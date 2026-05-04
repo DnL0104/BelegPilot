@@ -139,61 +139,61 @@ Explicitly excluded. Documented to prevent scope creep. Aligns with `.planning/P
 
 ## Traceability
 
-Which phases cover which requirements. To be populated during roadmap creation.
+Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FND-01 | TBD | Pending |
-| FND-02 | TBD | Pending |
-| FND-03 | TBD | Pending |
-| FND-04 | TBD | Pending |
-| FND-05 | TBD | Pending |
-| OBS-01 | TBD | Pending |
-| OBS-02 | TBD | Pending |
-| OBS-03 | TBD | Pending |
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| PIPE-01 | TBD | Pending |
-| PIPE-02 | TBD | Pending |
-| PIPE-03 | TBD | Pending |
-| PIPE-04 | TBD | Pending |
-| PIPE-05 | TBD | Pending |
-| PIPE-06 | TBD | Pending |
-| CLASS-01 | TBD | Pending |
-| CLASS-02 | TBD | Pending |
-| CLASS-03 | TBD | Pending |
-| CLASS-04 | TBD | Pending |
-| CLASS-05 | TBD | Pending |
-| CLASS-06 | TBD | Pending |
-| CLASS-07 | TBD | Pending |
-| PAY-01 | TBD | Pending |
-| PAY-02 | TBD | Pending |
-| PAY-03 | TBD | Pending |
-| PAY-04 | TBD | Pending |
-| PAY-05 | TBD | Pending |
-| PAY-06 | TBD | Pending |
-| LEG-01 | TBD | Pending |
-| LEG-02 | TBD | Pending |
-| LEG-03 | TBD | Pending |
-| LEG-04 | TBD | Pending |
-| LEG-05 | TBD | Pending |
-| LEG-06 | TBD | Pending |
-| LEG-07 | TBD | Pending |
-| LEG-08 | TBD | Pending |
-| LEG-09 | TBD | Pending |
-| QA-01 | TBD | Pending |
-| QA-02 | TBD | Pending |
-| QA-03 | TBD | Pending |
-| QA-04 | TBD | Pending |
-| QA-05 | TBD | Pending |
-| QA-06 | TBD | Pending |
-| QA-07 | TBD | Pending |
+| FND-01 | Phase 1 | Pending |
+| FND-02 | Phase 1 | Pending |
+| FND-03 | Phase 1 | Pending |
+| FND-04 | Phase 1 | Pending |
+| FND-05 | Phase 1 | Pending |
+| OBS-01 | Phase 1 | Pending |
+| OBS-02 | Phase 1 | Pending |
+| OBS-03 | Phase 7 | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| PIPE-01 | Phase 3 | Pending |
+| PIPE-02 | Phase 3 | Pending |
+| PIPE-03 | Phase 3 | Pending |
+| PIPE-04 | Phase 3 | Pending |
+| PIPE-05 | Phase 3 | Pending |
+| PIPE-06 | Phase 3 | Pending |
+| CLASS-01 | Phase 4 | Pending |
+| CLASS-02 | Phase 4 | Pending |
+| CLASS-03 | Phase 4 | Pending |
+| CLASS-04 | Phase 4 | Pending |
+| CLASS-05 | Phase 4 | Pending |
+| CLASS-06 | Phase 4 | Pending |
+| CLASS-07 | Phase 4 | Pending |
+| PAY-01 | Phase 5 | Pending |
+| PAY-02 | Phase 5 | Pending |
+| PAY-03 | Phase 5 | Pending |
+| PAY-04 | Phase 5 | Pending |
+| PAY-05 | Phase 5 | Pending |
+| PAY-06 | Phase 5 | Pending |
+| LEG-01 | Phase 6 | Pending |
+| LEG-02 | Phase 6 | Pending |
+| LEG-03 | Phase 6 | Pending |
+| LEG-04 | Phase 6 | Pending |
+| LEG-05 | Phase 6 | Pending |
+| LEG-06 | Phase 6 | Pending |
+| LEG-07 | Phase 6 | Pending |
+| LEG-08 | Phase 6 | Pending |
+| LEG-09 | Phase 6 | Pending |
+| QA-01 | Phase 7 | Pending |
+| QA-02 | Phase 7 | Pending |
+| QA-03 | Phase 7 | Pending |
+| QA-04 | Phase 7 | Pending |
+| QA-05 | Phase 7 | Pending |
+| QA-06 | Phase 7 | Pending |
+| QA-07 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 47 total
-- Mapped to phases: 0 (filled by roadmap)
-- Unmapped: 47 ⚠️ (expected — gets resolved by `/gsd:new-project` Step 8)
+- Mapped to phases: 47
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-03*
