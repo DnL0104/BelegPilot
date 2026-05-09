@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Roadmap committed; ready for `/gsd-plan-phase 1`
-last_updated: "2026-05-04T08:21:41.621Z"
-last_activity: 2026-05-03 — Project initialized; ROADMAP.md committed
+status: ready-to-execute
+stopped_at: Phase 1 planned (4 plans); ready for `/gsd-execute-phase 1`
+last_updated: "2026-05-06T07:30:00.000Z"
+last_activity: 2026-05-06 — Phase 1 plans committed (01-01..01-04); plan-checker passed iteration 2
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -27,10 +27,16 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 Phase: 1 of 7 (Foundation Cleanup + CI)
 Plan: 0 of 4 in current phase
-Status: Context gathered — ready to plan
-Last activity: 2026-05-04 — Phase 1 CONTEXT.md + DISCUSSION-LOG.md committed
+Status: **Ready to execute** — 4 plans verified across 4 waves
+Last activity: 2026-05-06 — Phase 1 plans verified (plan-checker iteration 2 passed)
 
 Progress: ░░░░░░░░░░ 0%
+
+### Wave map
+- Wave 1: 01-01 (Hygiene + Anthropic alignment + CORS deny-all) — no deps
+- Wave 2: 01-04 (Serilog enrichers + LogContext) — depends on 01-01
+- Wave 3: 01-03 (Sentry .NET + Next.js, EU residency, PII scrubbing) — depends on 01-01, 01-04
+- Wave 4: 01-02 (CI workflow + README) — depends on 01-01, 01-03, 01-04
 
 ## Performance Metrics
 
@@ -83,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-04
-Stopped at: Phase 1 context gathered; ready for `/gsd-plan-phase 1`
-Resume file: .planning/phases/01-foundation-cleanup-ci/01-CONTEXT.md
+Last session: 2026-05-06
+Stopped at: Phase 1 planned (4 plans, plan-checker passed iteration 2); ready for `/gsd-execute-phase 1`
+Resume file: .planning/phases/01-foundation-cleanup-ci/01-01-PLAN.md (start of Wave 1)

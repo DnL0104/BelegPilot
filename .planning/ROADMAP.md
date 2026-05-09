@@ -36,10 +36,24 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
+
+**Wave 1** *(no dependencies — start here)*
 - [ ] 01-01: Hygiene cleanup — remove `storage/` + `build-diag.txt`, fix Anthropic model alignment, lock CORS, add `.gitignore` rules
-- [ ] 01-02: GitHub Actions CI workflow — build/test/lint gates as merge-blocking; top-level `README.md`
-- [ ] 01-03: Sentry integration — .NET + Next.js, EU residency, PII scrubbing, conservative alert rules
+
+**Wave 2** *(blocked on Wave 1 — needs `Backend/Directory.Packages.props` post-01-01)*
 - [ ] 01-04: Serilog enrichers + correlation-ID `LogContext` in long-running handlers
+
+**Wave 3** *(blocked on Waves 1+2 — appsettings.json + Directory.Packages.props serialization)*
+- [ ] 01-03: Sentry integration — .NET + Next.js, EU residency, PII scrubbing, conservative alert rules
+
+**Wave 4** *(blocked on Waves 1–3 — runs CI against full Phase 1 surface for first green tick)*
+- [ ] 01-02: GitHub Actions CI workflow — build/test/lint gates as merge-blocking; top-level `README.md`
+
+**Cross-cutting constraints:** *(must_haves.truths shared across ≥ 2 plans)*
+- All plans honour structured-logging convention (named placeholders, never `$"..."` interpolation) per CLAUDE.md
+- Plans 01-01 and 01-03 both modify `docker-compose.yml` and `.env.example` — disjoint sections (01-01: Anthropic; 01-03: Sentry); execution order via wave assignment prevents conflict
+- Plans 01-04 and 01-03 both modify `Backend/src/TaxReader.Api/appsettings.json` — 01-04 replaces `Serilog` block; 01-03 adds new `Sentry` top-level section after; serialized by Wave 2 → Wave 3 ordering
+- Plans 01-01, 01-04, 01-03 all touch `Backend/Directory.Packages.props` — each appends entries; serialized by wave order
 
 ### Phase 2: Auth + Rate-Limit Hardening
 **Goal**: Multi-device-safe authentication via a `refresh_tokens` table with rotation + replay detection, plus rate limiting that doesn't lock out legitimate token rotation, plus DSGVO-friendly account-deletion confirmation.
