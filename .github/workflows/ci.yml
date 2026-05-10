@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-progress runs for the same PR ref; never cancel main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  hygiene-check:
+    name: Hygiene check (no PII / build artifacts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify no leaked storage / build artifacts
+        shell: bash
+        run: |
+          set -e
+          violations=()
+          for path in \
+            "storage" \
+            "Backend/storage" \
+            "Backend/src/TaxReader.Api/storage" ; do
+            if [ -d "$path" ]; then
+              violations+=("Forbidden directory: $path")
+            fi
+          done
+
+          # Pattern globs — match any build-diag*.txt or *.binlog at any depth.
+          while IFS= read -r f; do
+            violations+=("Forbidden file: $f")
+          done < <(find . -type f \
+            \( -name 'build-diag*.txt' -o -name '*.binlog' \) \
+            -not -path './.git/*' 2>/dev/null)
+
+          if [ ${#violations[@]} -gt 0 ]; then
+            printf 'Hygiene check FAILED:\n'
+            printf '  - %s\n' "${violations[@]}"
+            exit 1
+          fi
+          printf 'Hygiene check passed.\n'
+
+  backend-build-test:
+    name: Backend build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          # CPM cache key: include Directory.Packages.props because that's the
+          # central NuGet version manifest. Including it prevents stale cache
+          # restoration when versions are bumped (RESEARCH.md Pitfall 5).
+          cache: true
+          cache-dependency-path: |
+            Backend/**/packages.lock.json
+            Backend/Directory.Packages.props
+      - name: Restore
+        working-directory: Backend
+        run: dotnet restore
+      - name: Build
+        working-directory: Backend
+        run: dotnet build --no-restore --configuration Release
+      - name: Test
+        working-directory: Backend
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  frontend-lint-build:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+      - name: Install
+        working-directory: Frontend
+        run: npm ci
+      - name: Lint
+        working-directory: Frontend
+        run: npm run lint
+      - name: Build
+        working-directory: Frontend
+        run: npm run build
