@@ -44,7 +44,7 @@ Plans:
 - [x] 01-04: Serilog enrichers + correlation-ID `LogContext` in long-running handlers
 
 **Wave 3** *(blocked on Waves 1+2 — appsettings.json + Directory.Packages.props serialization)*
-- [ ] 01-03: Sentry integration — .NET + Next.js, EU residency, PII scrubbing, conservative alert rules
+- [x] 01-03: Sentry integration — .NET + Next.js, EU residency, PII scrubbing, conservative alert rules
 
 **Wave 4** *(blocked on Waves 1–3 — runs CI against full Phase 1 surface for first green tick)*
 - [ ] 01-02: GitHub Actions CI workflow — build/test/lint gates as merge-blocking; top-level `README.md`
