@@ -14,8 +14,8 @@
 - [x] **FND-01**: Remove `storage/` directory + `build-diag.txt` from working tree; update `.gitignore` to prevent regression; verify no code path writes receipts to disk
 - [x] **FND-02**: Reconcile Anthropic model default between `AnthropicOptions.cs` and `docker-compose.yml`; document chosen default in `CLAUDE.md`
 - [x] **FND-03**: Lock CORS production policy — deny all origins when `CORS_ALLOWED_ORIGINS` is unset in non-Development environments
-- [ ] **FND-04**: GitHub Actions CI workflow — `dotnet build`, `dotnet test`, `npm run lint`, `npm run build` as merge-blocking checks on every PR
-- [ ] **FND-05**: Top-level `README.md` covering required tools, env-var setup (link `.env.example`), `docker compose up --build`, where to point a browser
+- [x] **FND-04**: GitHub Actions CI workflow — `dotnet build`, `dotnet test`, `npm run lint`, `npm run build` as merge-blocking checks on every PR
+- [x] **FND-05**: Top-level `README.md` covering required tools, env-var setup (link `.env.example`), `docker compose up --build`, where to point a browser
 
 ### Observability
 
@@ -146,8 +146,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | FND-01 | Phase 1 | Complete (01-01) |
 | FND-02 | Phase 1 | Complete (01-01) |
 | FND-03 | Phase 1 | Complete (01-01) |
-| FND-04 | Phase 1 | Pending |
-| FND-05 | Phase 1 | Pending |
+| FND-04 | Phase 1 | Complete (01-02) |
+| FND-05 | Phase 1 | Complete (01-02) |
 | OBS-01 | Phase 1 | Complete (01-03) |
 | OBS-02 | Phase 1 | Complete (01-04) |
 | OBS-03 | Phase 7 | Pending |
@@ -197,4 +197,4 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-03*
-*Last updated: 2026-05-10 — OBS-01 complete after Plan 01-03*
+*Last updated: 2026-05-10 — FND-04 + FND-05 complete after Plan 01-02; Phase 1 = 7/7 requirements complete (FND-01..05, OBS-01, OBS-02), ready for verification*

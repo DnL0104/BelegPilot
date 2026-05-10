@@ -12,7 +12,7 @@ TaxReader is a brownfield product that already classifies German tax receipts (P
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation Cleanup + CI** — Hygiene fixes, CI/CD, Sentry, structured logging
+- [ ] **Phase 1: Foundation Cleanup + CI** — Hygiene fixes, CI/CD, Sentry, structured logging _(4/4 plans complete; pending `/gsd-verify-phase` and operator-side branch protection on `main`)_
 - [ ] **Phase 2: Auth + Rate-Limit Hardening** — Refresh-token table, rate limiter, account-deletion friction
 - [ ] **Phase 3: Background Pipeline + Tesseract Pool** — Hangfire jobs, async upload, OCR pool, error UX
 - [ ] **Phase 4: Classification Trustworthiness** — DE category expansion, rule + AI hybrid, audit/override UX, sum validation
@@ -47,7 +47,7 @@ Plans:
 - [x] 01-03: Sentry integration — .NET + Next.js, EU residency, PII scrubbing, conservative alert rules
 
 **Wave 4** *(blocked on Waves 1–3 — runs CI against full Phase 1 surface for first green tick)*
-- [ ] 01-02: GitHub Actions CI workflow — build/test/lint gates as merge-blocking; top-level `README.md`
+- [x] 01-02: GitHub Actions CI workflow — build/test/lint gates as merge-blocking; top-level `README.md`
 
 **Cross-cutting constraints:** *(must_haves.truths shared across ≥ 2 plans)*
 - All plans honour structured-logging convention (named placeholders, never `$"..."` interpolation) per CLAUDE.md
@@ -184,7 +184,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Cleanup + CI | 2/4 | In progress | - |
+| 1. Foundation Cleanup + CI | 4/4 | Ready for verification | - |
 | 2. Auth + Rate-Limit Hardening | 0/3 | Not started | - |
 | 3. Background Pipeline + Tesseract Pool | 0/4 | Not started | - |
 | 4. Classification Trustworthiness | 0/4 | Not started | - |

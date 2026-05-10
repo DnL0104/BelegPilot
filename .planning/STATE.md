@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Plan 01-03 complete (10/10 new tests pass, 113/113 total green; Frontend npm run build succeeds); ready for Wave 4 (Plan 01-02 — CI workflow + README)
-last_updated: "2026-05-10T11:02:33Z"
-last_activity: 2026-05-10 -- Completed 01-03-PLAN.md
+status: verifying
+stopped_at: Plan 01-02 complete (CI workflow + top-level README; 4/4 plans done; Phase 1 ready for verification — branch protection on main is a manual-pending operator step per D-10)
+last_updated: "2026-05-10T17:34:50Z"
+last_activity: 2026-05-10 -- Completed 01-02-PLAN.md (Wave 4 of Phase 1)
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 11
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -25,38 +25,38 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 1 (foundation-cleanup-ci) — EXECUTING
-Plan: 4 of 4 (Wave 4 — 01-02 CI workflow + README)
-Status: Plan 01-03 complete; ready for Wave 4
-Last activity: 2026-05-10 -- Completed 01-03-PLAN.md
+Phase: 1 (foundation-cleanup-ci) — READY FOR VERIFICATION
+Plan: 4 of 4 (Wave 4 — 01-02 CI workflow + README) — COMPLETE
+Status: Phase complete — all 4 plans done; ready for `/gsd-verify-phase` (Task 3 branch protection is operator-pending in GitHub UI, not blocking verification)
+Last activity: 2026-05-10 -- Completed 01-02-PLAN.md
 
-Progress: █░░░░░░░░░ 11%
+Progress: ██████████ 100%
 
 ### Wave map
 
 - Wave 1: 01-01 (Hygiene + Anthropic alignment + CORS deny-all) — no deps — DONE
 - Wave 2: 01-04 (Serilog enrichers + LogContext) — depends on 01-01 — DONE
 - Wave 3: 01-03 (Sentry .NET + Next.js, EU residency, PII scrubbing) — depends on 01-01, 01-04 — DONE
-- Wave 4: 01-02 (CI workflow + README) — depends on 01-01, 01-03, 01-04
+- Wave 4: 01-02 (CI workflow + README) — depends on 01-01, 01-03, 01-04 — DONE
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
-- Average duration: 7 min
-- Total execution time: 21 min
+- Total plans completed: 4
+- Average duration: 24 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 7 min)
+- Total execution time: 95 min
 
 **By Phase:**
 
 | Phase | Plans | Total  | Avg/Plan |
 |-------|-------|--------|----------|
-| 1     | 3/4   | 21 min | 7 min    |
+| 1     | 4/4   | 95 min | 24 min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files), 01-01 (5 min, 3 tasks, 11 files)
-- Trend: 01-03 took ~2x longer because it spans both stacks (.NET package install + scrubber + 7 tests + Next.js install of 148 packages + 4 frontend TS files + conditional withSentryConfig wrap). Two Rule 3 auto-fixes (Sentry SDK type rename `Request` → `SentryRequest`; `IDictionary<>` cast for `Extra` mutation) added one extra build round-trip.
+- Last 5 plans: 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files), 01-01 (5 min, 3 tasks, 11 files)
+- Trend: 01-02's 74-min wall-clock includes ~30 min context reading + a rate-limit-driven re-orient on a predecessor agent's already-on-disk `ci.yml`. The actual on-tools work (verifying must_haves + writing README + summary) was ~10 min. Read this metric with the resumption context in mind — it is NOT representative of fresh execution velocity.
 
 *Updated after each plan completion*
 
@@ -86,10 +86,14 @@ Recent decisions affecting current work:
 - 01-03: AllowedExtraKeys allow-list ({receipt_id, processing_run_id, request_id, job_id, phase}) actively wipes Extra keys not in the set — defence-in-depth so future Sentry.SetExtra("vendor", ...) cannot leak receipt content (D-14 #6 active enforcement, not just call-site contract)
 - 01-03: Frontend Sentry stays OFF in Phase 1 (D-16) — instrumentation-client.ts (NOT deprecated sentry.client.config.ts) gates Sentry.init on NEXT_PUBLIC_SENTRY_ENABLED === "true"; Phase 6 LEG-05 cookie banner flips the flag
 - 01-03: Conditional withSentryConfig in next.config.ts (Pitfall 6) — production builds work without SENTRY_ORG/SENTRY_PROJECT in Phase 1 CI because the wrap is skipped when the flag is off
+- 01-02: GitHub Actions CI workflow (`.github/workflows/ci.yml`) is the first ever CI in the repo — three parallel jobs (`hygiene-check`, `backend-build-test`, `frontend-lint-build`) on PRs to main and pushes to main; CPM-aware cache key includes `Backend/Directory.Packages.props` (RESEARCH.md Pitfall 5 mitigation)
+- 01-02: Branch protection on main is manual-pending per D-10 + plan instruction — operator runs the GitHub UI workflow after first PR merges and CI registers the three job names; auto-enabling repo security via gh CLI is explicitly out of executor scope
+- 01-02: Top-level `README.md` is English (not German) per D-12 — convention boundary between dev tooling (English, matches existing `Backend/README.md` analog) and end-user UI (German Sie-form). No screenshots, no CI badge until branch protection is enabled
+- 01-02: Local empty `storage/` dir is benign — gitignored by Plan 01-01, zero tracked files, never reaches CI runner via `actions/checkout@v4`. Plan's local-side smoke fails on directory presence; CI-side check on tracked files passes. Documented as local-vs-CI delta, NOT a regression
 
 ### Pending Todos
 
-None yet.
+- **Operator (manual)** — Enable branch protection on `main` after first PR carrying CI workflow merges and the three job names register with GitHub. Full configuration in `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` "Pending Operator Action" section. Not blocking Phase 1 verification but required for full satisfaction of Phase 1 Success Criterion #1 ("checks BLOCK merges", not just "checks RUN").
 
 ### Blockers/Concerns
 
@@ -104,5 +108,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-10
-Stopped at: Plan 01-03 complete (10/10 new tests pass, 113/113 total green; Frontend npm run build succeeds); ready for Wave 4 (Plan 01-02 — CI workflow + README)
-Resume file: .planning/phases/01-foundation-cleanup-ci/01-02-PLAN.md (Wave 4 — GitHub Actions CI workflow + top-level README)
+Stopped at: Plan 01-02 complete (4/4 plans done; CI workflow + README landed; branch protection on main is operator-pending). Phase 1 ready for `/gsd-verify-phase`.
+Resume file: Phase 1 verification — run `/gsd-verify-phase 1` next; then `/gsd-execute-phase 2` (Auth + Rate-Limit Hardening). Operator manual follow-up: enable branch protection on main per the configuration in `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action section.
