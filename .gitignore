@@ -1,0 +1,17 @@
+.env
+.env.local
+*.env.local
+
+# Runtime storage
+Backend/storage/
+storage/
+
+# Tesseract trained data (binary, large — install separately)
+*.traineddata
+
+# Backend API project storage (PII receipt PDFs)
+Backend/src/TaxReader.Api/storage/
+
+# MSBuild diagnostic logs / binlogs
+build-diag*.txt
+*.binlog
