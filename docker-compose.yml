@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: belegpilot-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: belegpilot
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d belegpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No ports: — DB is only reachable on the internal Docker network.
+
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: belegpilot-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=belegpilot;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: BelegPilot
+      Jwt__Audience: BelegPilot
+      Jwt__AccessTokenExpirationMinutes: ${JWT_ACCESS_EXPIRY_MINUTES:-60}
+      Jwt__RefreshTokenExpirationDays: ${JWT_REFRESH_EXPIRY_DAYS:-30}
+      Anthropic__ApiKey: ${ANTHROPIC_API_KEY}
+      Anthropic__Model: ${ANTHROPIC_MODEL:-claude-haiku-4-5}
+      Anthropic__MaxTokens: ${ANTHROPIC_MAX_TOKENS:-1024}
+      Anthropic__CostPerClassification: ${ANTHROPIC_COST_PER_CLASSIFICATION:-1}
+      RUN_MIGRATIONS: "true"
+    # No ports: — API is only reachable via the web container.
+
+  web:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: belegpilot-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      BACKEND_API_URL: http://api:8080
+    # No ports: — traffic enters only through Caddy.
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: belegpilot-caddy
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
