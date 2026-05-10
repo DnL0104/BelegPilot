@@ -20,7 +20,7 @@
 ### Observability
 
 - [ ] **OBS-01**: Sentry installed for both .NET API and Next.js frontend with EU data residency; PII scrubbing in `BeforeSend`; conservative alert rules (no per-error pages, only sustained-rate or new-error-type with cooldown)
-- [ ] **OBS-02**: Serilog enrichers (`Environment`, `CorrelationId`) configured; long-running handlers use `LogContext.PushProperty` for `ReceiptFileId` / `JobId` correlation
+- [x] **OBS-02**: Serilog enrichers (`Environment`, `CorrelationId`) configured; long-running handlers use `LogContext.PushProperty` for `ReceiptFileId` / `JobId` correlation
 - [ ] **OBS-03**: BetterStack Uptime monitors on `/health` (DB ping) and `/api/v1/health` (DB + Anthropic config); status page linked from footer; deploy maintenance windows configurable
 
 ### Authentication & Rate Limiting
@@ -149,7 +149,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | FND-04 | Phase 1 | Pending |
 | FND-05 | Phase 1 | Pending |
 | OBS-01 | Phase 1 | Pending |
-| OBS-02 | Phase 1 | Pending |
+| OBS-02 | Phase 1 | Complete (01-04) |
 | OBS-03 | Phase 7 | Pending |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |

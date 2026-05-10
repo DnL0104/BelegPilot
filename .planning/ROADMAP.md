@@ -41,7 +41,7 @@ Plans:
 - [x] 01-01: Hygiene cleanup — remove `storage/` + `build-diag.txt`, fix Anthropic model alignment, lock CORS, add `.gitignore` rules
 
 **Wave 2** *(blocked on Wave 1 — needs `Backend/Directory.Packages.props` post-01-01)*
-- [ ] 01-04: Serilog enrichers + correlation-ID `LogContext` in long-running handlers
+- [x] 01-04: Serilog enrichers + correlation-ID `LogContext` in long-running handlers
 
 **Wave 3** *(blocked on Waves 1+2 — appsettings.json + Directory.Packages.props serialization)*
 - [ ] 01-03: Sentry integration — .NET + Next.js, EU residency, PII scrubbing, conservative alert rules
@@ -184,7 +184,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Cleanup + CI | 1/4 | In progress | - |
+| 1. Foundation Cleanup + CI | 2/4 | In progress | - |
 | 2. Auth + Rate-Limit Hardening | 0/3 | Not started | - |
 | 3. Background Pipeline + Tesseract Pool | 0/4 | Not started | - |
 | 4. Classification Trustworthiness | 0/4 | Not started | - |
