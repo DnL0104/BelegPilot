@@ -84,7 +84,7 @@ try
     builder.Services.AddScoped<GetUserSettingsHandler>();
     builder.Services.AddScoped<UpdateUserSettingsHandler>();
 
-    // CORS
+    // CORS — D-07: production fail-mode is deny-all when CORS_ALLOWED_ORIGINS unset.
     builder.Services.AddCors(options =>
     {
         options.AddDefaultPolicy(policy =>
@@ -105,9 +105,14 @@ try
                 return;
             }
 
-            policy.WithOrigins("http://localhost:3000")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            // D-07: non-Development with no origins → deny all. We register the
+            // default policy with empty Origins so app.UseCors() doesn't error,
+            // but no preflight or simple cross-origin request passes the check.
+            // Same-origin browser requests via the Caddy proxy are unaffected
+            // (browsers don't add Origin on same-origin requests).
+            Log.Warning(
+                "CORS_ALLOWED_ORIGINS unset in {Environment} environment — denying all cross-origin requests.",
+                builder.Environment.EnvironmentName);
         });
     });
 
