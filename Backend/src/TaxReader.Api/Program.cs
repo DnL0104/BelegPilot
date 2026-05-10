@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Sentry;
 using Serilog;
 using TaxReader.Api.Endpoints;
 using TaxReader.Api.Middleware;
@@ -14,6 +15,7 @@ using TaxReader.Application.Queries;
 using TaxReader.Infrastructure;
 using TaxReader.Infrastructure.Configuration;
 using TaxReader.Infrastructure.Data;
+using TaxReader.Infrastructure.Observability;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -24,6 +26,18 @@ try
     Log.Information("Starting BelegPilot API");
 
     var builder = WebApplication.CreateBuilder(args);
+
+    // Pitfall 1: Sentry must be the FIRST registration after CreateBuilder so it
+    // sees DI-time exceptions. Do not move below other AddX calls.
+    // DSN binds automatically from configuration (Sentry__Dsn env var or the
+    // "Sentry":{"Dsn":"..."} block in appsettings.json). Empty DSN = no-op.
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Environment = builder.Environment.EnvironmentName;
+        options.SendDefaultPii = false;
+        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.None;
+        options.SetBeforeSend((sentryEvent, hint) => SentryScrubbing.Scrub(sentryEvent));
+    });
 
     var corsOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

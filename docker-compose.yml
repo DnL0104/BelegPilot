@@ -38,6 +38,8 @@ services:
       Anthropic__Model: ${ANTHROPIC_MODEL:-claude-haiku-4-5}
       Anthropic__MaxTokens: ${ANTHROPIC_MAX_TOKENS:-1024}
       Anthropic__CostPerClassification: ${ANTHROPIC_COST_PER_CLASSIFICATION:-1}
+      Sentry__Dsn: ${SENTRY_DSN_BACKEND:-}
+      Sentry__Environment: production
       RUN_MIGRATIONS: "true"
     # No ports: — API is only reachable via the web container.
 
@@ -52,6 +54,8 @@ services:
     environment:
       NODE_ENV: production
       BACKEND_API_URL: http://api:8080
+      NEXT_PUBLIC_SENTRY_ENABLED: ${NEXT_PUBLIC_SENTRY_ENABLED:-false}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
     # No ports: — traffic enters only through Caddy.
 
   caddy:
