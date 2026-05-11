@@ -12,7 +12,7 @@ TaxReader is a brownfield product that already classifies German tax receipts (P
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation Cleanup + CI** — Hygiene fixes, CI/CD, Sentry, structured logging _(4/4 plans complete; pending `/gsd-verify-phase` and operator-side branch protection on `main`)_
+- [x] **Phase 1: Foundation Cleanup + CI** — Hygiene fixes, CI/CD, Sentry, structured logging _(4/4 plans complete; pending `/gsd-verify-phase` and operator-side branch protection on `main`)_ (completed 2026-05-11)
 - [ ] **Phase 2: Auth + Rate-Limit Hardening** — Refresh-token table, rate limiter, account-deletion friction
 - [ ] **Phase 3: Background Pipeline + Tesseract Pool** — Hangfire jobs, async upload, OCR pool, error UX
 - [ ] **Phase 4: Classification Trustworthiness** — DE category expansion, rule + AI hybrid, audit/override UX, sum validation
@@ -184,7 +184,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Cleanup + CI | 4/4 | Ready for verification | - |
+| 1. Foundation Cleanup + CI | 4/4 | Complete    | 2026-05-11 |
 | 2. Auth + Rate-Limit Hardening | 0/3 | Not started | - |
 | 3. Background Pipeline + Tesseract Pool | 0/4 | Not started | - |
 | 4. Classification Trustworthiness | 0/4 | Not started | - |
