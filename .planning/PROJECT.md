@@ -147,4 +147,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-02 after initialization*
+*Last updated: 2026-05-11 — Phase 1 (Foundation Cleanup + CI) complete; requirements FND-01..05 + OBS-01..02 validated. 4 operator-side items tracked in `phases/01-foundation-cleanup-ci/01-HUMAN-UAT.md`.*
