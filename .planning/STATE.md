@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Plan 01-02 complete (4/4 plans done; CI workflow + README landed; branch protection on main is operator-pending). Phase 1 ready for `/gsd-verify-phase`.
+status: ready-to-plan
+stopped_at: Phase 1 complete (4/4 plans, 7/7 requirements, verification approved with 4 human-UAT items tracked in 01-HUMAN-UAT.md). Phase 2 (Auth + Rate-Limit Hardening) ready for `/gsd-discuss-phase 2` or `/gsd-plan-phase 2`.
 last_updated: "2026-05-11T14:53:37.825Z"
 last_activity: 2026-05-11
 progress:
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03)
 
 **Core value:** Trustworthy classification — every line item correctly categorized into the right tax category, with reasoning the user can audit and override.
-**Current focus:** Phase 1 — foundation-cleanup-ci
+**Current focus:** Phase 2 — auth + rate-limit hardening (next)
 
 ## Current Position
 
-Phase: 2
+Phase: 2 (Auth + Rate-Limit Hardening) — not yet started
 Plan: Not started
-Status: Phase complete — all 4 plans done; ready for `/gsd-verify-phase` (Task 3 branch protection is operator-pending in GitHub UI, not blocking verification)
-Last activity: 2026-05-11
+Status: Phase 1 complete and verified (29/29 must-haves, code-review fixes applied). 4 operator-side human-UAT items tracked in 01-HUMAN-UAT.md (branch protection on `main`, Sentry dashboard, AVV/DPA contracts, `build-diag.txt` cleanup). Ready to discuss/plan Phase 2.
+Last activity: 2026-05-11 — Completed Phase 1 (Foundation Cleanup + CI)
 
-Progress: ██████████ 100%
+Progress: ██████████ 100% of Phase 1; Phase 2 next
 
 ### Wave map
 
