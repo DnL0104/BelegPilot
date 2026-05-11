@@ -31,9 +31,10 @@ try
     // sees DI-time exceptions. Do not move below other AddX calls.
     // DSN binds automatically from configuration (Sentry__Dsn env var or the
     // "Sentry":{"Dsn":"..."} block in appsettings.json). Empty DSN = no-op.
+    // Environment is also bound from configuration (Sentry__Environment env var
+    // or the SDK's ASPNETCORE_ENVIRONMENT fallback) — do not overwrite here.
     builder.WebHost.UseSentry(options =>
     {
-        options.Environment = builder.Environment.EnvironmentName;
         options.SendDefaultPii = false;
         options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.None;
         options.SetBeforeSend((sentryEvent, hint) => SentryScrubbing.Scrub(sentryEvent));
