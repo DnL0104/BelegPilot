@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using TaxReader.Application.DTOs;
 using TaxReader.Application.Interfaces;
@@ -16,7 +17,8 @@ public class UploadReceiptFilesHandler(
     IImageTextExtractor imageExtractor,
     IEnumerable<IReceiptParser> parsers,
     IClassificationService classificationService,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    ILogger<UploadReceiptFilesHandler> logger)
 {
     private static readonly HashSet<string> ImageExtensions =
         [".jpg", ".jpeg", ".png", ".webp"];
@@ -211,7 +213,17 @@ public class UploadReceiptFilesHandler(
         file.Status = FileStatus.Failed;
         // Use CancellationToken.None — we must persist the failure status even if
         // the original request token was already cancelled (e.g. client disconnected).
-        try { await dbContext.SaveChangesAsync(CancellationToken.None); } catch { /* best-effort */ }
+        try
+        {
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to persist failure status for ReceiptFile {ReceiptFileId}; status may be stale.",
+                file.Id);
+        }
     }
 
     private sealed record PendingReceipt(
