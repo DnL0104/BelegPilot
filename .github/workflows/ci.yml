@@ -57,9 +57,7 @@ jobs:
           # central NuGet version manifest. Including it prevents stale cache
           # restoration when versions are bumped (RESEARCH.md Pitfall 5).
           cache: true
-          cache-dependency-path: |
-            Backend/**/packages.lock.json
-            Backend/Directory.Packages.props
+          cache-dependency-path: Backend/Directory.Packages.props
       - name: Restore
         working-directory: Backend
         run: dotnet restore
