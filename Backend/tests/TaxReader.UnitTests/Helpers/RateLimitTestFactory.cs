@@ -1,0 +1,44 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace TaxReader.UnitTests.Helpers;
+
+/// <summary>
+/// Shared WebApplicationFactory builder for Phase 2 plans (02-01 refresh-token tests,
+/// 02-02 delete-account tests, 02-03 rate-limit tests). Mirrors the pattern in
+/// CorsConfigurationTests.BuildFactory but adds RefreshToken:HashKey seeding (32-byte
+/// zero pepper is fine for tests — only determinism matters) and accepts an arbitrary
+/// settings dictionary for per-test overrides.
+/// </summary>
+public static class RateLimitTestFactory
+{
+    public static WebApplicationFactory<Program> BuildFactory(
+        string environment = "Production",
+        string? origins = null,
+        Dictionary<string, string?>? extraSettings = null)
+    {
+        return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment(environment);
+            builder.UseSetting("CORS_ALLOWED_ORIGINS", origins ?? string.Empty);
+            builder.UseSetting("Jwt:Secret", "test-secret-test-secret-test-secret-1234");
+            builder.UseSetting("Jwt:Issuer", "test");
+            builder.UseSetting("Jwt:Audience", "test");
+            builder.UseSetting(
+                "ConnectionStrings:DefaultConnection",
+                "Host=localhost;Port=5432;Database=test;Username=test;Password=test");
+
+            // RefreshToken pepper — 32 zero bytes Base64-encoded. Tests that need a
+            // non-zero pepper override this via extraSettings.
+            builder.UseSetting("RefreshToken:HashKey", Convert.ToBase64String(new byte[32]));
+
+            if (extraSettings is not null)
+            {
+                foreach (var (key, value) in extraSettings)
+                {
+                    builder.UseSetting(key, value);
+                }
+            }
+        });
+    }
+}
