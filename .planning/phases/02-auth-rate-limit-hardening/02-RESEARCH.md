@@ -1198,7 +1198,7 @@ const handleDeleteAccount = async () => {
 
 **If this table is empty:** Not empty — A1 and A6 should be validated during execution.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the rate-limit windows/limits be configurable via env vars, or hardcoded?**
    - What we know: CONTEXT.md D-09 calls out the values explicitly (5/min, 30/min, 60/min) but Claude's Discretion includes "RateLimitOptions.cs (NEW... if windows/limits are made configurable rather than hardcoded)."
