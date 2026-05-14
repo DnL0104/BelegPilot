@@ -14,9 +14,14 @@ public static class AuthEndpoints
         auth.MapPost("/register", async (
             RegisterRequest request,
             IAuthService authService,
+            HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
-            var result = await authService.RegisterAsync(request, userAgent: null, ipAddress: null, cancellationToken);
+            var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+            // After UseForwardedHeaders runs (plan 02-03), RemoteIpAddress is the real client IP.
+            var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await authService.RegisterAsync(request, userAgent, ipAddress, cancellationToken);
 
             return result.IsSuccess
                 ? Results.Ok(result.Value)
@@ -29,9 +34,13 @@ public static class AuthEndpoints
         auth.MapPost("/login", async (
             LoginRequest request,
             IAuthService authService,
+            HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
-            var result = await authService.LoginAsync(request, userAgent: null, ipAddress: null, cancellationToken);
+            var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+            var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await authService.LoginAsync(request, userAgent, ipAddress, cancellationToken);
 
             return result.IsSuccess
                 ? Results.Ok(result.Value)
@@ -44,9 +53,13 @@ public static class AuthEndpoints
         auth.MapPost("/refresh", async (
             RefreshRequest request,
             IAuthService authService,
+            HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
-            var result = await authService.RefreshAsync(request.RefreshToken, userAgent: null, ipAddress: null, cancellationToken);
+            var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+            var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await authService.RefreshAsync(request.RefreshToken, userAgent, ipAddress, cancellationToken);
 
             return result.IsSuccess
                 ? Results.Ok(result.Value)

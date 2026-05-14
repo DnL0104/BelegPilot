@@ -15,7 +15,8 @@ namespace TaxReader.Infrastructure.Services;
 
 public class AuthService(
     IAppDbContext dbContext,
-    IOptions<JwtOptions> jwtOptions) : IAuthService
+    IOptions<JwtOptions> jwtOptions,
+    IRefreshTokenService refreshTokenService) : IAuthService
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;
     private const int InitialFreeTokens = 10;
@@ -71,8 +72,18 @@ public class AuthService(
             CreatedAt = DateTime.UtcNow
         });
 
-        // TODO Task 4: delegate refresh-token issuance to IRefreshTokenService.IssueAsync.
-        throw new NotImplementedException("Awaiting Task 4: IRefreshTokenService integration.");
+        // Persist the user + welcome-tokens before issuing the refresh-token row —
+        // the FK on refresh_tokens.user_id requires the user to exist first.
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var accessToken = GenerateAccessToken(user);
+        var refreshToken = await refreshTokenService.IssueAsync(
+            user.Id, userAgent, ipAddress, cancellationToken);
+
+        return Result<AuthResponse>.Success(new AuthResponse(
+            accessToken,
+            refreshToken,
+            new UserDto(user.Id, user.Email, user.DisplayName)));
     }
 
     public async Task<Result<AuthResponse>> LoginAsync(
@@ -89,18 +100,40 @@ public class AuthService(
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Result<AuthResponse>.Failure("Ungültige E-Mail oder Passwort.");
 
-        // TODO Task 4: delegate refresh-token issuance to IRefreshTokenService.IssueAsync.
-        throw new NotImplementedException("Awaiting Task 4: IRefreshTokenService integration.");
+        var accessToken = GenerateAccessToken(user);
+        var refreshToken = await refreshTokenService.IssueAsync(
+            user.Id, userAgent, ipAddress, cancellationToken);
+
+        return Result<AuthResponse>.Success(new AuthResponse(
+            accessToken,
+            refreshToken,
+            new UserDto(user.Id, user.Email, user.DisplayName)));
     }
 
-    public Task<Result<AuthResponse>> RefreshAsync(
+    public async Task<Result<AuthResponse>> RefreshAsync(
         string refreshToken,
         string? userAgent,
         string? ipAddress,
         CancellationToken cancellationToken = default)
     {
-        // TODO Task 4: delegate rotation+replay to IRefreshTokenService.ValidateAndRotateAsync.
-        throw new NotImplementedException("Awaiting Task 4: IRefreshTokenService integration.");
+        var rotationResult = await refreshTokenService.ValidateAndRotateAsync(
+            refreshToken, userAgent, ipAddress, cancellationToken);
+
+        if (rotationResult.IsFailure)
+            return Result<AuthResponse>.Failure(rotationResult.Error!);
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == rotationResult.Value.UserId, cancellationToken);
+
+        if (user is null)
+            return Result<AuthResponse>.Failure("Ungültiges oder abgelaufenes Refresh-Token.");
+
+        var accessToken = GenerateAccessToken(user);
+
+        return Result<AuthResponse>.Success(new AuthResponse(
+            accessToken,
+            rotationResult.Value.PlaintextToken,
+            new UserDto(user.Id, user.Email, user.DisplayName)));
     }
 
     private string GenerateAccessToken(User user)
