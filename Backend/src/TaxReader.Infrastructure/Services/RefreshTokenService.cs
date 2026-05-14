@@ -124,12 +124,35 @@ public class RefreshTokenService(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return await dbContext.RefreshTokens
+        // ExecuteUpdateAsync is supported by relational providers (Npgsql in production).
+        // The InMemory provider used by unit tests doesn't implement it, so fall back
+        // to load-and-mutate there. Both code paths produce the same row-level outcome.
+        // We check by provider name to avoid taking a runtime dependency on the
+        // InMemory extension package from production code.
+        if (dbContext is DbContext concrete && !IsInMemoryProvider(concrete))
+        {
+            return await dbContext.RefreshTokens
+                .Where(t => t.UserId == userId && t.RevokedAt == null)
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow),
+                    cancellationToken);
+        }
+
+        var rows = await dbContext.RefreshTokens
             .Where(t => t.UserId == userId && t.RevokedAt == null)
-            .ExecuteUpdateAsync(
-                s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow),
-                cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        foreach (var row in rows)
+        {
+            row.RevokedAt = now;
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return rows.Count;
     }
+
+    private static bool IsInMemoryProvider(DbContext context)
+        => context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
 
     private string ComputeHash(string plaintextToken)
     {

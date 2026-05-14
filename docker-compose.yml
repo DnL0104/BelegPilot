@@ -34,6 +34,7 @@ services:
       Jwt__Audience: BelegPilot
       Jwt__AccessTokenExpirationMinutes: ${JWT_ACCESS_EXPIRY_MINUTES:-60}
       Jwt__RefreshTokenExpirationDays: ${JWT_REFRESH_EXPIRY_DAYS:-30}
+      RefreshToken__HashKey: ${REFRESHTOKEN_HASHKEY}
       Anthropic__ApiKey: ${ANTHROPIC_API_KEY}
       Anthropic__Model: ${ANTHROPIC_MODEL:-claude-haiku-4-5}
       Anthropic__MaxTokens: ${ANTHROPIC_MAX_TOKENS:-1024}

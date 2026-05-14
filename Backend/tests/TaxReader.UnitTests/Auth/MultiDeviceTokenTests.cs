@@ -1,16 +1,77 @@
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using TaxReader.Domain.Entities;
+using TaxReader.Infrastructure.Configuration;
+using TaxReader.Infrastructure.Data;
+using TaxReader.Infrastructure.Services;
+
 namespace TaxReader.UnitTests.Auth;
 
 /// <summary>
-/// AUTH-01: Two active refresh tokens for the same user (phone + laptop)
-/// must both validate independently and rotate without affecting the other.
-/// Wave 0 stub — un-skipped by Task 5.
+/// AUTH-01: The same user can hold two active refresh tokens simultaneously
+/// (phone + laptop) and rotate each independently. Rotation of token A must
+/// not affect token B's chain.
 /// </summary>
-public class MultiDeviceTokenTests
+public class MultiDeviceTokenTests : IDisposable
 {
-    [Fact(Skip = "Pending implementation in Wave 1 tasks 2-4")]
-    public void TwoActiveTokens_BothValidate()
+    private static readonly Guid TestUserId = Guid.Parse("cccccccc-1111-2222-3333-444444444444");
+
+    private readonly AppDbContext _dbContext;
+    private readonly RefreshTokenService _service;
+
+    public MultiDeviceTokenTests()
     {
-        // Will issue token A then token B for same user, rotate A then rotate B,
-        // assert both rotations succeed and neither revokes the other device's chain.
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        _dbContext = new AppDbContext(options);
+
+        _dbContext.Users.Add(new User
+        {
+            Id = TestUserId,
+            Email = "multi@test.local",
+            DisplayName = "Multi Tester",
+            PasswordHash = "x"
+        });
+        _dbContext.SaveChanges();
+
+        _service = new RefreshTokenService(
+            _dbContext,
+            Options.Create(new RefreshTokenOptions { HashKey = Convert.ToBase64String(new byte[32]) }),
+            Options.Create(new JwtOptions
+            {
+                Secret = "test-secret-test-secret-test-secret-12",
+                Issuer = "test",
+                Audience = "test",
+                RefreshTokenExpirationDays = 30
+            }),
+            NullLogger<RefreshTokenService>.Instance);
     }
+
+    [Fact]
+    public async Task TwoActiveTokens_BothValidate()
+    {
+        var plaintextA = await _service.IssueAsync(TestUserId, "phone", null);
+        var plaintextB = await _service.IssueAsync(TestUserId, "laptop", null);
+
+        // Rotate A — B must still validate independently afterwards.
+        var rotationA = await _service.ValidateAndRotateAsync(plaintextA, "phone-2", null);
+        rotationA.IsSuccess.Should().BeTrue("first device should rotate cleanly");
+
+        // The laptop's still-active plaintext must also rotate.
+        var rotationB = await _service.ValidateAndRotateAsync(plaintextB, "laptop-2", null);
+        rotationB.IsSuccess.Should().BeTrue(
+            "second device's token must remain valid after first device rotates");
+
+        // Final state: both old plaintexts revoked, both new plaintexts active.
+        var active = await _dbContext.RefreshTokens
+            .Where(t => t.UserId == TestUserId && t.RevokedAt == null)
+            .ToListAsync();
+
+        active.Should().HaveCount(2, "both devices should each have one fresh active token");
+    }
+
+    public void Dispose() => _dbContext.Dispose();
 }
