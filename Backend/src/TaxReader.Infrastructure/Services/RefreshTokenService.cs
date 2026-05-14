@@ -85,7 +85,7 @@ public class RefreshTokenService(
             // REPLAY DETECTION (D-03): revoked row was presented — revoke ALL the user's tokens.
             if (existing.RevokedAt is not null)
             {
-                logger.LogWarning("Refresh token replay detected");
+                logger.LogWarning("Replay of revoked refresh token; revoking all tokens for user");
                 SentrySdk.CaptureMessage(
                     "Refresh token replay detected",
                     scope => scope.SetExtra("user.id_hash", HashUserId(existing.UserId)),
