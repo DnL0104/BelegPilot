@@ -68,7 +68,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: `refresh_tokens` table + `RefreshTokenService` with rotation + replay detection (replaces single-column model)
+- [x] 02-01: `refresh_tokens` table + `RefreshTokenService` with rotation + replay detection (replaces single-column model)
 - [ ] 02-02: Account-deletion confirmation modal + re-auth requirement
 - [ ] 02-03: ASP.NET Core `AddRateLimiter` policies on `/auth/*`, `/auth/refresh`, `/receipt-files`, global
 

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 01-02 complete (4/4 plans done; CI workflow + README landed; branch protection on main is operator-pending). Phase 1 ready for `/gsd-verify-phase`.
-last_updated: "2026-05-14T20:27:50.838Z"
-last_activity: 2026-05-14 -- Phase 02 planning complete
+stopped_at: Plan 02-01 complete (1/3 Phase-2 plans done; refresh_tokens table + IRefreshTokenService landed; AUTH-01 satisfied). Plan 02-02 (account-deletion re-auth) is next.
+last_updated: "2026-05-14T20:49:18Z"
+last_activity: 2026-05-14 -- Plan 02-01 complete (AUTH-01 satisfied)
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
-  percent: 57
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03)
 
 **Core value:** Trustworthy classification — every line item correctly categorized into the right tax category, with reasoning the user can audit and override.
-**Current focus:** Phase 2 — auth + rate-limit hardening (next)
+**Current focus:** Phase 02 — auth-rate-limit-hardening
 
 ## Current Position
 
-Phase: 2 (Auth + Rate-Limit Hardening) — context gathered, planning next
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-14 -- Phase 02 planning complete
+Phase: 02 (auth-rate-limit-hardening) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 02 (plan 02-01 done)
+Last activity: 2026-05-14 -- Plan 02-01 complete (AUTH-01 satisfied)
 
-Progress: ██████████ 100% of Phase 1; Phase 2 next
+Progress: ██████████ 100% of Phase 1; 1/3 plans in Phase 2 done
 
 ### Wave map
 
@@ -43,20 +43,21 @@ Progress: ██████████ 100% of Phase 1; Phase 2 next
 
 **Velocity:**
 
-- Total plans completed: 8
-- Average duration: 24 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 7 min)
-- Total execution time: 95 min
+- Total plans completed: 9
+- Average duration: 23 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 8 min)
+- Total execution time: 110 min
 
 **By Phase:**
 
 | Phase | Plans | Total  | Avg/Plan |
 |-------|-------|--------|----------|
 | 1 | 4 | - | - |
+| 2 | 1 | 15 min | 15 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files), 01-01 (5 min, 3 tasks, 11 files)
-- Trend: 01-02's 74-min wall-clock includes ~30 min context reading + a rate-limit-driven re-orient on a predecessor agent's already-on-disk `ci.yml`. The actual on-tools work (verifying must_haves + writing README + summary) was ~10 min. Read this metric with the resumption context in mind — it is NOT representative of fresh execution velocity.
+- Last 5 plans: 02-01 (15 min, 6 tasks, 23 files — fresh execution), 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files), 01-01 (5 min, 3 tasks, 11 files)
+- Trend: 02-01 hit ~15 min for a 6-task plan with 23 files (12 created / 11 modified) including an EF migration and full test suite. Two Rule-1 deviations (InMemory provider ExecuteUpdateAsync fallback + grep-guard string disambiguation) added small touch-up but no scope creep.
 
 *Updated after each plan completion*
 
@@ -90,6 +91,11 @@ Recent decisions affecting current work:
 - 01-02: Branch protection on main is manual-pending per D-10 + plan instruction — operator runs the GitHub UI workflow after first PR merges and CI registers the three job names; auto-enabling repo security via gh CLI is explicitly out of executor scope
 - 01-02: Top-level `README.md` is English (not German) per D-12 — convention boundary between dev tooling (English, matches existing `Backend/README.md` analog) and end-user UI (German Sie-form). No screenshots, no CI badge until branch protection is enabled
 - 01-02: Local empty `storage/` dir is benign — gitignored by Plan 01-01, zero tracked files, never reaches CI runner via `actions/checkout@v4`. Plan's local-side smoke fails on directory presence; CI-side check on tracked files passes. Documented as local-vs-CI delta, NOT a regression
+- 02-01: RefreshTokenService stays HTTP-context-free (Pitfall 8) — UA/IP are method parameters; Minimal API endpoint binds HttpContext directly and extracts them. No IHttpContextAccessor injection.
+- 02-01: RevokeAllForUserAsync detects provider by name (`Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory"`) — production runs ExecuteUpdateAsync; in-memory tests fall back to load-and-mutate. No InMemory package dependency leaked into production Infrastructure.
+- 02-01: Sentry message body is the unique searchable token ("Refresh token replay detected"); Serilog warning uses a different phrasing so the verification grep returns exactly one match. Both fire together on every replay event.
+- 02-01: EF migration manually reordered to CreateTable-first then DropColumn-last (EF scaffolds the reverse) per D-15 + RESEARCH Pattern 3.
+- 02-01: AuthService.RegisterAsync now SaveChanges before refreshTokenService.IssueAsync — refresh_tokens.user_id FK requires the user row to exist first.
 
 ### Pending Todos
 
@@ -107,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10
-Stopped at: Plan 01-02 complete (4/4 plans done; CI workflow + README landed; branch protection on main is operator-pending). Phase 1 ready for `/gsd-verify-phase`.
-Resume file: Phase 1 verification — run `/gsd-verify-phase 1` next; then `/gsd-execute-phase 2` (Auth + Rate-Limit Hardening). Operator manual follow-up: enable branch protection on main per the configuration in `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action section.
+Last session: 2026-05-14
+Stopped at: Plan 02-01 complete (1/3 Phase-2 plans done; refresh_tokens table + IRefreshTokenService landed; AUTH-01 satisfied). Plan 02-02 (account-deletion re-auth) is next.
+Resume file: Continue Phase 2 execution — plan 02-02 (Account-deletion re-auth, AUTH-02) is the next plan in the queue, followed by 02-03 (Rate-limit policies, AUTH-03). Operator manual follow-up still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.

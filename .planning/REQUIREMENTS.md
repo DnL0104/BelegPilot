@@ -25,7 +25,7 @@
 
 ### Authentication & Rate Limiting
 
-- [ ] **AUTH-01**: `refresh_tokens` table with hash-only storage, multi-row per user, rotation on refresh, replay detection that revokes all tokens on collision; `RefreshTokenService` replacing `user.RefreshToken` column logic
+- [x] **AUTH-01**: `refresh_tokens` table with hash-only storage, multi-row per user, rotation on refresh, replay detection that revokes all tokens on collision; `RefreshTokenService` replacing `user.RefreshToken` column logic
 - [ ] **AUTH-02**: Account-deletion confirmation modal — re-authentication required + irreversibility warning before `DELETE /auth/account` fires
 - [ ] **AUTH-03**: ASP.NET Core `AddRateLimiter` policies — fixed-window 5 req/min on `/auth/login` + `/auth/register` per IP, 30 req/min on `/auth/refresh` per user, concurrency-2 on `/receipt-files` per user, global 60 req/min per IP
 
@@ -151,7 +151,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | OBS-01 | Phase 1 | Complete (01-03) |
 | OBS-02 | Phase 1 | Complete (01-04) |
 | OBS-03 | Phase 7 | Pending |
-| AUTH-01 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete (02-01) |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
 | PIPE-01 | Phase 3 | Pending |
