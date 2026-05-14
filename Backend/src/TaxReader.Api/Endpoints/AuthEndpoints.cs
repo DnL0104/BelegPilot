@@ -28,6 +28,7 @@ public static class AuthEndpoints
                 : Results.BadRequest(new { error = result.Error });
         })
         .AllowAnonymous()
+        .RequireRateLimiting("auth-strict")
         .WithName("Register")
         .WithSummary("Create a new user account");
 
@@ -47,6 +48,7 @@ public static class AuthEndpoints
                 : Results.Unauthorized();
         })
         .AllowAnonymous()
+        .RequireRateLimiting("auth-strict")
         .WithName("Login")
         .WithSummary("Authenticate and receive JWT tokens");
 
@@ -66,6 +68,7 @@ public static class AuthEndpoints
                 : Results.Unauthorized();
         })
         .AllowAnonymous()
+        .RequireRateLimiting("auth-refresh")
         .WithName("RefreshToken")
         .WithSummary("Exchange a refresh token for new tokens");
 
