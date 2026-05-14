@@ -1,4 +1,6 @@
+using System.Net;
 using FluentAssertions;
+using TaxReader.UnitTests.Helpers;
 
 namespace TaxReader.UnitTests.RateLimiting;
 
@@ -7,13 +9,32 @@ namespace TaxReader.UnitTests.RateLimiting;
 /// Catches generic abuse below the per-endpoint quotas. Triggers BEFORE auth so
 /// even unauthenticated requests count against the bucket.
 /// </summary>
+[Collection(RateLimiterTestCollection.Name)]
 public class GlobalPolicyTests
 {
-    [Fact(Skip = "Pending implementation in Task 2-4")]
-    public Task SixtyFirstRequest_Returns429()
+    [Fact]
+    public async Task SixtyFirstRequest_Returns429()
     {
-        // Stub — un-skipped in Task 4. Burns 60 generic GETs on /api/v1/*;
-        // 61st must be 429.
-        return Task.CompletedTask;
+        using var factory = RateLimitTestFactory.BuildFactory();
+        var client = factory.CreateClient();
+
+        // Hit an endpoint with NO per-endpoint policy attached (so only the global
+        // 60/min limiter counts). GET /api/v1/receipts returns 401 (Unauthorized)
+        // unauthenticated, but the rate limiter still consumes a permit per request.
+        for (var i = 0; i < 60; i++)
+        {
+            var attempt = await client.GetAsync("/api/v1/receipts");
+            attempt.StatusCode.Should().BeOneOf(
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.NotFound,
+                HttpStatusCode.OK);
+        }
+
+        var response = await client.GetAsync("/api/v1/receipts");
+
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests,
+            "61st request from one IP MUST hit the global 60/min limiter (D-09)");
+        response.Content.Headers.ContentType?.MediaType
+            .Should().Be("application/problem+json");
     }
 }

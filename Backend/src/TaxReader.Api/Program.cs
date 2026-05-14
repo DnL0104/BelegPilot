@@ -197,7 +197,6 @@ try
             }
 
             context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            context.HttpContext.Response.ContentType = "application/problem+json";
 
             var problem = new ProblemDetails
             {
@@ -208,7 +207,13 @@ try
             };
             problem.Extensions["retryAfterSeconds"] = retryAfterSeconds;
 
-            await context.HttpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+            // Pass contentType explicitly — WriteAsJsonAsync would otherwise reset the
+            // response content-type to application/json, clobbering the problem+json header.
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                problem,
+                options: null,
+                contentType: "application/problem+json",
+                cancellationToken: cancellationToken);
         };
     });
 

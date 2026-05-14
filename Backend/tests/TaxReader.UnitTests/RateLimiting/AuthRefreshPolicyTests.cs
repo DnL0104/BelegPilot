@@ -1,4 +1,7 @@
+using System.Net;
+using System.Net.Http.Json;
 using FluentAssertions;
+using TaxReader.UnitTests.Helpers;
 
 namespace TaxReader.UnitTests.RateLimiting;
 
@@ -7,13 +10,35 @@ namespace TaxReader.UnitTests.RateLimiting;
 /// Higher than auth-strict because legitimate token rotation may burst (multiple tabs,
 /// app cold-starts). Two NAT'd devices share a bucket — acceptable at 100-500 user target.
 /// </summary>
+[Collection(RateLimiterTestCollection.Name)]
 public class AuthRefreshPolicyTests
 {
-    [Fact(Skip = "Pending implementation in Task 2-4")]
-    public Task ThirtyFirstRefreshAttempt_Returns429()
+    [Fact]
+    public async Task ThirtyFirstRefreshAttempt_Returns429()
     {
-        // Stub — un-skipped in Task 4. Burns 30 /auth/refresh attempts with dummy
-        // token (each returns 401 or 400); 31st must be 429.
-        return Task.CompletedTask;
+        using var factory = RateLimitTestFactory.BuildFactory();
+        var client = factory.CreateClient();
+
+        // Burn the 30/min budget with a dummy refresh token. /auth/refresh returns
+        // 401 (Unauthorized) for unknown tokens — the rate-limit policy still
+        // consumes a permit on each attempt.
+        for (var i = 0; i < 30; i++)
+        {
+            var attempt = await client.PostAsJsonAsync("/api/v1/auth/refresh",
+                new { RefreshToken = $"dummy-token-{i}" });
+
+            attempt.StatusCode.Should().BeOneOf(
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.BadRequest);
+        }
+
+        // 31st attempt MUST be rate-limited.
+        var response = await client.PostAsJsonAsync("/api/v1/auth/refresh",
+            new { RefreshToken = "dummy-token-31" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        response.Content.Headers.ContentType?.MediaType
+            .Should().Be("application/problem+json");
+        response.Headers.RetryAfter.Should().NotBeNull();
     }
 }

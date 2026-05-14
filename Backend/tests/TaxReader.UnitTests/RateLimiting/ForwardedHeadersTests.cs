@@ -1,4 +1,9 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using TaxReader.UnitTests.Helpers;
 
 namespace TaxReader.UnitTests.RateLimiting;
 
@@ -8,21 +13,37 @@ namespace TaxReader.UnitTests.RateLimiting;
 /// trusts only the Docker bridge subnet 172.16.0.0/12. ForwardLimit=1 prevents
 /// X-Forwarded-For spoofing.
 /// </summary>
+[Collection(RateLimiterTestCollection.Name)]
 public class ForwardedHeadersTests
 {
-    [Fact(Skip = "Pending implementation in Task 2-4")]
+    [Fact]
     public void KnownIPNetworksContainsDockerSubnet()
     {
-        // Stub — un-skipped in Task 4. Resolves IOptions<ForwardedHeadersOptions>
-        // from the WebApplicationFactory and asserts KnownIPNetworks contains
-        // a network whose ToString starts with "172.16.0.0/12".
+        using var factory = RateLimitTestFactory.BuildFactory();
+        using var scope = factory.Services.CreateScope();
+
+        var forwarded = scope.ServiceProvider
+            .GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+
+        forwarded.KnownIPNetworks.Should().Contain(
+            n => n.ToString() == "172.16.0.0/12",
+            "D-06: only the Docker bridge subnet must be trusted to set X-Forwarded-For. " +
+            "Without this, IP-partitioned rate limits bucket all internet traffic under " +
+            "Caddy's docker-internal IP.");
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
+    [Fact]
     public void ForwardLimitIsOne()
     {
-        // Stub — un-skipped in Task 4. Asserts ForwardLimit == 1 (Caddy is the
-        // single hop; raising this allows IP spoofing per RESEARCH Pitfall 9).
+        using var factory = RateLimitTestFactory.BuildFactory();
+        using var scope = factory.Services.CreateScope();
+
+        var forwarded = scope.ServiceProvider
+            .GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+
+        forwarded.ForwardLimit.Should().Be(1,
+            "Caddy is the single reverse-proxy hop. Raising ForwardLimit lets attackers " +
+            "prepend fake IPs to X-Forwarded-For and spoof partition keys (RESEARCH Pitfall 9).");
     }
 
     [Fact(Skip = "Requires reverse-proxy hop simulation, manual UAT — see VALIDATION.md")]

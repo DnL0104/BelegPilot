@@ -24,9 +24,13 @@ public static class RateLimitTestFactory
             builder.UseSetting("Jwt:Secret", "test-secret-test-secret-test-secret-1234");
             builder.UseSetting("Jwt:Issuer", "test");
             builder.UseSetting("Jwt:Audience", "test");
+            // Short connection timeout so rate-limit integration tests don't wait for
+            // a real Postgres handshake — the local DB isn't expected to be running.
+            // Each request fails fast (Npgsql times out in ~1 second) and the test
+            // can burn the per-minute policy budget well under the 60-second window.
             builder.UseSetting(
                 "ConnectionStrings:DefaultConnection",
-                "Host=localhost;Port=5432;Database=test;Username=test;Password=test");
+                "Host=localhost;Port=5432;Database=test;Username=test;Password=test;Timeout=1;Command Timeout=1");
 
             // RefreshToken pepper — 32 zero bytes Base64-encoded. Tests that need a
             // non-zero pepper override this via extraSettings.

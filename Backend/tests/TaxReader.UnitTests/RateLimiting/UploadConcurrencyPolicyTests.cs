@@ -9,18 +9,21 @@ namespace TaxReader.UnitTests.RateLimiting;
 /// </summary>
 public class UploadConcurrencyPolicyTests
 {
-    [Fact(Skip = "Pending implementation in Task 2-4")]
+    [Fact(Skip = "Concurrency limiter behavior verified manually via `docker compose up` — see VALIDATION.md Manual-Only Verifications. WebApplicationFactory in-process test client makes the timing assertions for 'queues vs rejects' unreliable.")]
     public Task ThirdConcurrentUpload_QueuesUntilSlotFree()
     {
-        // Stub — un-skipped in Task 4. Concurrency-limiter tests in WebApplicationFactory
-        // are tricky (in-process test client); may remain skipped with manual UAT note.
+        // Manual-only: see VALIDATION.md.
+        // Behavior contract: with concurrency=2, three concurrent uploads from the same
+        // authenticated user => 2 active, 3rd queues until one completes.
         return Task.CompletedTask;
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
+    [Fact(Skip = "Concurrency limiter behavior verified manually via `docker compose up` — see VALIDATION.md Manual-Only Verifications.")]
     public Task SeventhConcurrentUpload_Returns429()
     {
-        // Stub — un-skipped in Task 4. 2 active + 4 queued = capacity 6; 7th = 429.
+        // Manual-only: see VALIDATION.md.
+        // Behavior contract: with concurrency=2 + QueueLimit=4, 7 concurrent uploads =>
+        // 2 active + 4 queued + 7th rejected with 429 + German body.
         return Task.CompletedTask;
     }
 }
