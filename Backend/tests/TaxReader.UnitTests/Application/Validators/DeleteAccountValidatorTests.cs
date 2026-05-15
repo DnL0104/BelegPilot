@@ -1,22 +1,31 @@
+using FluentValidation.TestHelper;
+using TaxReader.Application.DTOs;
+using TaxReader.Application.Validators;
+
 namespace TaxReader.UnitTests.Application.Validators;
 
 /// <summary>
-/// AUTH-02: Stub scaffolding for DeleteAccountValidator. Validator + tests
-/// are activated in Tasks 2 and 5 respectively.
+/// AUTH-02: DeleteAccountValidator pins the password-not-empty rule
+/// + the German validation message ("Passwort ist erforderlich.").
 /// </summary>
 public class DeleteAccountValidatorTests
 {
-    [Fact(Skip = "Pending implementation in Task 2-4")]
+    private readonly DeleteAccountValidator _validator = new();
+
+    [Fact]
     public void Validate_EmptyPassword_FailsWithGermanMessage()
     {
-        // Will: instantiate DeleteAccountValidator; TestValidate(new DeleteAccountRequest(""));
-        // assert ShouldHaveValidationErrorFor(x => x.Password).WithErrorMessage("Passwort ist erforderlich.")
+        var result = _validator.TestValidate(new DeleteAccountRequest(""));
+
+        result.ShouldHaveValidationErrorFor(x => x.Password)
+            .WithErrorMessage("Passwort ist erforderlich.");
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
+    [Fact]
     public void Validate_NonEmptyPassword_Passes()
     {
-        // Will: TestValidate(new DeleteAccountRequest("anypassword"));
-        // assert ShouldNotHaveValidationErrorFor(x => x.Password)
+        var result = _validator.TestValidate(new DeleteAccountRequest("anypassword"));
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Password);
     }
 }

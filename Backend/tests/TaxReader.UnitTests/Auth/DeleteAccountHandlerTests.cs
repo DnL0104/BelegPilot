@@ -1,14 +1,18 @@
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using TaxReader.Application.Commands;
+using TaxReader.Application.DTOs;
 using TaxReader.Application.Interfaces;
+using TaxReader.Domain.Entities;
 using TaxReader.Infrastructure.Data;
 
 namespace TaxReader.UnitTests.Auth;
 
 /// <summary>
-/// AUTH-02: Stub scaffolding for the DeleteAccountHandler password-reauth flow.
-/// Tests are Skipped until Tasks 2-4 land the handler refactor, validator, and
-/// endpoint binding; Task 5 unskips them and fills in the assertion bodies.
+/// AUTH-02: DeleteAccountHandler password-reauth, defense-in-depth refresh-token
+/// revoke, cascade delete. In-memory EF DB + Moq for ICurrentUser and
+/// IRefreshTokenService.
 /// </summary>
 public class DeleteAccountHandlerTests : IDisposable
 {
@@ -17,6 +21,7 @@ public class DeleteAccountHandlerTests : IDisposable
     private readonly AppDbContext _dbContext;
     private readonly Mock<ICurrentUser> _currentUserMock;
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
+    private readonly DeleteAccountHandler _handler;
 
     public DeleteAccountHandlerTests()
     {
@@ -31,37 +36,106 @@ public class DeleteAccountHandlerTests : IDisposable
         _refreshTokenServiceMock
             .Setup(s => s.RevokeAllForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
+
+        _handler = new DeleteAccountHandler(
+            _dbContext,
+            _currentUserMock.Object,
+            _refreshTokenServiceMock.Object);
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
-    public Task CorrectPassword_Returns204_AndCascadeDeletes()
+    [Fact]
+    public async Task CorrectPassword_Returns204_AndCascadeDeletes()
     {
-        // Will: seed User with BCrypt-hashed password; call HandleAsync(new DeleteAccountRequest("mypassword123"));
-        // assert IsSuccess + dbContext.Users.Count() == 0 + refreshTokenServiceMock.Verify(RevokeAllForUserAsync, Times.Once)
-        return Task.CompletedTask;
+        var user = new User
+        {
+            Id = TestUserId,
+            Email = "test@example.de",
+            DisplayName = "Test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("mypassword123"),
+        };
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new DeleteAccountRequest("mypassword123"));
+
+        result.IsSuccess.Should().BeTrue();
+        (await _dbContext.Users.CountAsync()).Should().Be(0);
+        _refreshTokenServiceMock.Verify(
+            s => s.RevokeAllForUserAsync(TestUserId, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
-    public Task WrongPassword_Returns401_GermanError()
+    [Fact]
+    public async Task WrongPassword_Returns401_GermanError()
     {
-        // Will: seed User; HandleAsync(new DeleteAccountRequest("wrong"));
-        // assert IsFailure + Error == "Ungültiges Passwort." + User still present
-        return Task.CompletedTask;
+        var user = new User
+        {
+            Id = TestUserId,
+            Email = "test@example.de",
+            DisplayName = "Test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("realpassword"),
+        };
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new DeleteAccountRequest("wrongpassword"));
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Ungültiges Passwort.");
+        (await _dbContext.Users.CountAsync()).Should().Be(1, "wrong password must not delete the user");
+        _refreshTokenServiceMock.Verify(
+            s => s.RevokeAllForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "revoke must NOT be called when password verification fails");
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
-    public Task RevokesTokensBeforeDelete_DefenseInDepth()
+    [Fact]
+    public async Task RevokesTokensBeforeDelete_DefenseInDepth()
     {
-        // Will: spy on the mock invocation; assert RevokeAllForUserAsync was called
-        // before the Users.Remove cascade fires.
-        return Task.CompletedTask;
+        // D-13: refreshTokenService.RevokeAllForUserAsync must run BEFORE
+        // dbContext.Users.Remove. We assert ordering by capturing the user
+        // count at the moment the revoke callback fires — if revoke runs
+        // before the cascade delete, the user is still present.
+        int userCountAtRevokeMoment = -1;
+        _refreshTokenServiceMock
+            .Setup(s => s.RevokeAllForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Callback(() => userCountAtRevokeMoment = _dbContext.Users.Count())
+            .ReturnsAsync(0);
+
+        var user = new User
+        {
+            Id = TestUserId,
+            Email = "test@example.de",
+            DisplayName = "Test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("p"),
+        };
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new DeleteAccountRequest("p"));
+
+        result.IsSuccess.Should().BeTrue();
+        userCountAtRevokeMoment.Should().Be(1,
+            "the user must still exist at the moment RevokeAllForUserAsync is invoked — proves revoke runs BEFORE Users.Remove");
+        (await _dbContext.Users.CountAsync()).Should().Be(0,
+            "after the handler returns, the cascade delete has fired");
+        _refreshTokenServiceMock.Verify(
+            s => s.RevokeAllForUserAsync(TestUserId, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
-    [Fact(Skip = "Pending implementation in Task 2-4")]
-    public Task MissingUser_ReturnsFailure()
+    [Fact]
+    public async Task MissingUser_ReturnsFailure()
     {
-        // Will: call HandleAsync with a userId that doesn't exist; assert IsFailure + "User not found."
-        return Task.CompletedTask;
+        // Do NOT seed any user — the current-user mock points at a non-existent id.
+        var result = await _handler.HandleAsync(new DeleteAccountRequest("anything"));
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("User not found.");
+        _refreshTokenServiceMock.Verify(
+            s => s.RevokeAllForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "no revoke should fire for a user that doesn't exist");
     }
 
     public void Dispose()

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaxReader.Application.Commands;
 using TaxReader.Application.DTOs;
@@ -73,7 +74,7 @@ public static class AuthEndpoints
         .WithSummary("Exchange a refresh token for new tokens");
 
         auth.MapDelete("/account", async (
-            DeleteAccountRequest request,
+            [FromBody] DeleteAccountRequest request,
             DeleteAccountHandler handler,
             CancellationToken cancellationToken) =>
         {
