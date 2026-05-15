@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plans 02-01 + 02-03 complete (2/3 Phase-2 plans done; AUTH-01 + AUTH-03 satisfied). Plan 02-02 (account-deletion re-auth) is next.
-last_updated: "2026-05-14T21:12:57Z"
-last_activity: 2026-05-14 -- Plan 02-03 complete (AUTH-03 satisfied)
+stopped_at: Phase 2 complete (3/3 plans done; AUTH-01 + AUTH-02 + AUTH-03 satisfied). Pending /gsd-verify-phase before Phase 3.
+last_updated: "2026-05-15T16:05:07Z"
+last_activity: 2026-05-15 -- Plan 02-02 complete (AUTH-02 satisfied); Phase 2 complete
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -25,39 +25,45 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 02 (auth-rate-limit-hardening) — EXECUTING
-Plan: 3 of 3
-Status: Executing Phase 02 (plans 02-01 + 02-03 done; 02-02 next)
-Last activity: 2026-05-14 -- Plan 02-03 complete (AUTH-03 satisfied)
+Phase: 02 (auth-rate-limit-hardening) — COMPLETE (pending /gsd-verify-phase)
+Plan: 3 of 3 done
+Status: Phase 02 complete — AUTH-01, AUTH-02, AUTH-03 all satisfied
+Last activity: 2026-05-15 -- Plan 02-02 complete (AUTH-02 satisfied); Phase 2 complete
 
-Progress: ██████████ 100% of Phase 1; 2/3 plans in Phase 2 done
+Progress: ██████████ 100% of Phase 1 + Phase 2
 
 ### Wave map
 
+**Phase 1 (complete):**
 - Wave 1: 01-01 (Hygiene + Anthropic alignment + CORS deny-all) — no deps — DONE
 - Wave 2: 01-04 (Serilog enrichers + LogContext) — depends on 01-01 — DONE
 - Wave 3: 01-03 (Sentry .NET + Next.js, EU residency, PII scrubbing) — depends on 01-01, 01-04 — DONE
 - Wave 4: 01-02 (CI workflow + README) — depends on 01-01, 01-03, 01-04 — DONE
 
+**Phase 2 (complete):**
+- Wave 1: 02-01 (refresh_tokens table + RefreshTokenService — AUTH-01) — no deps — DONE
+- Wave 2: 02-03 (AddRateLimiter + ForwardedHeaders — AUTH-03) — depends on 02-01 — DONE
+- Wave 2: 02-02 (account-deletion password re-auth — AUTH-02) — depends on 02-01, 02-03 — DONE
+
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 10
-- Average duration: 22 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 9 min)
-- Total execution time: 128 min
+- Total plans completed: 11
+- Average duration: 22 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 11 min)
+- Total execution time: 158 min
 
 **By Phase:**
 
 | Phase | Plans | Total  | Avg/Plan |
 |-------|-------|--------|----------|
 | 1 | 4 | - | - |
-| 2 | 2 | 33 min | 16.5 min |
+| 2 | 3 | 63 min | 21 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-03 (18 min, 4 tasks, 12 files — fresh execution; 3 Rule-1 auto-fixes), 02-01 (15 min, 6 tasks, 23 files — fresh execution), 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files)
-- Trend: 02-03 ran 18 min for a 4-task plan with 12 files (8 created / 4 modified). Three Rule-1 deviations all in test infrastructure (WriteAsJsonAsync content-type, Npgsql fast-fail timeout, WAF parallel-test serialization) — production code unaffected by deviation count.
+- Last 5 plans: 02-02 (30 min, 5 tasks, 9 files — fresh execution; 2 deviations including a Rule-1 WAF host-startup regression caused by Minimal API DELETE body-binding without [FromBody]), 02-03 (18 min, 4 tasks, 12 files — fresh execution; 3 Rule-1 auto-fixes), 02-01 (15 min, 6 tasks, 23 files — fresh execution), 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files)
+- Trend: 02-02 spent most wall-clock time investigating the [FromBody] regression that broke every WAF-using test in the suite (CorsConfigurationTests + 5 RateLimiting test classes). Root-cause isolation by piecewise revert; one-attribute fix. Production code unaffected.
 
 *Updated after each plan completion*
 
@@ -101,6 +107,10 @@ Recent decisions affecting current work:
 - 02-03: `KnownIPNetworks` uses `System.Net.IPNetwork.Parse("172.16.0.0/12")` (.NET 10 BCL) — NOT the deprecated `Microsoft.AspNetCore.HttpOverrides.IPNetwork` (emits `ASPDEPR005`). `ForwardLimit = 1` is explicit security intent (defaults are right today but explicit code blocks future drift toward IP-spoofing windows).
 - 02-03: `OnRejected` writes via `WriteAsJsonAsync(value, options: null, contentType: "application/problem+json", ct)` — the 4-arg overload — NOT the property setter pattern, which `WriteAsJsonAsync` clobbers back to `application/json`. RejectionStatusCode set as first line inside `AddRateLimiter` (default would be 503, misleading clients/monitoring).
 - 02-03: WebApplicationFactory<Program> rate-limit tests serialized via `[CollectionDefinition(DisableParallelization = true)]` host (`RateLimiterTestCollection`) — `Program.cs` top-level statements break in parallel WAF runs. Pattern reusable for any future WAF integration test. Plan 02-02 should adopt the same `[Collection]` attribute.
+- 02-02: DELETE-with-record-body in Minimal API requires explicit `[FromBody]` attribute on the parameter — without it, the host short-circuits at WebApplicationFactory bootstrap time with ObjectDisposedException. Affects ANY future endpoint that body-binds on a verb other than POST/PUT. The cost is one attribute + one using directive.
+- 02-02: BCrypt.Net-Next now PackageReference'd on TaxReader.Application (was Infrastructure-only). Justified because handlers live in Application/Commands and BCrypt is a pure library (no IO/network), so the "Infrastructure implements external concerns" rule is not violated.
+- 02-02: Frontend uses raw `axios.delete` (NOT the shared `api` instance) for `deleteAccount` so user-error 401s surface inline rather than triggering the shared refresh-interceptor's logout flow. Pattern reusable for any endpoint where a 401 represents a user error rather than session expiry.
+- 02-02: Mock.Callback used to assert call ordering (revoke-before-delete D-13) by capturing the user count at the moment the callback fires — cleaner than Mock.Sequence and compatible with EF in-memory's deferred SaveChanges. Pattern reusable for any handler that needs to prove a side-effect runs before a DB mutation.
 
 ### Pending Todos
 
@@ -118,6 +128,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14
-Stopped at: Plans 02-01 + 02-03 complete (2/3 Phase-2 plans done; AUTH-01 + AUTH-03 satisfied; refresh_tokens + IRefreshTokenService + 4-policy AddRateLimiter all wired). Plan 02-02 (account-deletion re-auth) is next.
-Resume file: Continue Phase 2 execution — plan 02-02 (Account-deletion re-auth, AUTH-02) is the last remaining plan in Phase 2. It depends on both 02-01 (RevokeAllForUserAsync) and 02-03 (auth-strict policy attached to /account DELETE). Operator manual follow-up still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.
+Last session: 2026-05-15
+Stopped at: Phase 2 complete (3/3 plans done; AUTH-01 + AUTH-02 + AUTH-03 satisfied; refresh_tokens + IRefreshTokenService + 4-policy AddRateLimiter + password-gated account deletion with defence-in-depth revoke-before-cascade all wired).
+Resume file: Run `/gsd-verify-phase` for Phase 2 before starting Phase 3. Manual UAT items in `02-02-SUMMARY.md` Next Phase Readiness section (settings dialog password flow + 6th-attempt 429 rate-limit check). Operator manual follow-up from Phase 1 still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.

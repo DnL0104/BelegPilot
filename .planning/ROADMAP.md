@@ -13,7 +13,7 @@ TaxReader is a brownfield product that already classifies German tax receipts (P
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation Cleanup + CI** — Hygiene fixes, CI/CD, Sentry, structured logging _(4/4 plans complete; pending `/gsd-verify-phase` and operator-side branch protection on `main`)_ (completed 2026-05-11)
-- [ ] **Phase 2: Auth + Rate-Limit Hardening** — Refresh-token table, rate limiter, account-deletion friction
+- [x] **Phase 2: Auth + Rate-Limit Hardening** — Refresh-token table, rate limiter, account-deletion friction _(3/3 plans complete; pending `/gsd-verify-phase`)_ (completed 2026-05-15)
 - [ ] **Phase 3: Background Pipeline + Tesseract Pool** — Hangfire jobs, async upload, OCR pool, error UX
 - [ ] **Phase 4: Classification Trustworthiness** — DE category expansion, rule + AI hybrid, audit/override UX, sum validation
 - [ ] **Phase 5: Commercial Surface (Payments)** — Stripe checkout + webhooks, Widerrufsrecht waiver, billing page, multi-env safety
@@ -69,7 +69,7 @@ Plans:
 
 Plans:
 - [x] 02-01: `refresh_tokens` table + `RefreshTokenService` with rotation + replay detection (replaces single-column model)
-- [ ] 02-02: Account-deletion confirmation modal + re-auth requirement
+- [x] 02-02: Account-deletion confirmation modal + re-auth requirement
 - [x] 02-03: ASP.NET Core `AddRateLimiter` policies on `/auth/*`, `/auth/refresh`, `/receipt-files`, global
 
 ### Phase 3: Background Pipeline + Tesseract Pool
@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation Cleanup + CI | 4/4 | Complete    | 2026-05-11 |
-| 2. Auth + Rate-Limit Hardening | 0/3 | Not started | - |
+| 2. Auth + Rate-Limit Hardening | 3/3 | Complete    | 2026-05-15 |
 | 3. Background Pipeline + Tesseract Pool | 0/4 | Not started | - |
 | 4. Classification Trustworthiness | 0/4 | Not started | - |
 | 5. Commercial Surface (Payments) | 0/4 | Not started | - |
