@@ -73,15 +73,23 @@ public static class AuthEndpoints
         .WithSummary("Exchange a refresh token for new tokens");
 
         auth.MapDelete("/account", async (
+            DeleteAccountRequest request,
             DeleteAccountHandler handler,
             CancellationToken cancellationToken) =>
         {
-            var result = await handler.HandleAsync(cancellationToken);
+            var result = await handler.HandleAsync(request, cancellationToken);
 
-            return result.IsSuccess
-                ? Results.NoContent()
-                : Results.NotFound(new { error = result.Error });
+            if (result.IsSuccess)
+                return Results.NoContent();
+
+            // D-12: wrong password = 401 with German error inline so the dialog
+            // can surface it without bouncing the user to /login.
+            if (result.Error == "Ungültiges Passwort.")
+                return Results.Json(new { error = result.Error }, statusCode: 401);
+
+            return Results.NotFound(new { error = result.Error });
         })
+        .RequireRateLimiting("auth-strict")
         .WithName("DeleteAccount")
         .WithSummary("Permanently delete the authenticated user account and all associated data");
 
