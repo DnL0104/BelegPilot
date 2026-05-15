@@ -70,7 +70,7 @@ Plans:
 Plans:
 - [x] 02-01: `refresh_tokens` table + `RefreshTokenService` with rotation + replay detection (replaces single-column model)
 - [ ] 02-02: Account-deletion confirmation modal + re-auth requirement
-- [ ] 02-03: ASP.NET Core `AddRateLimiter` policies on `/auth/*`, `/auth/refresh`, `/receipt-files`, global
+- [x] 02-03: ASP.NET Core `AddRateLimiter` policies on `/auth/*`, `/auth/refresh`, `/receipt-files`, global
 
 ### Phase 3: Background Pipeline + Tesseract Pool
 **Goal**: Move the upload pipeline (extract → parse → classify) to Hangfire background jobs so HTTP requests return immediately, OCR scales via a Tesseract pool, and users see useful status + error messages.

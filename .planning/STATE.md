@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 02-01 complete (1/3 Phase-2 plans done; refresh_tokens table + IRefreshTokenService landed; AUTH-01 satisfied). Plan 02-02 (account-deletion re-auth) is next.
-last_updated: "2026-05-14T20:49:18Z"
-last_activity: 2026-05-14 -- Plan 02-01 complete (AUTH-01 satisfied)
+stopped_at: Plans 02-01 + 02-03 complete (2/3 Phase-2 plans done; AUTH-01 + AUTH-03 satisfied). Plan 02-02 (account-deletion re-auth) is next.
+last_updated: "2026-05-14T21:12:57Z"
+last_activity: 2026-05-14 -- Plan 02-03 complete (AUTH-03 satisfied)
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 ## Current Position
 
 Phase: 02 (auth-rate-limit-hardening) — EXECUTING
-Plan: 2 of 3
-Status: Executing Phase 02 (plan 02-01 done)
-Last activity: 2026-05-14 -- Plan 02-01 complete (AUTH-01 satisfied)
+Plan: 3 of 3
+Status: Executing Phase 02 (plans 02-01 + 02-03 done; 02-02 next)
+Last activity: 2026-05-14 -- Plan 02-03 complete (AUTH-03 satisfied)
 
-Progress: ██████████ 100% of Phase 1; 1/3 plans in Phase 2 done
+Progress: ██████████ 100% of Phase 1; 2/3 plans in Phase 2 done
 
 ### Wave map
 
@@ -43,21 +43,21 @@ Progress: ██████████ 100% of Phase 1; 1/3 plans in Phase 2 d
 
 **Velocity:**
 
-- Total plans completed: 9
-- Average duration: 23 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 8 min)
-- Total execution time: 110 min
+- Total plans completed: 10
+- Average duration: 22 min (skewed by 01-02's 74-min resumption-agent wall-clock; non-resumption avg = 9 min)
+- Total execution time: 128 min
 
 **By Phase:**
 
 | Phase | Plans | Total  | Avg/Plan |
 |-------|-------|--------|----------|
 | 1 | 4 | - | - |
-| 2 | 1 | 15 min | 15 min |
+| 2 | 2 | 33 min | 16.5 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-01 (15 min, 6 tasks, 23 files — fresh execution), 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files), 01-01 (5 min, 3 tasks, 11 files)
-- Trend: 02-01 hit ~15 min for a 6-task plan with 23 files (12 created / 11 modified) including an EF migration and full test suite. Two Rule-1 deviations (InMemory provider ExecuteUpdateAsync fallback + grep-guard string disambiguation) added small touch-up but no scope creep.
+- Last 5 plans: 02-03 (18 min, 4 tasks, 12 files — fresh execution; 3 Rule-1 auto-fixes), 02-01 (15 min, 6 tasks, 23 files — fresh execution), 01-02 (74 min, 2 tasks, 2 files — resumption agent), 01-03 (11 min, 2 tasks, 17 files), 01-04 (5 min, 2 tasks, 6 files)
+- Trend: 02-03 ran 18 min for a 4-task plan with 12 files (8 created / 4 modified). Three Rule-1 deviations all in test infrastructure (WriteAsJsonAsync content-type, Npgsql fast-fail timeout, WAF parallel-test serialization) — production code unaffected by deviation count.
 
 *Updated after each plan completion*
 
@@ -96,6 +96,11 @@ Recent decisions affecting current work:
 - 02-01: Sentry message body is the unique searchable token ("Refresh token replay detected"); Serilog warning uses a different phrasing so the verification grep returns exactly one match. Both fire together on every replay event.
 - 02-01: EF migration manually reordered to CreateTable-first then DropColumn-last (EF scaffolds the reverse) per D-15 + RESEARCH Pattern 3.
 - 02-01: AuthService.RegisterAsync now SaveChanges before refreshTokenService.IssueAsync — refresh_tokens.user_id FK requires the user row to exist first.
+- 02-03: Pipeline order pinned — `UseForwardedHeaders` FIRST (real client IP must resolve before any IP-partitioned read), `UseRateLimiter` between Serilog and Authentication. `ForwardedHeadersWiringTests` defends the invariant via three source-level structural-grep tests.
+- 02-03: `auth-strict` is a single mixed-partition policy — JWT `sub` claim present → partition by `user:{sub}`, otherwise `ip:{RemoteIpAddress}`. Plan 02-02 can attach the same policy name to authenticated `/account` DELETE and get sub-partitioned behavior automatically.
+- 02-03: `KnownIPNetworks` uses `System.Net.IPNetwork.Parse("172.16.0.0/12")` (.NET 10 BCL) — NOT the deprecated `Microsoft.AspNetCore.HttpOverrides.IPNetwork` (emits `ASPDEPR005`). `ForwardLimit = 1` is explicit security intent (defaults are right today but explicit code blocks future drift toward IP-spoofing windows).
+- 02-03: `OnRejected` writes via `WriteAsJsonAsync(value, options: null, contentType: "application/problem+json", ct)` — the 4-arg overload — NOT the property setter pattern, which `WriteAsJsonAsync` clobbers back to `application/json`. RejectionStatusCode set as first line inside `AddRateLimiter` (default would be 503, misleading clients/monitoring).
+- 02-03: WebApplicationFactory<Program> rate-limit tests serialized via `[CollectionDefinition(DisableParallelization = true)]` host (`RateLimiterTestCollection`) — `Program.cs` top-level statements break in parallel WAF runs. Pattern reusable for any future WAF integration test. Plan 02-02 should adopt the same `[Collection]` attribute.
 
 ### Pending Todos
 
@@ -114,5 +119,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-14
-Stopped at: Plan 02-01 complete (1/3 Phase-2 plans done; refresh_tokens table + IRefreshTokenService landed; AUTH-01 satisfied). Plan 02-02 (account-deletion re-auth) is next.
-Resume file: Continue Phase 2 execution — plan 02-02 (Account-deletion re-auth, AUTH-02) is the next plan in the queue, followed by 02-03 (Rate-limit policies, AUTH-03). Operator manual follow-up still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.
+Stopped at: Plans 02-01 + 02-03 complete (2/3 Phase-2 plans done; AUTH-01 + AUTH-03 satisfied; refresh_tokens + IRefreshTokenService + 4-policy AddRateLimiter all wired). Plan 02-02 (account-deletion re-auth) is next.
+Resume file: Continue Phase 2 execution — plan 02-02 (Account-deletion re-auth, AUTH-02) is the last remaining plan in Phase 2. It depends on both 02-01 (RevokeAllForUserAsync) and 02-03 (auth-strict policy attached to /account DELETE). Operator manual follow-up still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.
