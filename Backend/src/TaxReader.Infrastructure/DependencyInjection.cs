@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using TaxReader.Application.Interfaces;
 using TaxReader.Infrastructure.Configuration;
 using TaxReader.Infrastructure.Data;
@@ -29,7 +30,16 @@ public static class DependencyInjection
         // Auth
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-        services.Configure<RefreshTokenOptions>(configuration.GetSection(RefreshTokenOptions.SectionName));
+
+        // RefreshToken:HashKey is a 32-byte Base64-encoded HMAC-SHA256 pepper (D-01).
+        // ValidateOnStart() runs RefreshTokenOptionsValidator at host build so a missing
+        // or malformed value fails the boot loudly instead of silently degrading the
+        // HMAC to an empty-key construction (CR-01 from the Phase 2 review).
+        services.AddSingleton<IValidateOptions<RefreshTokenOptions>, RefreshTokenOptionsValidator>();
+        services
+            .AddOptions<RefreshTokenOptions>()
+            .Bind(configuration.GetSection(RefreshTokenOptions.SectionName))
+            .ValidateOnStart();
 
         // Anthropic / AI classification
         services.Configure<AnthropicOptions>(configuration.GetSection(AnthropicOptions.SectionName));

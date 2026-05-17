@@ -53,6 +53,9 @@ public class CorsConfigurationTests
             builder.UseSetting(
                 "ConnectionStrings:DefaultConnection",
                 "Host=localhost;Port=5432;Database=test;Username=test;Password=test");
+            // RefreshToken pepper — 32 zero bytes Base64-encoded. Required since CR-01
+            // wired ValidateOnStart() on RefreshTokenOptions in DependencyInjection.cs.
+            builder.UseSetting("RefreshToken:HashKey", Convert.ToBase64String(new byte[32]));
         });
     }
 
