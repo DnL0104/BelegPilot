@@ -76,7 +76,9 @@ public class RefreshTokenService(
 
         using (LogContext.PushProperty("UserId", existing.UserId))
         {
-            if (existing.ExpiresAt < DateTime.UtcNow)
+            // Use <= so a token whose ExpiresAt equals now is treated as expired
+            // (inclusive on the rejection side — security predicate).
+            if (existing.ExpiresAt <= DateTime.UtcNow)
             {
                 logger.LogInformation("Refresh token expired");
                 return Result<(Guid, string)>.Failure(GenericFailure);
