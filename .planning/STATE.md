@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 complete (3/3 plans done; AUTH-01 + AUTH-02 + AUTH-03 satisfied). Pending /gsd-verify-phase before Phase 3.
-last_updated: "2026-05-15T16:05:07Z"
-last_activity: 2026-05-15 -- Plan 02-02 complete (AUTH-02 satisfied); Phase 2 complete
+stopped_at: Phase 2 closed (3/3 plans done; AUTH-01 + AUTH-02 + AUTH-03 satisfied; verifier returned human_needed with 4 manual UAT items persisted in 02-HUMAN-UAT.md; CR-01 + CR-02 code review fixes landed via REVIEW-FIX). Phase 3 (Background Pipeline + Tesseract Pool) is next.
+last_updated: "2026-05-16T00:00:00Z"
+last_activity: 2026-05-16 -- Phase 2 closed (verification + REVIEW-FIX applied)
 progress:
   total_phases: 7
   completed_phases: 2
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 02 (auth-rate-limit-hardening) — COMPLETE (pending /gsd-verify-phase)
-Plan: 3 of 3 done
-Status: Phase 02 complete — AUTH-01, AUTH-02, AUTH-03 all satisfied
-Last activity: 2026-05-15 -- Plan 02-02 complete (AUTH-02 satisfied); Phase 2 complete
+Phase: 03 (background-pipeline-tesseract-pool) — READY TO START
+Plan: Not started (Phase 2 closed with verification + REVIEW-FIX)
+Status: Phase 02 closed — AUTH-01, AUTH-02, AUTH-03 verified; 4 manual UAT items tracked in 02-HUMAN-UAT.md; CR-01 + CR-02 fixes applied
+Last activity: 2026-05-16 -- Phase 2 closed (verification + REVIEW-FIX applied)
 
-Progress: ██████████ 100% of Phase 1 + Phase 2
+Progress: ██████████ 100% of Phase 1 + Phase 2; Phase 3 next
 
 ### Wave map
 
@@ -111,10 +111,14 @@ Recent decisions affecting current work:
 - 02-02: BCrypt.Net-Next now PackageReference'd on TaxReader.Application (was Infrastructure-only). Justified because handlers live in Application/Commands and BCrypt is a pure library (no IO/network), so the "Infrastructure implements external concerns" rule is not violated.
 - 02-02: Frontend uses raw `axios.delete` (NOT the shared `api` instance) for `deleteAccount` so user-error 401s surface inline rather than triggering the shared refresh-interceptor's logout flow. Pattern reusable for any endpoint where a 401 represents a user error rather than session expiry.
 - 02-02: Mock.Callback used to assert call ordering (revoke-before-delete D-13) by capturing the user count at the moment the callback fires — cleaner than Mock.Sequence and compatible with EF in-memory's deferred SaveChanges. Pattern reusable for any handler that needs to prove a side-effect runs before a DB mutation.
+- 02-CR-01: HMAC pepper validation is fail-fast via `RefreshTokenOptionsValidator` + `ValidateOnStart()` — rejects empty/non-Base64/wrong-length `HashKey`. API refuses to boot without a valid 32-byte pepper, eliminating the silent empty-key HMAC degradation the original code shipped with.
+- 02-CR-02: Minimal API DELETE endpoint manually invokes `IValidator<DeleteAccountRequest>.ValidateAsync` before calling the handler. FluentValidation is NOT auto-invoked by Minimal APIs; this pattern (`Results.ValidationProblem(errors)` for grouped per-property German messages) should be replicated on any future endpoint that wants validator-driven 400 responses.
 
 ### Pending Todos
 
 - **Operator (manual)** — Enable branch protection on `main` after first PR carrying CI workflow merges and the three job names register with GitHub. Full configuration in `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` "Pending Operator Action" section. Not blocking Phase 1 verification but required for full satisfaction of Phase 1 Success Criterion #1 ("checks BLOCK merges", not just "checks RUN").
+- **Phase 2 manual UAT** — 4 items in `02-HUMAN-UAT.md` (real-IP-through-Caddy burn, upload-concurrency timing, account-deletion dialog UX, Postgres migration `Up()` against real Postgres 17). Run `/gsd-verify-work 2` when ready to test against a live docker compose stack.
+- **Phase 2 polish** — 9 WARNING + 6 INFO items remain in `02-REVIEW.md` (German localization on "User not found", typed error discriminator for 401 vs 404, ExpiresAt `<=` boundary, etc.). Bundle into a `/gsd-quick` polish pass when convenient.
 
 ### Blockers/Concerns
 
@@ -128,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15
-Stopped at: Phase 2 complete (3/3 plans done; AUTH-01 + AUTH-02 + AUTH-03 satisfied; refresh_tokens + IRefreshTokenService + 4-policy AddRateLimiter + password-gated account deletion with defence-in-depth revoke-before-cascade all wired).
-Resume file: Run `/gsd-verify-phase` for Phase 2 before starting Phase 3. Manual UAT items in `02-02-SUMMARY.md` Next Phase Readiness section (settings dialog password flow + 6th-attempt 429 rate-limit check). Operator manual follow-up from Phase 1 still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.
+Last session: 2026-05-16
+Stopped at: Phase 2 closed — 3/3 plans done (AUTH-01 + AUTH-02 + AUTH-03), code review applied (17 findings, 2 CRITICAL fixed in REVIEW-FIX), verifier returned human_needed with 4 UAT items persisted in 02-HUMAN-UAT.md.
+Resume file: Start Phase 3 (Background Pipeline + Tesseract Pool). Recommended path: `/gsd-discuss-phase 3` to gather context before planning. When ready for manual Phase 2 close-out: `/gsd-verify-work 2` (HUMAN-UAT items). Phase 1 operator follow-up still pending: enable branch protection on main per `.planning/phases/01-foundation-cleanup-ci/01-02-SUMMARY.md` Pending Operator Action.
