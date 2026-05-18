@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaxReader.Application.Commands;
@@ -75,9 +76,23 @@ public static class AuthEndpoints
 
         auth.MapDelete("/account", async (
             [FromBody] DeleteAccountRequest request,
+            IValidator<DeleteAccountRequest> validator,
             DeleteAccountHandler handler,
             CancellationToken cancellationToken) =>
         {
+            // CR-02 fix: Minimal APIs do NOT auto-invoke FluentValidation; the validator
+            // is registered for DI but never fires unless we call it explicitly. Without
+            // this, a null/empty Password reaches BCrypt.Verify and throws → 500 instead
+            // of the intended 400 with the German "Passwort ist erforderlich." message.
+            var validation = await validator.ValidateAsync(request, cancellationToken);
+            if (!validation.IsValid)
+            {
+                var errors = validation.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+                return Results.ValidationProblem(errors);
+            }
+
             var result = await handler.HandleAsync(request, cancellationToken);
 
             if (result.IsSuccess)
