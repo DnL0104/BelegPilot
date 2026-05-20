@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 3 context gathered
-last_updated: "2026-05-19T11:15:49.110Z"
-last_activity: 2026-05-16 -- Phase 2 closed (verification + REVIEW-FIX applied)
+status: ready_to_execute
+stopped_at: Phase 3 planned (4 plans across 3 waves)
+last_updated: "2026-05-20T00:00:00.000Z"
+last_activity: 2026-05-20 -- Phase 3 planning complete (RESEARCH + PATTERNS + VALIDATION + 4 PLANs, plan-checker PASS iter 2)
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 7
+  total_plans: 11
   completed_plans: 7
-  percent: 100
+  percent: 64
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 03 (background-pipeline-tesseract-pool) — READY TO START
-Plan: Not started (Phase 2 closed with verification + REVIEW-FIX)
-Status: Phase 02 closed — AUTH-01, AUTH-02, AUTH-03 verified; 4 manual UAT items tracked in 02-HUMAN-UAT.md; CR-01 + CR-02 fixes applied
-Last activity: 2026-05-16 -- Phase 2 closed (verification + REVIEW-FIX applied)
+Phase: 03 (background-pipeline-tesseract-pool) — READY TO EXECUTE
+Plan: 4 plans planned, plan-checker PASS (iteration 2), VERIFICATION.md drafted (Nyquist scaffolds in Plan 03-01 T1)
+Status: Phase 03 fully planned across 3 waves; Wave 1 (03-01 + 03-03) parallel, Wave 2 (03-02), Wave 3 (03-04)
+Last activity: 2026-05-20 -- Phase 3 planning complete (RESEARCH + PATTERNS + VALIDATION + 4 PLANs); ready for /gsd-execute-phase 3
 
-Progress: ██████████ 100% of Phase 1 + Phase 2; Phase 3 next
+Progress: ██████████ 100% of Phase 1 + Phase 2; Phase 3 plans READY (0/4 executed)
 
 ### Wave map
 
@@ -46,6 +46,13 @@ Progress: ██████████ 100% of Phase 1 + Phase 2; Phase 3 next
 - Wave 1: 02-01 (refresh_tokens table + RefreshTokenService — AUTH-01) — no deps — DONE
 - Wave 2: 02-03 (AddRateLimiter + ForwardedHeaders — AUTH-03) — depends on 02-01 — DONE
 - Wave 2: 02-02 (account-deletion password re-auth — AUTH-02) — depends on 02-01, 02-03 — DONE
+
+**Phase 3 (planned, ready to execute):**
+
+- Wave 1: 03-01 (Hangfire installation + dashboard auth + recurring jobs — PIPE-01) — no deps
+- Wave 1: 03-03 (TesseractEnginePool + warmup — PIPE-04) — no deps (parallel with 03-01)
+- Wave 2: 03-02 (ProcessReceiptFileJob + ClassifyBatchJob + 202 Accepted + status + cancel endpoints — PIPE-02, PIPE-03) — depends on 03-01, 03-03
+- Wave 3: 03-04 (UploadErrorCatalog + frontend status hooks + 5-page UI polish — PIPE-05, PIPE-06) — depends on 03-02
 
 ## Performance Metrics
 

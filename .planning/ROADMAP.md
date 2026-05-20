@@ -87,10 +87,24 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
+
+**Wave 1** *(no dependencies — start here; 03-01 and 03-03 run in parallel)*
 - [ ] 03-01: Hangfire installation (Postgres-backed) + dashboard auth gate + recurring cleanup jobs
-- [ ] 03-02: `ProcessReceiptFileJob` + `202 Accepted` API response + status polling endpoint + cancellation endpoint
 - [ ] 03-03: `TesseractEnginePool` (3-5 engines, `Channel<TesseractEngine>`) replacing Singleton-lock pattern
-- [ ] 03-04: User-friendly upload error mapping (German strings) + empty/loading/error UI states across upload + receipts list pages
+
+**Wave 2** *(blocked on Wave 1 — needs Hangfire client + Tesseract pool registration)*
+- [ ] 03-02: `ProcessReceiptFileJob` + `ClassifyBatchJob` + `202 Accepted` API response + status polling endpoint + cancellation endpoint + ProcessingStatus enum migration + IUploadBlobStore (D-15 addendum)
+
+**Wave 3** *(blocked on Wave 2 — needs status endpoint shape for the frontend polling hook)*
+- [ ] 03-04: `UploadErrorCatalog` (German strings) + frontend `useReceiptFileStatus` + `useCancelReceiptFile` hooks + empty/loading/error UI states across upload + receipts list + receipt detail + dashboard + reports pages
+
+**Cross-cutting constraints:** *(must_haves.truths shared across ≥ 2 plans)*
+- D-05 (`LogContext.PushProperty("JobId", id)` scope at job entry) applies to both `ProcessReceiptFileJob` (03-02) and `ClassifyBatchJob` (03-02), fulfilling Phase 1 D-18 reservation. The cookie-vs-localStorage transport split (D-10) is owned by 03-01 alone but the `tr_access` cookie life-cycle is consumed by every downstream operator who hits `/hangfire`.
+- D-21 `UploadErrorCatalog` is the single source of German user-facing error strings — Plans 03-02 (job-side wiring via T2) and 03-04 (catalog implementation + frontend rendering) share this invariant. No other plan creates user-facing error strings.
+- All plans honour CLAUDE.md conventions: `Result<T>` for errors, primary-constructor DI, file-scoped namespaces, structured logging with named placeholders, German `Sie`-form on user-facing strings, `Async` suffix on every async method.
+- Plans 03-01 and 03-02 both modify `Backend/src/TaxReader.Api/Program.cs` (Hangfire dashboard registration + AddScoped DI lines) — disjoint sections; serialised by wave ordering.
+- Plans 03-01 and 03-02 both modify `Backend/src/TaxReader.Infrastructure/DependencyInjection.cs` (Hangfire AddHangfire/AddHangfireServer block + IBackgroundJobClient registration + IUploadBlobStore registration) — disjoint sections; serialised by wave ordering.
+- ASVS L1 threat-model controls are applied across all 4 plans (security_enforcement=true in `.planning/config.json`).
 
 ### Phase 4: Classification Trustworthiness
 **Goal**: Deliver Core Value — every line item correctly categorized into the right tax category (across 13 DE categories), with rule + AI hybrid for consistency, prominent reasoning users can audit and override, and sum-validation that catches AI hallucinations.
@@ -186,7 +200,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation Cleanup + CI | 4/4 | Complete    | 2026-05-11 |
 | 2. Auth + Rate-Limit Hardening | 3/3 | Complete    | 2026-05-15 |
-| 3. Background Pipeline + Tesseract Pool | 0/4 | Not started | - |
+| 3. Background Pipeline + Tesseract Pool | 0/4 | Planned (ready to execute) | - |
 | 4. Classification Trustworthiness | 0/4 | Not started | - |
 | 5. Commercial Surface (Payments) | 0/4 | Not started | - |
 | 6. Legal + Consent + Data Export | 0/5 | Not started | - |
