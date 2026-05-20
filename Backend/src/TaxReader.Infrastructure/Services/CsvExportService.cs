@@ -1,0 +1,86 @@
+using System.Globalization;
+using System.Text;
+using TaxReader.Application.DTOs;
+
+namespace TaxReader.Infrastructure.Services;
+
+public static class CsvExportService
+{
+    private static readonly string[] Headers =
+    [
+        "Datum",
+        "Anbieter",
+        "Beschreibung",
+        "Menge",
+        "Einzelpreis",
+        "Gesamtpreis",
+        "Kategorie",
+        "Status",
+        "Methode",
+        "Begründung"
+    ];
+
+    private static readonly Dictionary<string, string> CategoryLabels = new()
+    {
+        ["ConsumablesAndOfficeSupplies"] = "Bürobedarf & Verbrauchsmaterial",
+        ["SpecialistLiterature"] = "Fachliteratur",
+        ["TeachingMaterials"] = "Lehr- & Arbeitsmaterial",
+        ["DigitalToolsAndSoftware"] = "Digitale Tools & Software",
+        ["OfficeEquipment"] = "Büroausstattung",
+        ["TravelAndCommuting"] = "Fahrtkosten & Reisen",
+        ["ProfessionalDevelopment"] = "Fortbildung",
+        ["Unknown"] = "Nicht zugeordnet",
+    };
+
+    private static readonly Dictionary<string, string> StatusLabels = new()
+    {
+        ["Confirmed"] = "Bestätigt",
+        ["Suggested"] = "Vorschlag",
+        ["None"] = "Keine",
+    };
+
+    public static byte[] Generate(IReadOnlyList<ExportItemDto> items)
+    {
+        var sb = new StringBuilder();
+
+        // BOM for Excel UTF-8 detection
+        sb.Append('\uFEFF');
+
+        // Header
+        sb.AppendLine(string.Join(";", Headers));
+
+        // Rows
+        foreach (var item in items)
+        {
+            sb.Append(item.PurchaseDate.ToString("dd.MM.yyyy"));
+            sb.Append(';');
+            sb.Append(Escape(item.Vendor));
+            sb.Append(';');
+            sb.Append(Escape(item.Description));
+            sb.Append(';');
+            sb.Append(item.Quantity);
+            sb.Append(';');
+            sb.Append(item.UnitPrice.ToString("F2", CultureInfo.GetCultureInfo("de-DE")));
+            sb.Append(';');
+            sb.Append(item.TotalPrice.ToString("F2", CultureInfo.GetCultureInfo("de-DE")));
+            sb.Append(';');
+            sb.Append(CategoryLabels.GetValueOrDefault(item.Category, item.Category));
+            sb.Append(';');
+            sb.Append(StatusLabels.GetValueOrDefault(item.ClassificationStatus, item.ClassificationStatus));
+            sb.Append(';');
+            sb.Append(item.ClassificationMethod);
+            sb.Append(';');
+            sb.Append(Escape(item.Reason ?? ""));
+            sb.AppendLine();
+        }
+
+        return Encoding.UTF8.GetBytes(sb.ToString());
+    }
+
+    private static string Escape(string value)
+    {
+        if (value.Contains(';') || value.Contains('"') || value.Contains('\n'))
+            return $"\"{value.Replace("\"", "\"\"")}\"";
+        return value;
+    }
+}

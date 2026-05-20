@@ -1,0 +1,182 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
+using TaxReader.Application.Interfaces;
+using TaxReader.Domain.Entities;
+
+namespace TaxReader.Infrastructure.Parsers;
+
+public partial class GenericParser : IReceiptParser
+{
+    public bool CanParse(string rawText, string? sourceHint) => true;
+
+    public Receipt Parse(string rawText, ReceiptFile receiptFile)
+    {
+        var receipt = new Receipt
+        {
+            Vendor = ExtractVendor(rawText, receiptFile.SourceHint),
+            Currency = "EUR",
+            PurchaseDate = ExtractDate(rawText),
+            RawExtractedText = rawText
+        };
+
+        var items = ExtractItems(rawText);
+        foreach (var item in items)
+        {
+            receipt.Items.Add(item);
+        }
+
+        // If no items were found, create a single item with the total
+        if (receipt.Items.Count == 0)
+        {
+            var total = ExtractTotal(rawText);
+            if (total > 0)
+            {
+                receipt.Items.Add(new ReceiptItem
+                {
+                    Description = "Unspecified item",
+                    Quantity = 1,
+                    UnitPrice = total,
+                    TotalPrice = total,
+                    LineNumber = 1
+                });
+            }
+        }
+
+        receipt.SubTotal = receipt.Items.Sum(i => i.TotalPrice);
+        receipt.TaxAmount = ExtractTax(rawText);
+        receipt.TotalAmount = ExtractTotal(rawText) > 0
+            ? ExtractTotal(rawText)
+            : receipt.SubTotal + receipt.TaxAmount;
+
+        return receipt;
+    }
+
+    private static string ExtractVendor(string text, string? sourceHint)
+    {
+        if (!string.IsNullOrWhiteSpace(sourceHint))
+            return sourceHint;
+
+        // Use the first non-empty line as the vendor name
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (trimmed.Length is >= 2 and <= 100)
+                return trimmed;
+        }
+
+        return "Unknown";
+    }
+
+    private static DateOnly ExtractDate(string text)
+    {
+        // Look for labeled dates first
+        var labeledMatch = LabeledDateRegex().Match(text);
+        if (labeledMatch.Success &&
+            DateOnly.TryParseExact(labeledMatch.Groups["date"].Value,
+                ["dd.MM.yyyy", "d.MM.yyyy", "dd.M.yyyy"],
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var labeledDate))
+            return labeledDate;
+
+        // German format
+        var germanMatch = GermanDateRegex().Match(text);
+        if (germanMatch.Success &&
+            DateOnly.TryParseExact(germanMatch.Value, ["dd.MM.yyyy", "d.MM.yyyy", "dd.M.yyyy"],
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var germanDate))
+            return germanDate;
+
+        // ISO format
+        var isoMatch = IsoDateRegex().Match(text);
+        if (isoMatch.Success && DateOnly.TryParse(isoMatch.Value, out var isoDate))
+            return isoDate;
+
+        return DateOnly.FromDateTime(DateTime.UtcNow);
+    }
+
+    private static List<ReceiptItem> ExtractItems(string text)
+    {
+        var items = new List<ReceiptItem>();
+        var lineNumber = 1;
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var line in lines)
+        {
+            // Only match prices with € symbol to avoid matching dates like 18.03.2026
+            var priceMatch = PriceRegex().Match(line);
+            if (!priceMatch.Success) continue;
+
+            var priceStr = priceMatch.Groups["price"].Value.Replace(",", ".");
+            if (!decimal.TryParse(priceStr, CultureInfo.InvariantCulture, out var price) || price <= 0)
+                continue;
+
+            var description = line[..priceMatch.Index].Trim();
+
+            // Skip total/sum lines and metadata lines
+            if (string.IsNullOrWhiteSpace(description) || description.Length < 3)
+                continue;
+            if (IsTotalLine(description))
+                continue;
+
+            items.Add(new ReceiptItem
+            {
+                Description = description.Length > 200 ? description[..200] : description,
+                Quantity = 1,
+                UnitPrice = price,
+                TotalPrice = price,
+                LineNumber = lineNumber++
+            });
+        }
+
+        return items;
+    }
+
+    private static bool IsTotalLine(string text) =>
+        TotalKeywordRegex().IsMatch(text);
+
+    private static decimal ExtractTax(string text)
+    {
+        var match = TaxRegex().Match(text);
+        if (match.Success)
+        {
+            var priceStr = match.Groups["tax"].Value.Replace(",", ".");
+            if (decimal.TryParse(priceStr, CultureInfo.InvariantCulture, out var tax))
+                return tax;
+        }
+        return 0m;
+    }
+
+    private static decimal ExtractTotal(string text)
+    {
+        var match = TotalValueRegex().Match(text);
+        if (match.Success)
+        {
+            var priceStr = match.Groups["total"].Value.Replace(",", ".");
+            if (decimal.TryParse(priceStr, CultureInfo.InvariantCulture, out var total))
+                return total;
+        }
+        return 0m;
+    }
+
+    [GeneratedRegex(@"\d{1,2}\.\d{1,2}\.\d{4}")]
+    private static partial Regex GermanDateRegex();
+
+    [GeneratedRegex(@"\d{4}-\d{2}-\d{2}")]
+    private static partial Regex IsoDateRegex();
+
+    [GeneratedRegex(@"(?:Rechnungsdatum|Bestelldatum|Zahldatum|Datum)\s+(?<date>\d{1,2}\.\d{1,2}\.\d{4})", RegexOptions.IgnoreCase)]
+    private static partial Regex LabeledDateRegex();
+
+    // Require € symbol to avoid matching dates.
+    // Decimal part is optional to handle OCR output that drops the comma.
+    [GeneratedRegex(@"(?<price>\d+(?:[.,]\d{1,2})?)\s*€")]
+    private static partial Regex PriceRegex();
+
+    [GeneratedRegex(@"(?:Gesamt|Total|Summe|Endbetrag|Zwischensumme|Netto|Brutto|MwSt|USt|Umsatzsteuer|Steuer|Versand|Shipping|Zahldatum|Rechnungsdatum|Bestelldatum|Referenz|Rechnung\s+\d|Pos\s+Nummer|Anzahl|Preis)", RegexOptions.IgnoreCase)]
+    private static partial Regex TotalKeywordRegex();
+
+    [GeneratedRegex(@"(?:MwSt|USt|Umsatzsteuer|Steuer)[^\d]*(?<tax>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
+    private static partial Regex TaxRegex();
+
+    [GeneratedRegex(@"(?:Gesamtsumme|Gesamt|Total|Summe|Endbetrag|Brutto)[^\d]*(?<total>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
+    private static partial Regex TotalValueRegex();
+}
