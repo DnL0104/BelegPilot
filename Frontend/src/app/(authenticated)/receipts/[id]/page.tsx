@@ -1,0 +1,156 @@
+"use client";
+
+import { use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { Header } from "@/components/layout/header";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ReceiptItemsTable } from "@/components/receipts/receipt-items-table";
+import { useReceiptById } from "@/hooks/use-receipts";
+import { useDeleteFile } from "@/hooks/use-receipt-files";
+import { useReclassifyReceipt } from "@/hooks/use-receipt-items";
+import { formatCurrency, formatDate } from "@/lib/format";
+
+export default function ReceiptDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const router = useRouter();
+  const { data: receipt, isLoading } = useReceiptById(id);
+  const deleteMutation = useDeleteFile();
+  const reclassifyMutation = useReclassifyReceipt();
+
+  const handleReclassify = async () => {
+    try {
+      await reclassifyMutation.mutateAsync(id);
+      toast.success("Artikel wurden neu klassifiziert");
+    } catch {
+      toast.error("Klassifizierung fehlgeschlagen. Bitte erneut versuchen.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!receipt) return;
+    try {
+      await deleteMutation.mutateAsync(receipt.receiptFileId);
+      toast.success("Beleg gelöscht");
+      router.push("/receipts");
+    } catch {
+      toast.error("Löschen fehlgeschlagen. Bitte erneut versuchen.");
+    }
+  };
+
+  return (
+    <>
+      <Header title="Belegdetails" />
+      <div className="flex-1 space-y-5 p-6 overflow-auto">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/receipts" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Zurück zu Belege
+          </Button>
+          {receipt && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReclassify}
+                disabled={reclassifyMutation.isPending}
+              >
+                {reclassifyMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Neu klassifizieren
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-1 h-3 w-3" />
+                )}
+                Beleg löschen
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {isLoading ? (
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-5 w-32" />
+              <div className="flex gap-8">
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-24" />
+              </div>
+            </div>
+          </div>
+        ) : receipt ? (
+          <>
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-2xl font-bold tracking-tight mb-5">
+                {receipt.vendor}
+              </h2>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                  <p className="text-[13px] text-muted-foreground mb-1">Datum</p>
+                  <p className="text-lg font-medium">
+                    {formatDate(receipt.purchaseDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[13px] text-muted-foreground mb-1">Zwischensumme</p>
+                  <p className="text-lg font-medium">
+                    {formatCurrency(receipt.subTotal)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[13px] text-muted-foreground mb-1">MwSt</p>
+                  <p className="text-lg font-medium">
+                    {formatCurrency(receipt.taxAmount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[13px] text-muted-foreground mb-1">Gesamt</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(receipt.totalAmount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[13px] text-muted-foreground mb-1">Währung</p>
+                  <p className="text-lg font-medium">{receipt.currency}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+              <div className="border-b border-border px-6 py-4">
+                <h3 className="text-[15px] font-semibold">
+                  Artikel ({receipt.itemCount})
+                </h3>
+              </div>
+              <ReceiptItemsTable receiptId={id} />
+            </div>
+          </>
+        ) : (
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <p className="text-muted-foreground">Beleg nicht gefunden.</p>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
