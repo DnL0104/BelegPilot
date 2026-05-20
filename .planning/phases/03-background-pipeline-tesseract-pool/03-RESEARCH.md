@@ -1075,32 +1075,24 @@ public class CancelReceiptFileHandler(
 
 **If this table is empty:** N/A — 8 assumptions need confirmation. A3 and A8 are highest-risk and should be addressed before plan execution begins.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All five questions are RESOLVED. Resolutions below are load-bearing — Plan checker found Q1's "default to appended values" suggestion conflicts with locked CONTEXT D-06; the override is recorded explicitly so no executor reads the old recommendation.
 
 1. **D-06 numeric reorder — accept data migration cost or use appended values?**
-   - What we know: D-06 specifies `Pending=0, Queued=1, Extracting=2, …, Cancelled=7`.
-   - What's unclear: Whether the user/planner wants the in-place renumber migration (with the UPDATE statement risk in Pitfall 8) vs the simpler appended-values approach (`Queued=6, Cancelled=7`).
-   - Recommendation: Plan checker should re-prompt with the data-migration cost spelled out. Default to appended values unless user explicitly wants the clean order.
+   - **RESOLVED — CONTEXT D-06 is LOCKED**: the strict `Pending=0, Queued=1, Extracting=2, Parsing=3, Classifying=4, Completed=5, Failed=6, Cancelled=7` order is the canonical choice. The earlier recommendation ("default to appended values") is OVERRIDDEN by CONTEXT and PATTERNS pattern mapper's separate caveat is similarly OVERRIDDEN. Mitigation: Plan 03-02 Task T1 ships the migration with descending-order UPDATE statements (RESEARCH Pitfall 8 mitigation) — `5→6, 4→5, 3→4, 2→3, 1→2`. Test 5 in Plan 03-02 T1 source-greps the migration file for the exact UPDATE strings.
 
 2. **JobId column on `receipt_files` or `processing_runs`?**
-   - What we know: D-14's cancel endpoint needs to delete a Hangfire job by ID; the ID must persist somewhere queryable.
-   - What's unclear: Whether `receipt_files.hangfire_job_id` or `processing_runs.hangfire_job_id` is the natural home. The cancel handler in Code Examples assumes `receipt_files.JobId`. ProcessingRun may be a better fit (it tracks the actual job execution; receipt_files is more identity-of-the-file).
-   - Recommendation: Add `hangfire_job_id` column to `processing_runs`. The latest run carries the cancel target.
+   - **RESOLVED**: `hangfire_job_id` lives on `processing_runs` — the latest run carries the cancel target. Plan 03-02 T1 adds the column; T5 (Cancel handler) queries the latest ProcessingRun by `StartedAt DESC` and reads `HangfireJobId`. Receipt-file identity stays separate from job-execution identity.
 
 3. **TesseractEngine concurrency — confirm single-ownership-via-Channel works**
-   - What we know: Single ownership semantics + bounded Channel = no two concurrent threads touch the same engine.
-   - What's unclear: Whether Tesseract's documented "not thread-safe" extends to "fails inside a process even with single-thread access at a time" (the historical SEHException pattern reported by `charlesw/tesseract` users).
-   - Recommendation: Smoke-test in Plan 03-03 with a 10-image concurrent upload. Fall back to Singleton+lock + decorate it with a German error if pool fails.
+   - **RESOLVED**: Plan 03-03 Task T1 ships the `Channel<TesseractEngine>` pool plus a 5-concurrent-acquire-against-3-engine unit test that proves single-ownership semantics. The historical `charlesw/tesseract` SEHException pattern was documented for shared-engine concurrent access; single-ownership via Channel acquire/release eliminates the precondition. Fallback (Singleton+lock + German error) is documented in 03-RESEARCH § "Alternatives Considered" but NOT shipped — only Plan 03-03 T1's pool ships.
 
 4. **Polling on receipts list page — global or per-row enabled?**
-   - What we know: D-22 requires the receipts list to reflect live status while any row is non-terminal.
-   - What's unclear: Whether to add one polling hook per non-terminal row (N TanStack Query instances) or one batched polling endpoint returning the status array for visible rows.
-   - Recommendation: Per-row hook (Pattern 5 reused); TanStack Query dedupes and batches under the hood; simpler to reason about cancel/terminal logic per row.
+   - **RESOLVED — Plan 03-04 T6 uses list-level polling**: a single `useReceipts({ refetchInterval: hasNonTerminal ? 2000 : false })` polls the whole list with gating on "any row non-terminal." Per-row hooks (the original recommendation) are NOT used because the receipts list already paginates and the list-level approach scales better — N TanStack Query instances would multiply network chatter. Per-row hooks ARE used inside the upload form's `ReceiptFileCard` component (each card has its own status — different surface).
 
 5. **Anti-forgery and `IgnoreAntiforgeryTokenAttribute` — confirm same-origin POST works without it**
-   - What we know: Hangfire 1.6.20+ auto-wires CSRF via `Microsoft.AspNetCore.Antiforgery`. SameSite=Strict cookie + same-origin admin posture should satisfy it without the bypass attribute.
-   - What's unclear: Whether the dashboard's "Requeue" / "Delete" buttons in Hangfire 1.8.23 work as expected through Caddy without `IgnoreAntiforgeryTokenAttribute`.
-   - Recommendation: Manual UAT in Plan 03-01: log in as admin, attempt to requeue a Failed job, confirm 200 not 403. If 403, add the attribute and document why.
+   - **RESOLVED — deferred to manual UAT**: Plan 03-01 Task T7 (manual UAT item) verifies the dashboard's "Requeue" / "Delete" buttons work end-to-end through Caddy without the bypass attribute. If the UAT fails, plan 03-01's SUMMARY adds `[IgnoreAntiforgeryTokenAttribute]` to the dashboard registration; otherwise the SameSite=Strict + same-origin posture (Plan 03-01 D-10) covers the threat model without the attribute.
 
 ## Environment Availability
 
