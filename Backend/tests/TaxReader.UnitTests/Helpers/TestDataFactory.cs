@@ -5,6 +5,38 @@ namespace TaxReader.UnitTests.Helpers;
 
 public static class TestDataFactory
 {
+    /// <summary>
+    /// D-07: builds a User with IsAdmin=true for Hangfire dashboard tests.
+    /// Email is lowercase-normalized (matches AuthService.RegisterAsync).
+    /// BCrypt hash is precomputed against "test-password-1234" so WAF login
+    /// flows produce a successful authentication.
+    /// </summary>
+    public static User CreateAdminUser(string email = "admin@test.local")
+    {
+        return new User
+        {
+            Id = Guid.NewGuid(),
+            Email = email.ToLowerInvariant(),
+            DisplayName = "Admin",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("test-password-1234"),
+            CreatedAt = DateTime.UtcNow,
+            IsAdmin = true
+        };
+    }
+
+    public static User CreateRegularUser(string email = "user@test.local")
+    {
+        return new User
+        {
+            Id = Guid.NewGuid(),
+            Email = email.ToLowerInvariant(),
+            DisplayName = "User",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("test-password-1234"),
+            CreatedAt = DateTime.UtcNow,
+            IsAdmin = false
+        };
+    }
+
     public static ReceiptFile CreateReceiptFile(
         Guid? id = null,
         string fileName = "test.pdf",
