@@ -88,9 +88,9 @@ Plans:
 
 Plans:
 
-**Wave 1** *(no dependencies — start here; 03-01 and 03-03 run in parallel)*
-- [ ] 03-01: Hangfire installation (Postgres-backed) + dashboard auth gate + recurring cleanup jobs
-- [ ] 03-03: `TesseractEnginePool` (3-5 engines, `Channel<TesseractEngine>`) replacing Singleton-lock pattern
+**Wave 1** *(no dependencies — start here; 03-01 and 03-03 ran sequentially due to DI overlap)*
+- [x] 03-01: Hangfire installation (Postgres-backed) + dashboard auth gate + recurring cleanup jobs *(complete 2026-05-21)*
+- [x] 03-03: `TesseractEnginePool` (3-5 engines, `Channel<TesseractEngine>`) replacing Singleton-lock pattern *(complete 2026-05-21)*
 
 **Wave 2** *(blocked on Wave 1 — needs Hangfire client + Tesseract pool registration)*
 - [ ] 03-02: `ProcessReceiptFileJob` + `ClassifyBatchJob` + `202 Accepted` API response + status polling endpoint + cancellation endpoint + ProcessingStatus enum migration + IUploadBlobStore (D-15 addendum)
