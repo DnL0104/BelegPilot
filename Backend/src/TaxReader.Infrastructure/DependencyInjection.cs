@@ -53,11 +53,16 @@ public static class DependencyInjection
         });
 
         // Image OCR (local Tesseract — no API costs).
-        // Singleton: TesseractEngine is expensive to construct (loads ~10 MB language data
-        // and initialises the LSTM model). Reused across requests, with internal locking
-        // because Tesseract is not thread-safe.
+        // D-16/D-17/D-18: bounded TesseractEngine pool replaces the legacy Singleton+lock.
+        // PoolSize (default 3) is configurable via Tesseract__PoolSize. The pool is registered
+        // as Singleton so its Channel<TesseractEngine> survives the host lifetime. Both the
+        // concrete type and the IImageTextExtractor interface resolve to the SAME instance
+        // (the second registration delegates to the first) so the warmup service finds the
+        // same pool the OCR callers use.
         services.Configure<TesseractOptions>(configuration.GetSection(TesseractOptions.SectionName));
-        services.AddSingleton<IImageTextExtractor, TesseractImageTextExtractor>();
+        services.AddSingleton<TesseractEnginePool>();
+        services.AddSingleton<IImageTextExtractor>(sp => sp.GetRequiredService<TesseractEnginePool>());
+        services.AddHostedService<TesseractEnginePoolWarmupService>();
 
         // Hangfire — RESEARCH § Pattern 1 + Pitfall 1.
         // D-04: tiered retries are applied per-job via [AutomaticRetry] attributes.
