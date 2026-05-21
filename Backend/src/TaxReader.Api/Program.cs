@@ -12,11 +12,14 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Sentry;
 using Serilog;
+using Hangfire;
 using TaxReader.Api.Endpoints;
+using TaxReader.Api.Hangfire;
 using TaxReader.Api.Middleware;
 using TaxReader.Api.Services;
 using TaxReader.Application.Commands;
 using TaxReader.Application.Interfaces;
+using TaxReader.Application.Jobs;
 using TaxReader.Application.Queries;
 using TaxReader.Infrastructure;
 using TaxReader.Infrastructure.Configuration;
@@ -104,6 +107,10 @@ try
     builder.Services.AddScoped<GetPendingSuggestionsHandler>();
     builder.Services.AddScoped<GetUserSettingsHandler>();
     builder.Services.AddScoped<UpdateUserSettingsHandler>();
+
+    // D-23: cleanup jobs (Scoped so the IRecurringJobManager can resolve them per-fire).
+    builder.Services.AddScoped<RefreshTokenCleanupJob>();
+    builder.Services.AddScoped<HangfireFailedJobCleanupJob>();
 
     // D-06 + RESEARCH Pitfall 1: real client IP behind Caddy reverse proxy.
     // .NET 10: KnownNetworks is OBSOLETE (ASPDEPR005) — use KnownIPNetworks with System.Net.IPNetwork
@@ -277,18 +284,10 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // OpenAPI + Scalar (dev only)
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi();
-        app.MapScalarApiReference(options =>
-        {
-            options.WithTitle("BelegPilot API");
-            options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-        });
-    }
-
     // Auto-migrate in Development and when RUN_MIGRATIONS=true (e.g. self-hosted container).
+    // Migration MUST run before Hangfire wires up — RESEARCH Pitfall 1 (EF would otherwise
+    // see Hangfire's job schema mid-creation and the Postgres storage provider would race
+    // EF's MigrateAsync on the same connection pool).
     var shouldMigrate = app.Environment.IsDevelopment()
         || string.Equals(
             Environment.GetEnvironmentVariable("RUN_MIGRATIONS"),
@@ -302,6 +301,31 @@ try
         await dbContext.Database.MigrateAsync();
     }
 
+    // Hangfire dashboard — gated by HangfireAdminAuthFilter (D-07, D-10).
+    // Mounted AFTER UseAuthorization so the filter sees claims, and AFTER MigrateAsync
+    // so the EF schema is in place before Hangfire prepares its own schema.
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization =
+        [
+            new HangfireAdminAuthFilter(
+                app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtOptions>>())
+        ],
+        DisplayStorageConnectionString = false,
+        DashboardTitle = "TaxReader Background Jobs"
+    });
+
+    // OpenAPI + Scalar (dev only)
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+        app.MapScalarApiReference(options =>
+        {
+            options.WithTitle("BelegPilot API");
+            options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        });
+    }
+
     // Map endpoints — RequireAuthorization applies to all routes by default.
     // Individual auth endpoints use .AllowAnonymous() to opt out.
     var api = app.MapGroup("/api/v1").RequireAuthorization();
@@ -313,6 +337,10 @@ try
     api.MapReportEndpoints();
     api.MapTokenEndpoints();
     api.MapSettingsEndpoints();
+
+    // D-23: register recurring cleanup jobs (RESEARCH Pattern 9). Idempotent across
+    // reboots — AddOrUpdate keys by recurringJobId, so duplicate registrations are safe.
+    RecurringJobsBootstrap.Register(app.Services);
 
     await app.RunAsync();
 }

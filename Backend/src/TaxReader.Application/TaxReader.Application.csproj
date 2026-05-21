@@ -11,6 +11,15 @@
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Serilog" />
+    <!-- Architectural concession (planner-approved in 03-01-PLAN.md T4 step 2):
+         Hangfire.Core lives in Application so cleanup-job classes can carry
+         [DisableConcurrentExecution] / [AutomaticRetry] metadata. The package
+         is purely managed code (attributes + Job/Storage types) and has no
+         transitive Infrastructure dependencies. -->
+    <PackageReference Include="Hangfire.Core" />
+    <!-- Pin transitive Newtonsoft.Json (Hangfire.Core dependency) above the
+         GHSA-5crp-9r3c-p9vr advisory cut-off (11.0.1 → 13.0.3). -->
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>

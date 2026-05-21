@@ -141,13 +141,21 @@ public class AuthService(
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        // D-07: emit role=admin only when User.IsAdmin is true. The Hangfire dashboard
+        // filter (HangfireAdminAuthFilter) checks principal.FindFirst("role")?.Value
+        // against "admin". Demotion takes effect within the access-token TTL (60 min).
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim("name", user.DisplayName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new("name", user.DisplayName),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (user.IsAdmin)
+        {
+            claims.Add(new Claim("role", "admin"));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,

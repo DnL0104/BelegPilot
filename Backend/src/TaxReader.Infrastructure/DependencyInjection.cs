@@ -1,3 +1,6 @@
+using Hangfire;
+using Hangfire.MemoryStorage;
+using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,6 +58,50 @@ public static class DependencyInjection
         // because Tesseract is not thread-safe.
         services.Configure<TesseractOptions>(configuration.GetSection(TesseractOptions.SectionName));
         services.AddSingleton<IImageTextExtractor, TesseractImageTextExtractor>();
+
+        // Hangfire — RESEARCH § Pattern 1 + Pitfall 1.
+        // D-04: tiered retries are applied per-job via [AutomaticRetry] attributes.
+        // D-16/D-17: WorkerCount is aligned with Tesseract:PoolSize so jobs never
+        // out-pace the OCR engine pool. Test branch swaps Postgres → in-memory storage
+        // so WAF tests don't need a real DB.
+        var useInMemory = string.Equals(
+            configuration["Hangfire:UseInMemoryStorage"],
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        services.AddHangfire(cfg =>
+        {
+            cfg.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+               .UseSimpleAssemblyNameTypeSerializer()
+               .UseRecommendedSerializerSettings();
+            if (useInMemory)
+            {
+                cfg.UseMemoryStorage();
+            }
+            else
+            {
+                cfg.UsePostgreSqlStorage(c => c.UseNpgsqlConnection(
+                    configuration.GetConnectionString("DefaultConnection")),
+                    new PostgreSqlStorageOptions
+                    {
+                        PrepareSchemaIfNecessary = true,
+                        QueuePollInterval = TimeSpan.FromSeconds(1),
+                        InvisibilityTimeout = TimeSpan.FromMinutes(30)
+                    });
+            }
+        });
+
+        var poolSize = configuration.GetValue<int>("Tesseract:PoolSize", 3);
+        services.AddHangfireServer(options =>
+        {
+            // D-16 + RESEARCH Pitfall 7: WorkerCount aligned with Tesseract pool size —
+            // never more workers than engines, so engine starvation is impossible.
+            options.WorkerCount = poolSize;
+            options.Queues = ["default"];
+            options.CancellationCheckInterval = TimeSpan.FromSeconds(2);
+        });
+
+        // D-08: read Hangfire:SeedAdminEmails on startup; flip IsAdmin=true on matches.
+        services.AddHostedService<Services.AdminBootstrap.SeedAdminUsersHostedService>();
 
         // Token / credit system
         services.AddScoped<ITokenService, TokenService>();

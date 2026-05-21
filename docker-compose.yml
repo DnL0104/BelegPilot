@@ -41,6 +41,8 @@ services:
       Anthropic__CostPerClassification: ${ANTHROPIC_COST_PER_CLASSIFICATION:-1}
       Sentry__Dsn: ${SENTRY_DSN_BACKEND:-}
       Sentry__Environment: production
+      Hangfire__SeedAdminEmails: ${HANGFIRE_SEEDADMINEMAILS:-}
+      Tesseract__PoolSize: ${TESSERACT_POOLSIZE:-3}
       RUN_MIGRATIONS: "true"
     # No ports: — API is only reachable via the web container.
 

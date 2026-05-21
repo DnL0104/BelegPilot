@@ -15,6 +15,10 @@ public class User
     /// </summary>
     public double? AutoConfirmThreshold { get; set; }
 
+    /// <summary>D-07: gates access to the Hangfire dashboard at /hangfire. Defaults false;
+    /// flipped to true via SeedAdminUsersHostedService at startup or manual UPDATE.</summary>
+    public bool IsAdmin { get; set; } = false;
+
     public ICollection<ReceiptFile> ReceiptFiles { get; set; } = [];
     public UserTokenBalance? TokenBalance { get; set; }
     public ICollection<TokenTransaction> TokenTransactions { get; set; } = [];
