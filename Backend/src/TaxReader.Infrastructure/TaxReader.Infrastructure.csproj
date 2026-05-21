@@ -37,4 +37,11 @@
     <ProjectReference Include="..\TaxReader.Application\TaxReader.Application.csproj" />
   </ItemGroup>
 
+  <!-- TesseractEnginePool exposes internal members (EngineFactoryOverride,
+       LiveEngineCount) for Layer A unit tests that cover channel mechanics
+       without the native Tesseract dependency. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="TaxReader.UnitTests" />
+  </ItemGroup>
+
 </Project>
