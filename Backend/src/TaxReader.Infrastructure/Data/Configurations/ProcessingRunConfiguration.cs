@@ -17,6 +17,12 @@ public class ProcessingRunConfiguration : IEntityTypeConfiguration<ProcessingRun
         builder.Property(e => e.ErrorMessage).HasMaxLength(2000);
         builder.Property(e => e.StepDetails).HasDefaultValue("[]");
 
+        // D-21: short stable code (e.g. NoTextExtracted, Cancelled). Pairs with German ErrorMessage.
+        builder.Property(e => e.ErrorCode).HasMaxLength(50);
+
+        // D-14: opaque Hangfire job ID; numeric strings today but the contract is opaque.
+        builder.Property(e => e.HangfireJobId).HasMaxLength(100);
+
         builder.HasOne(e => e.ReceiptFile)
             .WithMany(e => e.ProcessingRuns)
             .HasForeignKey(e => e.ReceiptFileId)

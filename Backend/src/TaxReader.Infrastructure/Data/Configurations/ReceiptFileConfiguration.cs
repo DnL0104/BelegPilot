@@ -22,5 +22,9 @@ public class ReceiptFileConfiguration : IEntityTypeConfiguration<ReceiptFile>
 
         builder.HasIndex(e => new { e.UserId, e.ContentHash }).IsUnique();
         builder.HasIndex(e => e.UploadedAt);
+
+        // D-01: index on upload_batch_id so the barrier query in ProcessReceiptFileJob
+        // (count siblings per batch) hits an index instead of a table scan.
+        builder.HasIndex(e => e.UploadBatchId);
     }
 }

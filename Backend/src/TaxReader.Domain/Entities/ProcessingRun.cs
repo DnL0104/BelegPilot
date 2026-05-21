@@ -12,5 +12,11 @@ public class ProcessingRun
     public string? ErrorMessage { get; set; }
     public string StepDetails { get; set; } = "[]";
 
+    /// <summary>D-21: stable enum value the frontend switches on. Pairs with German ErrorMessage.</summary>
+    public string? ErrorCode { get; set; }
+
+    /// <summary>D-14: Hangfire job ID for cancel target. The latest ProcessingRun for a ReceiptFile carries the cancel target.</summary>
+    public string? HangfireJobId { get; set; }
+
     public ReceiptFile ReceiptFile { get; set; } = null!;
 }
