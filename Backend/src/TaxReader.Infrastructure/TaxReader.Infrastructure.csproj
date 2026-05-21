@@ -20,6 +20,12 @@
     <PackageReference Include="Sentry" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Tesseract" />
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="Hangfire.MemoryStorage" />
+    <!-- Pin transitive Newtonsoft.Json (Hangfire dependency) above the
+         GHSA-5crp-9r3c-p9vr advisory cut-off (11.0.1 → 13.0.3). -->
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>

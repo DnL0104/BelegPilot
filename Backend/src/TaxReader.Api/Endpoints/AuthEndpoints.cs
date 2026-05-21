@@ -1,9 +1,11 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using TaxReader.Application.Commands;
 using TaxReader.Application.DTOs;
 using TaxReader.Application.Interfaces;
+using TaxReader.Infrastructure.Configuration;
 
 namespace TaxReader.Api.Endpoints;
 
@@ -37,6 +39,7 @@ public static class AuthEndpoints
         auth.MapPost("/login", async (
             LoginRequest request,
             IAuthService authService,
+            IOptions<JwtOptions> jwtOptions,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
@@ -45,9 +48,14 @@ public static class AuthEndpoints
 
             var result = await authService.LoginAsync(request, userAgent, ipAddress, cancellationToken);
 
-            return result.IsSuccess
-                ? Results.Ok(result.Value)
-                : Results.Unauthorized();
+            if (result.IsFailure)
+                return Results.Unauthorized();
+
+            // D-10: HttpOnly cookie scoped to /hangfire for dashboard browser auth.
+            // Same JWT as the SPA holds in localStorage — two transports, one token.
+            SetTrAccessCookie(httpContext, result.Value!.AccessToken, jwtOptions.Value);
+
+            return Results.Ok(result.Value);
         })
         .AllowAnonymous()
         .RequireRateLimiting("auth-strict")
@@ -57,6 +65,7 @@ public static class AuthEndpoints
         auth.MapPost("/refresh", async (
             RefreshRequest request,
             IAuthService authService,
+            IOptions<JwtOptions> jwtOptions,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
@@ -65,14 +74,33 @@ public static class AuthEndpoints
 
             var result = await authService.RefreshAsync(request.RefreshToken, userAgent, ipAddress, cancellationToken);
 
-            return result.IsSuccess
-                ? Results.Ok(result.Value)
-                : Results.Unauthorized();
+            if (result.IsFailure)
+                return Results.Unauthorized();
+
+            // D-10: refresh re-issues the cookie with the new access JWT and a fresh TTL.
+            SetTrAccessCookie(httpContext, result.Value!.AccessToken, jwtOptions.Value);
+
+            return Results.Ok(result.Value);
         })
         .AllowAnonymous()
         .RequireRateLimiting("auth-refresh")
         .WithName("RefreshToken")
         .WithSummary("Exchange a refresh token for new tokens");
+
+        auth.MapPost("/logout", (HttpContext httpContext) =>
+        {
+            // D-10: clear the dashboard cookie. Path MUST match the original Set-Cookie
+            // (Path=/hangfire) or the browser silently keeps it. SPA still calls its
+            // local clearAuthStorage() for the localStorage half.
+            httpContext.Response.Cookies.Delete("tr_access", new CookieOptions
+            {
+                Path = "/hangfire"
+            });
+            return Results.NoContent();
+        })
+        .AllowAnonymous()
+        .WithName("Logout")
+        .WithSummary("Clear the tr_access cookie used for Hangfire dashboard access");
 
         auth.MapDelete("/account", async (
             [FromBody] DeleteAccountRequest request,
@@ -127,5 +155,22 @@ public static class AuthEndpoints
         .WithSummary("Get the currently authenticated user");
 
         return group;
+    }
+
+    // D-10: identical attributes on /auth/login and /auth/refresh keep cookie
+    // semantics in lock-step (HttpOnly + Secure + SameSite=Strict + Path=/hangfire
+    // + expiry tied to JWT TTL). The helper exists so a future tweak only happens
+    // once. AuthService stays HTTP-context-free (cookie work lives in the endpoint
+    // layer per the Phase 2 02-01 invariant).
+    private static void SetTrAccessCookie(HttpContext httpContext, string accessToken, JwtOptions jwt)
+    {
+        httpContext.Response.Cookies.Append("tr_access", accessToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/hangfire",
+            Expires = DateTimeOffset.UtcNow.AddMinutes(jwt.AccessTokenExpirationMinutes)
+        });
     }
 }

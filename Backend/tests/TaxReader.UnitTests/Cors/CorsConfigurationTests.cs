@@ -56,6 +56,9 @@ public class CorsConfigurationTests
             // RefreshToken pepper — 32 zero bytes Base64-encoded. Required since CR-01
             // wired ValidateOnStart() on RefreshTokenOptions in DependencyInjection.cs.
             builder.UseSetting("RefreshToken:HashKey", Convert.ToBase64String(new byte[32]));
+            // Phase 3 plan 03-01: Hangfire boots on every WAF host. Use in-memory
+            // storage here so this CORS-only test doesn't try to connect to Postgres.
+            builder.UseSetting("Hangfire:UseInMemoryStorage", "true");
         });
     }
 

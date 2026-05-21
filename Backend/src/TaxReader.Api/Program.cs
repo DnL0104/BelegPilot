@@ -12,7 +12,9 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Sentry;
 using Serilog;
+using Hangfire;
 using TaxReader.Api.Endpoints;
+using TaxReader.Api.Hangfire;
 using TaxReader.Api.Middleware;
 using TaxReader.Api.Services;
 using TaxReader.Application.Commands;
@@ -277,18 +279,10 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // OpenAPI + Scalar (dev only)
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi();
-        app.MapScalarApiReference(options =>
-        {
-            options.WithTitle("BelegPilot API");
-            options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-        });
-    }
-
     // Auto-migrate in Development and when RUN_MIGRATIONS=true (e.g. self-hosted container).
+    // Migration MUST run before Hangfire wires up — RESEARCH Pitfall 1 (EF would otherwise
+    // see Hangfire's job schema mid-creation and the Postgres storage provider would race
+    // EF's MigrateAsync on the same connection pool).
     var shouldMigrate = app.Environment.IsDevelopment()
         || string.Equals(
             Environment.GetEnvironmentVariable("RUN_MIGRATIONS"),
@@ -300,6 +294,31 @@ try
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await dbContext.Database.MigrateAsync();
+    }
+
+    // Hangfire dashboard — gated by HangfireAdminAuthFilter (D-07, D-10).
+    // Mounted AFTER UseAuthorization so the filter sees claims, and AFTER MigrateAsync
+    // so the EF schema is in place before Hangfire prepares its own schema.
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization =
+        [
+            new HangfireAdminAuthFilter(
+                app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtOptions>>())
+        ],
+        DisplayStorageConnectionString = false,
+        DashboardTitle = "TaxReader Background Jobs"
+    });
+
+    // OpenAPI + Scalar (dev only)
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+        app.MapScalarApiReference(options =>
+        {
+            options.WithTitle("BelegPilot API");
+            options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        });
     }
 
     // Map endpoints — RequireAuthorization applies to all routes by default.

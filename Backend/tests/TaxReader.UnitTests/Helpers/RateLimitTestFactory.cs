@@ -36,6 +36,12 @@ public static class RateLimitTestFactory
             // non-zero pepper override this via extraSettings.
             builder.UseSetting("RefreshToken:HashKey", Convert.ToBase64String(new byte[32]));
 
+            // Phase 3 plan 03-01: every WAF host now boots Hangfire. Force in-memory
+            // storage here so existing rate-limit tests don't try to handshake against
+            // a Postgres database that isn't running. Tests that need real Postgres
+            // (none today) override via extraSettings.
+            builder.UseSetting("Hangfire:UseInMemoryStorage", "true");
+
             if (extraSettings is not null)
             {
                 foreach (var (key, value) in extraSettings)

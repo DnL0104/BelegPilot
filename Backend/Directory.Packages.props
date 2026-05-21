@@ -30,6 +30,14 @@
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Tesseract" Version="5.2.0" />
+    <PackageVersion Include="Hangfire.Core" Version="1.8.23" />
+    <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
+    <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
+    <PackageVersion Include="Hangfire.MemoryStorage" Version="1.8.1.2" />
+    <!-- Transitive pin: Hangfire 1.8.x brings Newtonsoft.Json 11.0.1 which carries
+         GHSA-5crp-9r3c-p9vr. Pinning to 13.0.3 eliminates the advisory without
+         changing Hangfire's behaviour (12.x+ wire-format unchanged). -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
