@@ -19,6 +19,7 @@ using TaxReader.Api.Middleware;
 using TaxReader.Api.Services;
 using TaxReader.Application.Commands;
 using TaxReader.Application.Interfaces;
+using TaxReader.Application.Jobs;
 using TaxReader.Application.Queries;
 using TaxReader.Infrastructure;
 using TaxReader.Infrastructure.Configuration;
@@ -106,6 +107,10 @@ try
     builder.Services.AddScoped<GetPendingSuggestionsHandler>();
     builder.Services.AddScoped<GetUserSettingsHandler>();
     builder.Services.AddScoped<UpdateUserSettingsHandler>();
+
+    // D-23: cleanup jobs (Scoped so the IRecurringJobManager can resolve them per-fire).
+    builder.Services.AddScoped<RefreshTokenCleanupJob>();
+    builder.Services.AddScoped<HangfireFailedJobCleanupJob>();
 
     // D-06 + RESEARCH Pitfall 1: real client IP behind Caddy reverse proxy.
     // .NET 10: KnownNetworks is OBSOLETE (ASPDEPR005) — use KnownIPNetworks with System.Net.IPNetwork
@@ -332,6 +337,10 @@ try
     api.MapReportEndpoints();
     api.MapTokenEndpoints();
     api.MapSettingsEndpoints();
+
+    // D-23: register recurring cleanup jobs (RESEARCH Pattern 9). Idempotent across
+    // reboots — AddOrUpdate keys by recurringJobId, so duplicate registrations are safe.
+    RecurringJobsBootstrap.Register(app.Services);
 
     await app.RunAsync();
 }

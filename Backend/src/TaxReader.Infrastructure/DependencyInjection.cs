@@ -100,6 +100,9 @@ public static class DependencyInjection
             options.CancellationCheckInterval = TimeSpan.FromSeconds(2);
         });
 
+        // D-08: read Hangfire:SeedAdminEmails on startup; flip IsAdmin=true on matches.
+        services.AddHostedService<Services.AdminBootstrap.SeedAdminUsersHostedService>();
+
         // Token / credit system
         services.AddScoped<ITokenService, TokenService>();
 
