@@ -36,28 +36,18 @@ export interface Receipt {
   unknownCount: number;
 }
 
-// --- Batch upload response ---
+// --- Batch upload response (202 Accepted — D-03) ---
 
-export type FailureKind = "Duplicate" | "ProcessingError";
-
-export interface SuccessfulUpload {
+/** One entry per uploaded file in the 202 Accepted response. */
+export interface UploadAcceptedFile {
+  receiptFileId: string;
+  jobId: string;
   fileName: string;
-  receipt: Receipt;
 }
 
-export interface FailedUpload {
-  fileName: string;
-  reason: string;
-  kind: FailureKind;
-}
-
-/**
- * Per-file outcome of a batch upload. The backend never aborts a batch on a
- * single file's failure — callers render `successful` and `failed` side-by-side.
- */
-export interface UploadReceiptFilesResponse {
-  successful: SuccessfulUpload[];
-  failed: FailedUpload[];
+/** POST /receipt-files → 202 Accepted response body. */
+export interface UploadAcceptedResponse {
+  files: UploadAcceptedFile[];
 }
 
 export interface ReceiptItem {
@@ -131,3 +121,41 @@ export type Category =
   | "OfficeEquipment"
   | "TravelAndCommuting"
   | "ProfessionalDevelopment";
+
+/** Mirrors backend ProcessingStatus enum (D-06). PascalCase to match string-serialised enum. */
+export type ProcessingStatus =
+  | "Pending"
+  | "Queued"
+  | "Extracting"
+  | "Parsing"
+  | "Classifying"
+  | "Completed"
+  | "Failed"
+  | "Cancelled";
+
+/** Stable error code enum (D-13/D-21) for client-side switching. */
+export type ReceiptFileErrorCode =
+  | "NoTextExtracted"
+  | "ParserMissing"
+  | "AiUnavailable"
+  | "InsufficientTokens"
+  | "Cancelled"
+  | "Unknown";
+
+/** GET /receipt-files/{id}/status response shape (D-13). */
+export interface ReceiptFileStatus {
+  status: ProcessingStatus;
+  updatedAt: string;
+  errorCode?: ReceiptFileErrorCode;
+  errorMessage?: string;
+}
+
+export const TERMINAL_STATUSES: readonly ProcessingStatus[] = [
+  "Completed",
+  "Failed",
+  "Cancelled",
+];
+
+export function isTerminal(status: ProcessingStatus): boolean {
+  return TERMINAL_STATUSES.includes(status);
+}

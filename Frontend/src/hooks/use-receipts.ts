@@ -4,10 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { getReceipts, getReceiptById } from "@/lib/api-client";
 
-export function useReceipts(year?: number) {
+export function useReceipts(
+  year?: number,
+  options: { refetchInterval?: number | false } = {}
+) {
   return useQuery({
     queryKey: queryKeys.receipts.list(year),
     queryFn: () => getReceipts(year),
+    refetchInterval: options.refetchInterval,
   });
 }
 

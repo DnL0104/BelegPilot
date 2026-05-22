@@ -10,7 +10,8 @@ import type {
   TokenBalance,
   TokenTransaction,
   PendingSuggestion,
-  UploadReceiptFilesResponse,
+  UploadAcceptedResponse,
+  ReceiptFileStatus,
 } from "@/types/api";
 
 const api = axios.create({
@@ -137,31 +138,32 @@ export async function deleteAccount(password: string): Promise<void> {
 
 export async function uploadReceiptFiles(
   files: File[]
-): Promise<UploadReceiptFilesResponse> {
+): Promise<UploadAcceptedResponse> {
   const formData = new FormData();
   files.forEach((file) => formData.append("files", file));
 
-  try {
-    const { data } = await api.post<UploadReceiptFilesResponse>(
-      "/receipt-files",
-      formData
-    );
-    return data;
-  } catch (err) {
-    // The backend returns 400 (mixed errors) or 409 (all duplicates) with the
-    // same per-file response body as 201. Those are user-facing outcomes, not
-    // network errors — unwrap the body so the caller can render it.
-    // Leave 401 (→ refresh) and 5xx to the default axios rejection path.
-    const axiosErr = err as {
-      response?: { status?: number; data?: UploadReceiptFilesResponse };
-    };
-    const status = axiosErr.response?.status;
-    const body = axiosErr.response?.data;
-    if ((status === 400 || status === 409) && body && Array.isArray(body.failed)) {
-      return body;
-    }
-    throw err;
-  }
+  // Backend returns 202 Accepted with per-file { receiptFileId, jobId, fileName }
+  // entries. Status polling is done via getReceiptFileStatus (D-13).
+  const { data } = await api.post<UploadAcceptedResponse>(
+    "/receipt-files",
+    formData
+  );
+  return data;
+}
+
+export async function getReceiptFileStatus(
+  id: string
+): Promise<ReceiptFileStatus> {
+  const { data } = await api.get<ReceiptFileStatus>(
+    `/receipt-files/${id}/status`
+  );
+  return data;
+}
+
+export async function cancelReceiptFile(id: string): Promise<void> {
+  // 204 No Content on success; 409 / 404 propagate as AxiosError for the
+  // hook to switch on.
+  await api.post(`/receipt-files/${id}/cancel`);
 }
 
 export async function getReceiptFiles(): Promise<ReceiptFile[]> {
