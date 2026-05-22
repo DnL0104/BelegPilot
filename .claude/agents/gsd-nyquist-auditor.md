@@ -8,6 +8,7 @@ tools:
   - Bash
   - Glob
   - Grep
+  - Skill
 color: "#8B5CF6"
 ---
 
@@ -82,6 +83,12 @@ Action by gap type:
 </step>
 
 <step name="generate_tests">
+Before writing tests for .NET code, invoke the relevant dotnet skill if applicable:
+- Tests for API endpoints → `Skill(dotnet-aspnet:dotnet-webapi)`
+- Tests involving EF Core queries → `Skill(dotnet-data:optimizing-ef-core-queries)`
+
+Skip if the gap is a pure domain/unit test with no framework dependency.
+
 Convention discovery: existing tests → framework defaults → fallback.
 
 | Framework | File Pattern | Runner | Assert Style |
