@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 Wave 1 complete (03-01 + 03-03); Wave 2 (03-02) dispatching next
-last_updated: "2026-05-21T00:00:00.000Z"
-last_activity: 2026-05-21 -- Wave 1 done sequentially (DI overlap): 03-01 Hangfire (5 commits, 6 auto-fixed deviations) + 03-03 TesseractEnginePool (3 commits, 2 auto-fixed). 171 tests passing.
+stopped_at: Phase 3 complete (03-01 + 03-02 + 03-03 + 03-04 all done)
+last_updated: "2026-05-22T00:00:00.000Z"
+last_activity: 2026-05-22 -- Phase 3 Wave 3 (03-04) complete. UploadErrorCatalog, job error wiring, shadcn Alert, status/cancel hooks, 5-page UI polish. 217 backend tests passing. Frontend build green.
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 9
-  percent: 82
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 Phase: 03 (background-pipeline-tesseract-pool) — EXECUTING
 Plan: 4 plans planned, plan-checker PASS (iteration 2), VERIFICATION.md drafted (Nyquist scaffolds in Plan 03-01 T1)
-Status: Phase 03 wave 1 dispatching — Wave 1 (03-01 + 03-03) parallel, Wave 2 (03-02), Wave 3 (03-04 — checkpoint plan)
-Last activity: 2026-05-20 -- Phase 3 planning complete (RESEARCH + PATTERNS + VALIDATION + 4 PLANs); ready for /gsd-execute-phase 3
+Status: Phase 03 COMPLETE — all 4 plans executed (03-01, 03-03, 03-02, 03-04)
+Last activity: 2026-05-22 -- Phase 3 complete. 217 backend tests passing. Frontend build green. UAT checklist in 03-HUMAN-UAT.md pending manual operator sign-off.
 
-Progress: ██████████ 100% of Phase 1 + Phase 2; Phase 3 plans READY (0/4 executed)
+Progress: ██████████ 100% of Phase 1 + Phase 2 + Phase 3
 
 ### Wave map
 
@@ -52,7 +52,7 @@ Progress: ██████████ 100% of Phase 1 + Phase 2; Phase 3 plan
 - Wave 1: 03-01 (Hangfire installation + dashboard auth + recurring jobs — PIPE-01) — no deps
 - Wave 1: 03-03 (TesseractEnginePool + warmup — PIPE-04) — no deps (parallel with 03-01)
 - Wave 2: 03-02 (ProcessReceiptFileJob + ClassifyBatchJob + 202 Accepted + status + cancel endpoints — PIPE-02, PIPE-03) — depends on 03-01, 03-03
-- Wave 3: 03-04 (UploadErrorCatalog + frontend status hooks + 5-page UI polish — PIPE-05, PIPE-06) — depends on 03-02
+- Wave 3: 03-04 (UploadErrorCatalog + frontend status hooks + 5-page UI polish — PIPE-05, PIPE-06) — depends on 03-02 — DONE
 
 ## Performance Metrics
 
@@ -122,6 +122,10 @@ Recent decisions affecting current work:
 - 02-02: Mock.Callback used to assert call ordering (revoke-before-delete D-13) by capturing the user count at the moment the callback fires — cleaner than Mock.Sequence and compatible with EF in-memory's deferred SaveChanges. Pattern reusable for any handler that needs to prove a side-effect runs before a DB mutation.
 - 02-CR-01: HMAC pepper validation is fail-fast via `RefreshTokenOptionsValidator` + `ValidateOnStart()` — rejects empty/non-Base64/wrong-length `HashKey`. API refuses to boot without a valid 32-byte pepper, eliminating the silent empty-key HMAC degradation the original code shipped with.
 - 02-CR-02: Minimal API DELETE endpoint manually invokes `IValidator<DeleteAccountRequest>.ValidateAsync` before calling the handler. FluentValidation is NOT auto-invoked by Minimal APIs; this pattern (`Results.ValidationProblem(errors)` for grouped per-property German messages) should be replicated on any future endpoint that wants validator-driven 400 responses.
+- 03-04: UploadErrorCatalog placed in Application/Common — zero infrastructure deps; raw ex.Message NEVER flows to processing_runs.error_message or HTTP response body (D-21 invariant verified by structural-grep test).
+- 03-04: shadcn Alert created manually (npx shadcn@latest add alert is interactive-only); matched base-nova style using cva + data-slot pattern identical to badge/skeleton/card components.
+- 03-04: Upload form fully rewritten for 202 Accepted shape; old synchronous UploadReceiptFilesResponse removed; ReceiptFileCard stack drives per-file polling.
+- 03-04: ClassifyBatchJob cancellation test updated to use CancellationTokenSource.Callback() — token must be cancelled DURING the classify call (not before) so EF idempotency AnyAsync() query succeeds before IsCancellationRequested is checked.
 
 ### Pending Todos
 
@@ -141,6 +145,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-19T11:15:49.098Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-background-pipeline-tesseract-pool/03-CONTEXT.md
+Last session: 2026-05-22T00:00:00Z
+Stopped at: Phase 3 complete — all plans executed; 03-04-SUMMARY.md written
+Resume file: None — start Phase 4 planning
