@@ -9,14 +9,19 @@ interface CategoryOverviewProps {
 }
 
 const categoryBarColors: Record<string, string> = {
-  ConsumablesAndOfficeSupplies: "bg-emerald-500",
-  SpecialistLiterature: "bg-purple-500",
-  TeachingMaterials: "bg-blue-500",
-  DigitalToolsAndSoftware: "bg-amber-500",
-  OfficeEquipment: "bg-emerald-600",
-  TravelAndCommuting: "bg-blue-600",
-  ProfessionalDevelopment: "bg-purple-600",
-  Unknown: "bg-muted-foreground",
+  WerbungskostenArbeitsmittel: "bg-emerald-500",
+  WerbungskostenFachliteratur: "bg-purple-500",
+  WerbungskostenBueromaterial: "bg-blue-500",
+  WerbungskostenReisekosten: "bg-orange-500",
+  WerbungskostenFortbildung: "bg-indigo-500",
+  WerbungskostenTelekommunikation: "bg-cyan-500",
+  SonderausgabenSpenden: "bg-rose-500",
+  SonderausgabenVorsorgeaufwendungen: "bg-amber-500",
+  AussergewoehnlicheBelastungenKrankheit: "bg-red-500",
+  HaushaltsnaheDienstleistung: "bg-lime-500",
+  Handwerkerleistung: "bg-yellow-500",
+  Privat: "bg-slate-500",
+  Unbekannt: "bg-muted-foreground",
 };
 
 export function CategoryOverview({ year }: CategoryOverviewProps) {
