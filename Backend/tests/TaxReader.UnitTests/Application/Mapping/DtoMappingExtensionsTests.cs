@@ -82,4 +82,26 @@ public class DtoMappingExtensionsTests
         dto.Method.Should().Be("Manual");
         dto.Status.Should().Be("Confirmed");
     }
+
+    [Fact]
+    public void ToDto_Receipt_HasSumMismatch_False_MapsToDto()
+    {
+        var entity = TestDataFactory.CreateReceipt(totalAmount: 10.00m);
+        entity.HasSumMismatch = false;
+
+        var dto = entity.ToDto();
+
+        dto.HasSumMismatch.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ToDto_Receipt_HasSumMismatch_True_MapsToDto()
+    {
+        var entity = TestDataFactory.CreateReceipt(totalAmount: 10.00m);
+        entity.HasSumMismatch = true;
+
+        var dto = entity.ToDto();
+
+        dto.HasSumMismatch.Should().BeTrue();
+    }
 }
