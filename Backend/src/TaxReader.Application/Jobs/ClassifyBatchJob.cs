@@ -2,6 +2,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using TaxReader.Application.Common;
 using TaxReader.Application.Interfaces;
 using TaxReader.Domain.Enums;
 
@@ -81,19 +82,36 @@ public class ClassifyBatchJob(
                     dbContext.ItemClassifications.Add(classification);
                 }
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                // D-12: cancellation = full refund branch runs inside ClassifyItemsAsync's catch block;
-                // we still must mark every run as Cancelled.
+                // Catalog maps the exception to a safe (code, German message) pair (D-21).
+                // Raw exception messages NEVER reach processing_runs.error_message.
+                var error = UploadErrorCatalog.Classify(ex, cancellationToken.IsCancellationRequested);
+
+                logger.LogError(ex,
+                    "{ErrorCode} during ClassifyBatchJob for batch {UploadBatchId}",
+                    error.Code, uploadBatchId);
+
+                var terminalStatus = cancellationToken.IsCancellationRequested
+                    ? ProcessingStatus.Cancelled
+                    : ProcessingStatus.Failed;
+
+                // D-12: cancellation and AI failures both need every run finalized.
+                // The token refund branch inside AiOnlyClassificationService runs before
+                // the exception propagates here (it's inside ClassifyItemsAsync's catch).
                 foreach (var r in runs)
                 {
-                    r.Status = ProcessingStatus.Cancelled;
+                    r.Status = terminalStatus;
                     r.CompletedAt = DateTime.UtcNow;
-                    r.ErrorCode = "Cancelled";
-                    r.ErrorMessage = "Vorgang abgebrochen.";
+                    r.ErrorCode = error.Code;
+                    r.ErrorMessage = error.GermanMessage;
                     r.ReceiptFile.Status = FileStatus.Failed;
                 }
                 await dbContext.SaveChangesAsync(CancellationToken.None);
+
+                // For user-initiated cancellation: suppress re-throw (Hangfire marks Succeeded).
+                // For AI failures (HttpRequestException etc.): re-throw (Hangfire marks Failed, no retry per D-04).
+                if (cancellationToken.IsCancellationRequested) return;
                 throw;
             }
         }

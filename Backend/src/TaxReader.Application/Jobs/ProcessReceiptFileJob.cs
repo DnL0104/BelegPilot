@@ -91,7 +91,7 @@ public class ProcessReceiptFileJob(
             await using var blobStream = await blobStore.OpenReadAsync(receiptFile.Id, cancellationToken);
             if (blobStream is null)
             {
-                await MarkFailedAsync(run, receiptFile, "NoContent", "Datei-Inhalt konnte nicht gelesen werden.");
+                await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoContent", "Datei-Inhalt konnte nicht gelesen werden.");
                 return;
             }
 
@@ -104,7 +104,7 @@ public class ProcessReceiptFileJob(
 
             if (string.IsNullOrWhiteSpace(rawText))
             {
-                await MarkFailedAsync(run, receiptFile, "NoTextExtracted", "Aus dieser Datei konnte kein Text gelesen werden.");
+                await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoTextExtracted", "Aus dieser Datei konnte kein Text gelesen werden.");
                 return;
             }
 
@@ -115,7 +115,7 @@ public class ProcessReceiptFileJob(
             var parser = parsers.FirstOrDefault(p => p.CanParse(rawText, receiptFile.SourceHint));
             if (parser is null)
             {
-                await MarkFailedAsync(run, receiptFile, "ParserMissing", "Format der Datei wird derzeit nicht unterstützt.");
+                await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "ParserMissing", "Format der Datei wird derzeit nicht unterstützt.");
                 return;
             }
 
@@ -134,19 +134,25 @@ public class ProcessReceiptFileJob(
             dbContext.Receipts.Add(receipt);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
-        {
-            // Cancellation observed mid-step. CancelReceiptFileHandler already
-            // wrote Status=Cancelled before triggering the Hangfire delete; do
-            // not overwrite. Bubble.
-            throw;
-        }
         catch (Exception ex)
         {
-            var (errorCode, germanMessage) = UploadErrorCatalog.Classify(ex);
-            logger.LogError(ex, "{ErrorCode} during ProcessReceiptFileJob for ReceiptFile {ReceiptFileId}", errorCode, receiptFileId);
-            await MarkFailedAsync(run, receiptFile, errorCode, germanMessage);
-            throw; // let AutomaticRetry observe; final attempt → Hangfire Failed state
+            var error = UploadErrorCatalog.Classify(ex, cancellationToken.IsCancellationRequested);
+
+            logger.LogError(ex,
+                "{ErrorCode} during ProcessReceiptFileJob for ReceiptFile {ReceiptFileId}",
+                error.Code, receiptFileId);
+
+            var terminalStatus = cancellationToken.IsCancellationRequested
+                ? ProcessingStatus.Cancelled
+                : ProcessingStatus.Failed;
+
+            await MarkFailedAsync(run, receiptFile, terminalStatus, error.Code, error.GermanMessage);
+
+            // For user-initiated cancellation: suppress re-throw so Hangfire marks the job
+            // Succeeded rather than triggering the retry backoff (D-04 tiered retries are for
+            // transient failures, not user actions).
+            if (cancellationToken.IsCancellationRequested) return;
+            throw;
         }
 
         // Barrier: count completed parents in this batch. Last one enqueues the classify job.
@@ -168,9 +174,14 @@ public class ProcessReceiptFileJob(
         }
     }
 
-    private async Task MarkFailedAsync(ProcessingRun run, ReceiptFile file, string errorCode, string germanMessage)
+    private async Task MarkFailedAsync(
+        ProcessingRun run,
+        ReceiptFile file,
+        ProcessingStatus terminalStatus,
+        string errorCode,
+        string germanMessage)
     {
-        run.Status = ProcessingStatus.Failed;
+        run.Status = terminalStatus;
         run.CompletedAt = DateTime.UtcNow;
         run.ErrorCode = errorCode;
         run.ErrorMessage = germanMessage;

@@ -130,13 +130,17 @@ public class ClassifyBatchJobTests : IDisposable
         var batchId = Guid.NewGuid();
         var (file, _, _) = SeedParsedFile(batchId);
 
-        // Make the classifier throw OperationCanceledException — same path D-12 cancellation takes.
+        // Cancel during the classify call (not before), so the idempotency EF query succeeds.
+        // Callback() fires synchronously when ClassifyItemsAsync is invoked, cancelling the token
+        // BEFORE the ThrowsAsync exception propagates — IsCancellationRequested is true in the catch.
+        using var cts = new CancellationTokenSource();
         _classificationMock
             .Setup(c => c.ClassifyItemsAsync(It.IsAny<IEnumerable<ReceiptItem>>(), TestUserId, It.IsAny<CancellationToken>()))
+            .Callback(() => cts.Cancel())
             .ThrowsAsync(new OperationCanceledException());
 
-        Func<Task> act = async () => await _job.HandleAsync(batchId, TestUserId, CancellationToken.None);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        // With IsCancellationRequested=true the job suppresses the rethrow (D-04 / Pitfall 3).
+        await _job.HandleAsync(batchId, TestUserId, cts.Token);
 
         var runs = await _dbContext.ProcessingRuns
             .Where(r => r.ReceiptFile.UploadBatchId == batchId).ToListAsync();
