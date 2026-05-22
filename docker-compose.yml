@@ -44,6 +44,9 @@ services:
       Hangfire__SeedAdminEmails: ${HANGFIRE_SEEDADMINEMAILS:-}
       Tesseract__PoolSize: ${TESSERACT_POOLSIZE:-3}
       RUN_MIGRATIONS: "true"
+      UploadStorage__Path: /var/lib/taxreader/uploads
+    volumes:
+      - taxreader_uploads:/var/lib/taxreader/uploads
     # No ports: — API is only reachable via the web container.
 
   web:
@@ -82,3 +85,4 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+  taxreader_uploads:
