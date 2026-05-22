@@ -28,7 +28,7 @@ public static class DtoMappingExtensions
                 .OrderByDescending(c => c.ClassifiedAt)
                 .FirstOrDefault();
 
-            if (latest is null || latest.Category == Category.Unknown)
+            if (latest is null || latest.Category == Category.Unbekannt)
                 unknownCount++;
             else if (latest.Status == ClassificationStatus.Suggested)
                 suggestedCount++;

@@ -12,14 +12,19 @@ public static class PdfExportService
 
     private static readonly Dictionary<string, string> CategoryLabels = new()
     {
-        ["ConsumablesAndOfficeSupplies"] = "Bürobedarf & Verbrauchsmaterial",
-        ["SpecialistLiterature"] = "Fachliteratur",
-        ["TeachingMaterials"] = "Lehr- & Arbeitsmaterial",
-        ["DigitalToolsAndSoftware"] = "Digitale Tools & Software",
-        ["OfficeEquipment"] = "Büroausstattung",
-        ["TravelAndCommuting"] = "Fahrtkosten & Reisen",
-        ["ProfessionalDevelopment"] = "Fortbildung",
-        ["Unknown"] = "Nicht zugeordnet",
+        ["Unbekannt"]                              = "Nicht zugeordnet",
+        ["WerbungskostenArbeitsmittel"]            = "Werbungskosten – Arbeitsmittel",
+        ["WerbungskostenFachliteratur"]            = "Werbungskosten – Fachliteratur",
+        ["WerbungskostenBueromaterial"]            = "Werbungskosten – Büromaterial",
+        ["WerbungskostenReisekosten"]              = "Werbungskosten – Reisekosten",
+        ["WerbungskostenFortbildung"]              = "Werbungskosten – Fortbildung",
+        ["WerbungskostenTelekommunikation"]        = "Werbungskosten – Telekommunikation",
+        ["SonderausgabenSpenden"]                  = "Sonderausgaben – Spenden",
+        ["SonderausgabenVorsorgeaufwendungen"]     = "Sonderausgaben – Vorsorgeaufwendungen",
+        ["AussergewoehnlicheBelastungenKrankheit"] = "Außergewöhnliche Belastungen – Krankheit",
+        ["HaushaltsnaheDienstleistung"]            = "Haushaltsnahe Dienstleistung",
+        ["Handwerkerleistung"]                     = "Handwerkerleistung",
+        ["Privat"]                                 = "Privat",
     };
 
     public static byte[] Generate(int year, IReadOnlyList<ExportItemDto> items)

@@ -105,7 +105,7 @@ public static class TestDataFactory
     public static ItemClassification CreateClassification(
         Guid? id = null,
         Guid? receiptItemId = null,
-        Category category = Category.ConsumablesAndOfficeSupplies,
+        Category category = Category.WerbungskostenBueromaterial,
         ClassificationMethod method = ClassificationMethod.Rule,
         ClassificationStatus status = ClassificationStatus.Suggested,
         string reason = "Matched rule: 'test'")
@@ -125,7 +125,7 @@ public static class TestDataFactory
     public static ClassificationRule CreateRule(
         Guid? id = null,
         string pattern = "Tinte",
-        Category category = Category.ConsumablesAndOfficeSupplies,
+        Category category = Category.WerbungskostenBueromaterial,
         int priority = 10,
         bool isActive = true)
     {

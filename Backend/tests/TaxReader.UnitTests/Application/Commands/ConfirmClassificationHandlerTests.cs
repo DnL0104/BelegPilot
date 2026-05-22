@@ -43,12 +43,12 @@ public class ConfirmClassificationHandlerTests : IDisposable
         _dbContext.ReceiptItems.Add(item);
         await _dbContext.SaveChangesAsync();
 
-        var command = new ConfirmClassificationCommand(item.Id, Category.SpecialistLiterature);
+        var command = new ConfirmClassificationCommand(item.Id, Category.WerbungskostenFachliteratur);
 
         var result = await _handler.HandleAsync(command);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.Category.Should().Be("SpecialistLiterature");
+        result.Value!.Category.Should().Be("WerbungskostenFachliteratur");
         result.Value.Method.Should().Be("Manual");
         result.Value.Status.Should().Be("Confirmed");
     }
@@ -56,7 +56,7 @@ public class ConfirmClassificationHandlerTests : IDisposable
     [Fact]
     public async Task HandleAsync_ItemNotFound_ReturnsFailure()
     {
-        var command = new ConfirmClassificationCommand(Guid.NewGuid(), Category.SpecialistLiterature);
+        var command = new ConfirmClassificationCommand(Guid.NewGuid(), Category.WerbungskostenFachliteratur);
 
         var result = await _handler.HandleAsync(command);
 

@@ -10,21 +10,26 @@ interface CategoryBreakdownProps {
 }
 
 const categoryColors: Record<string, string> = {
-  ConsumablesAndOfficeSupplies: "bg-emerald-500",
-  SpecialistLiterature: "bg-purple-500",
-  TeachingMaterials: "bg-blue-500",
-  DigitalToolsAndSoftware: "bg-amber-500",
-  OfficeEquipment: "bg-emerald-600",
-  TravelAndCommuting: "bg-blue-600",
-  ProfessionalDevelopment: "bg-purple-600",
-  Unknown: "bg-muted-foreground",
+  WerbungskostenArbeitsmittel: "bg-emerald-500",
+  WerbungskostenFachliteratur: "bg-purple-500",
+  WerbungskostenBueromaterial: "bg-blue-500",
+  WerbungskostenReisekosten: "bg-orange-500",
+  WerbungskostenFortbildung: "bg-indigo-500",
+  WerbungskostenTelekommunikation: "bg-cyan-500",
+  SonderausgabenSpenden: "bg-rose-500",
+  SonderausgabenVorsorgeaufwendungen: "bg-amber-500",
+  AussergewoehnlicheBelastungenKrankheit: "bg-red-500",
+  HaushaltsnaheDienstleistung: "bg-lime-500",
+  Handwerkerleistung: "bg-yellow-500",
+  Privat: "bg-slate-500",
+  Unbekannt: "bg-muted-foreground",
 };
 
 const categoryCardBg: Record<string, string> = {
-  ConsumablesAndOfficeSupplies: "bg-emerald-50 dark:bg-emerald-500/10",
-  SpecialistLiterature: "bg-purple-50 dark:bg-purple-500/10",
-  TeachingMaterials: "bg-blue-50 dark:bg-blue-500/10",
-  DigitalToolsAndSoftware: "bg-amber-50 dark:bg-amber-500/10",
+  WerbungskostenArbeitsmittel: "bg-emerald-50 dark:bg-emerald-500/10",
+  WerbungskostenFachliteratur: "bg-purple-50 dark:bg-purple-500/10",
+  WerbungskostenBueromaterial: "bg-blue-50 dark:bg-blue-500/10",
+  WerbungskostenReisekosten: "bg-orange-50 dark:bg-orange-500/10",
 };
 
 export function CategoryBreakdown({

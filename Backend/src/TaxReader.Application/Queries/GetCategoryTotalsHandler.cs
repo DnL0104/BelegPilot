@@ -26,9 +26,9 @@ public class GetCategoryTotalsHandler(IAppDbContext dbContext, ICurrentUser curr
                 var latest = item.Classifications
                     .OrderByDescending(c => c.ClassifiedAt)
                     .FirstOrDefault();
-                return new { Item = item, Category = latest?.Category ?? Category.Unknown };
+                return new { Item = item, Category = latest?.Category ?? Category.Unbekannt };
             })
-            .Where(x => x.Category != Category.Unknown)
+            .Where(x => x.Category != Category.Unbekannt)
             .GroupBy(x => x.Category)
             .Select(g => new CategoryTotalDto(
                 g.Key.ToString(),

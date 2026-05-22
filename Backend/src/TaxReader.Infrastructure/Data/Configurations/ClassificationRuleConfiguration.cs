@@ -27,7 +27,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000001"),
                 Pattern = "Tinte",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -37,7 +37,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000002"),
                 Pattern = "Papier",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -47,7 +47,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000003"),
                 Pattern = "Druckerpatrone",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -57,7 +57,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000004"),
                 Pattern = "Kugelschreiber",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -67,7 +67,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000005"),
                 Pattern = "Ordner",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -77,7 +77,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000006"),
                 Pattern = "Hefter",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -87,7 +87,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000007"),
                 Pattern = "Stift",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -97,7 +97,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000008"),
                 Pattern = "Klebeband",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -107,7 +107,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000009"),
                 Pattern = "Radiergummi",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -117,7 +117,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a1000000-0000-0000-0000-000000000010"),
                 Pattern = "Lineal",
-                Category = Category.ConsumablesAndOfficeSupplies,
+                Category = Category.WerbungskostenBueromaterial,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -127,7 +127,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a2000000-0000-0000-0000-000000000001"),
                 Pattern = "Buch",
-                Category = Category.SpecialistLiterature,
+                Category = Category.WerbungskostenFachliteratur,
                 Priority = 20,
                 IsActive = true,
                 CreatedAt = now,
@@ -137,7 +137,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a2000000-0000-0000-0000-000000000002"),
                 Pattern = "Fachbuch",
-                Category = Category.SpecialistLiterature,
+                Category = Category.WerbungskostenFachliteratur,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -147,7 +147,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a2000000-0000-0000-0000-000000000003"),
                 Pattern = "Lehrbuch",
-                Category = Category.SpecialistLiterature,
+                Category = Category.WerbungskostenFachliteratur,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -157,7 +157,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a2000000-0000-0000-0000-000000000004"),
                 Pattern = "Unterrichtsmaterial",
-                Category = Category.SpecialistLiterature,
+                Category = Category.WerbungskostenFachliteratur,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -167,7 +167,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a2000000-0000-0000-0000-000000000005"),
                 Pattern = "Arbeitsblatt",
-                Category = Category.SpecialistLiterature,
+                Category = Category.WerbungskostenFachliteratur,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -177,7 +177,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a2000000-0000-0000-0000-000000000006"),
                 Pattern = "Lernhilfe",
-                Category = Category.SpecialistLiterature,
+                Category = Category.WerbungskostenFachliteratur,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -188,7 +188,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000001"),
                 Pattern = "Eduki",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 5,
                 IsActive = true,
                 CreatedAt = now,
@@ -198,7 +198,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000002"),
                 Pattern = "Arbeitsblätter",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -208,7 +208,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000003"),
                 Pattern = "Laminierfolie",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -218,7 +218,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000004"),
                 Pattern = "Whiteboard",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -228,7 +228,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000005"),
                 Pattern = "Kreide",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -238,7 +238,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000006"),
                 Pattern = "Tafel",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -248,7 +248,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000007"),
                 Pattern = "Bastelmaterial",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -258,7 +258,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a3000000-0000-0000-0000-000000000008"),
                 Pattern = "Poster",
-                Category = Category.TeachingMaterials,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 15,
                 IsActive = true,
                 CreatedAt = now,
@@ -269,7 +269,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a4000000-0000-0000-0000-000000000001"),
                 Pattern = "Software",
-                Category = Category.DigitalToolsAndSoftware,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -279,7 +279,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a4000000-0000-0000-0000-000000000002"),
                 Pattern = "Lizenz",
-                Category = Category.DigitalToolsAndSoftware,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -289,7 +289,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a4000000-0000-0000-0000-000000000003"),
                 Pattern = "App",
-                Category = Category.DigitalToolsAndSoftware,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 20,
                 IsActive = true,
                 CreatedAt = now,
@@ -299,7 +299,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a4000000-0000-0000-0000-000000000004"),
                 Pattern = "USB",
-                Category = Category.DigitalToolsAndSoftware,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 15,
                 IsActive = true,
                 CreatedAt = now,
@@ -310,7 +310,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000001"),
                 Pattern = "Drucker",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -320,7 +320,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000002"),
                 Pattern = "Monitor",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -330,7 +330,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000003"),
                 Pattern = "Tastatur",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -340,7 +340,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000004"),
                 Pattern = "Maus",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 15,
                 IsActive = true,
                 CreatedAt = now,
@@ -350,7 +350,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000005"),
                 Pattern = "Headset",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -360,7 +360,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000006"),
                 Pattern = "Laminator",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -370,7 +370,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000007"),
                 Pattern = "Schreibtisch",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -380,7 +380,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000008"),
                 Pattern = "Stuhl",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 15,
                 IsActive = true,
                 CreatedAt = now,
@@ -390,7 +390,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a5000000-0000-0000-0000-000000000009"),
                 Pattern = "Mauspad",
-                Category = Category.OfficeEquipment,
+                Category = Category.WerbungskostenArbeitsmittel,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -401,7 +401,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a7000000-0000-0000-0000-000000000001"),
                 Pattern = "Fortbildung",
-                Category = Category.ProfessionalDevelopment,
+                Category = Category.WerbungskostenFortbildung,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -411,7 +411,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a7000000-0000-0000-0000-000000000002"),
                 Pattern = "Seminar",
-                Category = Category.ProfessionalDevelopment,
+                Category = Category.WerbungskostenFortbildung,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,
@@ -421,7 +421,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a7000000-0000-0000-0000-000000000003"),
                 Pattern = "Kurs",
-                Category = Category.ProfessionalDevelopment,
+                Category = Category.WerbungskostenFortbildung,
                 Priority = 15,
                 IsActive = true,
                 CreatedAt = now,
@@ -431,7 +431,7 @@ public class ClassificationRuleConfiguration : IEntityTypeConfiguration<Classifi
             {
                 Id = Guid.Parse("a7000000-0000-0000-0000-000000000004"),
                 Pattern = "Workshop",
-                Category = Category.ProfessionalDevelopment,
+                Category = Category.WerbungskostenFortbildung,
                 Priority = 10,
                 IsActive = true,
                 CreatedAt = now,

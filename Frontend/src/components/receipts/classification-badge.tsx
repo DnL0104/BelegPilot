@@ -9,14 +9,19 @@ interface ClassificationBadgeProps {
 }
 
 const categoryStyles: Record<string, string> = {
-  ConsumablesAndOfficeSupplies: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-  SpecialistLiterature: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
-  TeachingMaterials: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-  DigitalToolsAndSoftware: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-  OfficeEquipment: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400",
-  TravelAndCommuting: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
-  ProfessionalDevelopment: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
-  Unknown: "bg-muted text-muted-foreground",
+  WerbungskostenArbeitsmittel: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  WerbungskostenFachliteratur: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
+  WerbungskostenBueromaterial: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
+  WerbungskostenReisekosten: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+  WerbungskostenFortbildung: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
+  WerbungskostenTelekommunikation: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400",
+  SonderausgabenSpenden: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",
+  SonderausgabenVorsorgeaufwendungen: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  AussergewoehnlicheBelastungenKrankheit: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+  HaushaltsnaheDienstleistung: "bg-lime-50 text-lime-700 dark:bg-lime-500/10 dark:text-lime-400",
+  Handwerkerleistung: "bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400",
+  Privat: "bg-slate-50 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400",
+  Unbekannt: "bg-muted text-muted-foreground",
 };
 
 export function ClassificationBadge({
@@ -30,9 +35,9 @@ export function ClassificationBadge({
     );
   }
 
-  const style = categoryStyles[classification.category] ?? categoryStyles.Unknown;
+  const style = categoryStyles[classification.category] ?? categoryStyles.Unbekannt;
   const isSuggested = classification.status === "Suggested";
-  const isUnknown = classification.category === "Unknown";
+  const isUnknown = classification.category === "Unbekannt";
 
   const methodIcon =
     classification.method === "AI" ? (

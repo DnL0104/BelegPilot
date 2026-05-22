@@ -37,7 +37,7 @@ export function ReceiptItemsTable({ receiptId }: ReceiptItemsTableProps) {
           (i) =>
             i.latestClassification?.status === "Suggested" &&
             i.latestClassification?.category &&
-            i.latestClassification.category !== "Unknown"
+            i.latestClassification.category !== "Unbekannt"
         )
         .map((i) => i.id)
     );

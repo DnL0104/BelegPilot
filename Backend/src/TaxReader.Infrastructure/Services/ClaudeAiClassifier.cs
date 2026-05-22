@@ -74,18 +74,23 @@ public class ClaudeAiClassifier(
     }
 
     private const string SystemPrompt = """
-        Du bist ein Assistent, der Ausgaben für die Steuererklärung klassifiziert.
+        Du bist ein Assistent, der Ausgaben für die deutsche Steuererklärung klassifiziert.
         Der Nutzer kann Arbeitnehmer, Freiberufler oder Selbstständiger sein.
         Du musst jeden Artikel in GENAU eine der folgenden Kategorien einordnen:
 
-        - ConsumablesAndOfficeSupplies: Bürobedarf und Verbrauchsmaterial (Tinte, Papier, Stifte, Ordner, Druckerpapier, Briefumschläge, Toner)
-        - SpecialistLiterature: Fachbücher, Fachliteratur, Fachzeitschriften, E-Books mit beruflichem Bezug
-        - TeachingMaterials: Lehr- und Arbeitsmaterialien (Arbeitsblätter, Laminierfolien, Flipcharts, Präsentationsmaterial, Schulungsmaterial)
-        - DigitalToolsAndSoftware: Software, Lizenzen, Apps, Cloud-Dienste, Domains, Hosting, USB-Sticks, digitale Werkzeuge
-        - OfficeEquipment: Büroausstattung und Arbeitsmittel (Drucker, Monitor, Tastatur, Maus, Headset, Webcam, Schreibtisch, Bürostuhl, Laminator)
-        - TravelAndCommuting: Fahrtkosten, Dienstreisen, Pendlerpauschale (Tickets, Benzin, Hotels, Parkgebühren, Maut)
-        - ProfessionalDevelopment: Fortbildung, Seminare, Kurse, Workshops, Konferenzen, Zertifizierungen, Fachmessen
-        - Unknown: Nur wenn wirklich keine berufliche Kategorie passt (z.B. rein private Artikel wie Lebensmittel, Kleidung)
+        - WerbungskostenArbeitsmittel: Arbeitsmittel, Büroausstattung (Drucker, Monitor, Tastatur, Maus, Headset, Webcam, Schreibtisch, Bürostuhl, Laminator, USB-Sticks, Software, Lizenzen, Apps, Cloud-Dienste)
+        - WerbungskostenFachliteratur: Fachbücher, Fachliteratur, Fachzeitschriften, E-Books mit beruflichem Bezug, Unterrichtsmaterialien (Arbeitsblätter, Laminierfolien, Präsentationsmaterial)
+        - WerbungskostenBueromaterial: Bürobedarf und Verbrauchsmaterial (Tinte, Papier, Stifte, Ordner, Druckerpapier, Briefumschläge, Toner, Klebeband, Radiergummi)
+        - WerbungskostenReisekosten: Fahrtkosten, Dienstreisen, Pendlerpauschale (Tickets, Benzin, Hotels, Parkgebühren, Maut)
+        - WerbungskostenFortbildung: Fortbildung, Seminare, Kurse, Workshops, Konferenzen, Zertifizierungen, Fachmessen
+        - WerbungskostenTelekommunikation: Telefon, Internet, Mobilfunk (beruflicher Anteil)
+        - SonderausgabenSpenden: Spenden an gemeinnützige Organisationen
+        - SonderausgabenVorsorgeaufwendungen: Krankenversicherung, Rentenversicherung, Lebensversicherung (Vorsorgebeiträge)
+        - AussergewoehnlicheBelastungenKrankheit: Arztkosten, Medikamente, Krankenhauskosten, Hilfsmittel
+        - HaushaltsnaheDienstleistung: Putzhilfe, Gärtner, Haushaltshilfe (haushaltsnahe Dienstleistungen §35a EStG)
+        - Handwerkerleistung: Renovierung, Reparaturen im Haushalt (Handwerkerleistungen §35a EStG)
+        - Privat: Rein private Ausgaben ohne steuerliche Relevanz (Lebensmittel, Freizeitkleidung, Unterhaltung)
+        - Unbekannt: Nur wenn wirklich keine der obigen Kategorien passt
 
         Antworte AUSSCHLIESSLICH mit gültigem JSON-Array (ohne Markdown Code-Blöcke). Pro Artikel ein Objekt
         in der gleichen Reihenfolge wie die Eingabe:
@@ -137,13 +142,13 @@ public class ClaudeAiClassifier(
     /// <summary>
     /// Always returns exactly <paramref name="expectedCount"/> entries — items the
     /// model didn't return (truncation, malformed JSON, parsing error) are filled
-    /// with <see cref="Category.Unknown"/> so callers can handle the partial result
+    /// with <see cref="Category.Unbekannt"/> so callers can handle the partial result
     /// uniformly (e.g. refund tokens for missing entries).
     /// </summary>
     private IReadOnlyList<AiClassificationResult> ParseBatchResult(string text, int expectedCount)
     {
         var fallback = Enumerable.Repeat(
-            new AiClassificationResult(Category.Unknown, "AI-Antwort konnte nicht geparst werden.", 0),
+            new AiClassificationResult(Category.Unbekannt, "AI-Antwort konnte nicht geparst werden.", 0),
             expectedCount).ToArray();
 
         var cleaned = StripMarkdownFences(text.Trim());
@@ -179,7 +184,7 @@ public class ClaudeAiClassifier(
             if (i >= parsed.Length || parsed[i] is null)
             {
                 results[i] = new AiClassificationResult(
-                    Category.Unknown,
+                    Category.Unbekannt,
                     "AI hat dieses Item nicht klassifiziert.",
                     0);
                 continue;
@@ -188,14 +193,14 @@ public class ClaudeAiClassifier(
             var p = parsed[i];
             var category = Enum.TryParse<Category>(p.Category, ignoreCase: true, out var c)
                 ? c
-                : Category.Unknown;
+                : Category.Unbekannt;
             results[i] = new AiClassificationResult(category, p.Reason ?? "", p.Confidence);
         }
 
         if (parsed.Length != expectedCount)
         {
             logger.LogWarning(
-                "AI batch returned {Returned} entries for {Expected} items — missing entries filled with Unknown.",
+                "AI batch returned {Returned} entries for {Expected} items — missing entries filled with Unbekannt.",
                 parsed.Length, expectedCount);
         }
 
