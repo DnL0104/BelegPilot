@@ -1,21 +1,68 @@
+using TaxReader.Application.Exceptions;
+
 namespace TaxReader.Application.Common;
 
 /// <summary>
-/// STUB — Plan 03-04 ships the full German catalog mapping known exception types to
-/// (errorCode, germanMessage) pairs surfaced via D-13's status response. Until that
-/// ships, every classification falls through to the fallback "Unknown" pair.
+/// D-21: static catalog mapping known exception types to (ErrorCode, GermanMessage) pairs
+/// surfaced via the D-13 status endpoint. Raw exception messages NEVER appear in HTTP body
+/// or processing_runs.error_message — only these catalog entries do.
 ///
-/// D-21 invariant: raw exception messages NEVER appear in HTTP body or
-/// processing_runs.error_message. They go to Serilog only via
-/// logger.LogError(ex, "{ErrorCode} during {Step} for ReceiptFile {Id}", ...).
+/// Every German string uses Sie-form per CONVENTIONS.md.
 /// </summary>
+public readonly record struct UploadError(string Code, string GermanMessage);
+
 public static class UploadErrorCatalog
 {
-    public static (string ErrorCode, string GermanMessage) Classify(Exception ex)
+    public const string CodeNoTextExtracted = "NoTextExtracted";
+    public const string CodeParserMissing = "ParserMissing";
+    public const string CodeAiUnavailable = "AiUnavailable";
+    public const string CodeInsufficientTokens = "InsufficientTokens";
+    public const string CodeCancelled = "Cancelled";
+    public const string CodeUnknown = "Unknown";
+
+    private static readonly UploadError Unknown = new(
+        CodeUnknown,
+        "Verarbeitung fehlgeschlagen — bitte erneut versuchen oder Support kontaktieren.");
+
+    /// <summary>
+    /// Returns the stable (ErrorCode, GermanMessage) pair for the given exception.
+    /// Pass <paramref name="cancellationRequested"/> = true when the job's CancellationToken
+    /// was signalled — distinguishes user-initiated cancel from AI timeout.
+    /// </summary>
+    public static UploadError Classify(Exception exception, bool cancellationRequested = false)
     {
-        // Plan 03-04 replaces this stub with full mappings for NoTextExtracted /
-        // ParserMissing / AiUnavailable / InsufficientTokens / Cancelled / Unknown.
-        // Until then every exception falls through to the user-safe German fallback.
-        return ("Unknown", "Verarbeitung fehlgeschlagen — bitte erneut versuchen oder Support kontaktieren.");
+        // Cancellation takes precedence — caller passes the job's CancellationToken.IsCancellationRequested.
+        // TaskCanceledException extends OperationCanceledException; check token flag first.
+        if (cancellationRequested && exception is OperationCanceledException)
+            return new(CodeCancelled, "Vorgang abgebrochen.");
+
+        return exception switch
+        {
+            NoTextExtractedException =>
+                new(CodeNoTextExtracted,
+                    "Aus diesem Dokument konnte kein Text extrahiert werden. " +
+                    "Bitte laden Sie eine PDF-Datei mit Textinhalt hoch oder versuchen Sie ein klares Foto."),
+
+            ParserNotFoundException =>
+                new(CodeParserMissing,
+                    "Das Belegformat wird derzeit nicht erkannt. " +
+                    "Bitte versuchen Sie es mit einer Amazon- oder Eduki-Rechnung oder kontaktieren Sie den Support."),
+
+            InsufficientTokensException =>
+                new(CodeInsufficientTokens,
+                    "Ihr Token-Guthaben reicht für diesen Beleg nicht aus. " +
+                    "Bitte laden Sie Credits auf, um die Verarbeitung fortzusetzen."),
+
+            // OperationCanceledException without cancellation token signal = general cancel (e.g. job cancellation)
+            OperationCanceledException =>
+                new(CodeCancelled, "Vorgang abgebrochen."),
+
+            HttpRequestException =>
+                new(CodeAiUnavailable,
+                    "Die Klassifizierung ist vorübergehend nicht verfügbar. " +
+                    "Wir versuchen es automatisch erneut — bitte laden Sie die Seite in einer Minute neu."),
+
+            _ => Unknown
+        };
     }
 }
