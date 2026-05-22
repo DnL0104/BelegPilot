@@ -10,6 +10,7 @@ using TaxReader.Infrastructure.Configuration;
 using TaxReader.Infrastructure.Data;
 using TaxReader.Infrastructure.Parsers;
 using TaxReader.Infrastructure.Services;
+using TaxReader.Infrastructure.Storage;
 
 namespace TaxReader.Infrastructure;
 
@@ -107,6 +108,17 @@ public static class DependencyInjection
 
         // D-08: read Hangfire:SeedAdminEmails on startup; flip IsAdmin=true on matches.
         services.AddHostedService<Services.AdminBootstrap.SeedAdminUsersHostedService>();
+
+        // Application-layer port wrapping Hangfire's IBackgroundJobClient so Application
+        // (and tests) stay Hangfire-storage-free. The adapter forwards Enqueue/Delete to
+        // the framework client registered above by AddHangfire().
+        services.AddScoped<Application.Interfaces.IBackgroundJobClient, HangfireBackgroundJobClient>();
+
+        // Upload blob store — persists file bytes across the HTTP→Hangfire boundary.
+        // FileSystemUploadBlobStore defaults to Path.GetTempPath()/taxreader-uploads when
+        // UploadStorage:Path is not configured (safe default for dev).
+        services.Configure<UploadStorageOptions>(configuration.GetSection(UploadStorageOptions.SectionName));
+        services.AddSingleton<IUploadBlobStore, FileSystemUploadBlobStore>();
 
         // Token / credit system
         services.AddScoped<ITokenService, TokenService>();

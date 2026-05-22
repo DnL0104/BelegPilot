@@ -14,11 +14,13 @@ namespace TaxReader.Infrastructure.Services;
 /// returns Unknown for that item or the batch fails entirely. If the user has configured
 /// an auto-confirm threshold, classifications at or above that confidence are
 /// automatically confirmed; otherwise they stay as Suggested for manual review.
+///
+/// Phase 3 refactor: no longer depends on ICurrentUser — the caller (now a Hangfire
+/// job that runs outside any HTTP request) passes the owning userId explicitly.
 /// </summary>
 public class AiOnlyClassificationService(
     IAiClassifier aiClassifier,
     ITokenService tokenService,
-    ICurrentUser currentUser,
     IAppDbContext dbContext,
     IOptions<AnthropicOptions> anthropicOptions,
     ILogger<AiOnlyClassificationService> logger) : IClassificationService
@@ -27,6 +29,7 @@ public class AiOnlyClassificationService(
 
     public async Task<IReadOnlyList<ItemClassification>> ClassifyItemsAsync(
         IEnumerable<ReceiptItem> items,
+        Guid userId,
         CancellationToken cancellationToken = default)
     {
         var itemList = items as IReadOnlyList<ReceiptItem> ?? items.ToList();
@@ -39,7 +42,7 @@ public class AiOnlyClassificationService(
         }
 
         var threshold = await dbContext.Users
-            .Where(u => u.Id == currentUser.UserId)
+            .Where(u => u.Id == userId)
             .Select(u => u.AutoConfirmThreshold)
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -5,6 +6,7 @@ using Moq;
 using TaxReader.Application.Commands;
 using TaxReader.Application.DTOs;
 using TaxReader.Application.Interfaces;
+using TaxReader.Application.Jobs;
 using TaxReader.Domain.Entities;
 using TaxReader.Domain.Enums;
 using TaxReader.Infrastructure.Data;
@@ -12,16 +14,20 @@ using TaxReader.UnitTests.Helpers;
 
 namespace TaxReader.UnitTests.Application.Commands;
 
+/// <summary>
+/// Tests for the refactored UploadReceiptFilesHandler that returns 202 Accepted
+/// and enqueues Hangfire jobs instead of synchronous processing.
+/// The old synchronous tests are superseded by the Hangfire pipeline tests
+/// (ProcessReceiptFileJobTests + ClassifyBatchJobTests).
+/// </summary>
 public class UploadReceiptFilesHandlerTests : IDisposable
 {
     private static readonly Guid TestUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     private readonly AppDbContext _dbContext;
-    private readonly Mock<IPdfTextExtractor> _pdfExtractorMock;
-    private readonly Mock<IImageTextExtractor> _imageExtractorMock;
-    private readonly Mock<IReceiptParser> _parserMock;
-    private readonly Mock<IClassificationService> _classificationMock;
-    private readonly Mock<ICurrentUser> _currentUserMock;
+    private readonly Mock<IUploadBlobStore> _blobStoreMock = new();
+    private readonly Mock<IBackgroundJobClient> _jobClientMock = new();
+    private readonly Mock<ICurrentUser> _currentUserMock = new();
     private readonly UploadReceiptFilesHandler _handler;
 
     public UploadReceiptFilesHandlerTests()
@@ -29,266 +35,130 @@ public class UploadReceiptFilesHandlerTests : IDisposable
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
         _dbContext = new AppDbContext(options);
-        _pdfExtractorMock = new Mock<IPdfTextExtractor>();
-        _imageExtractorMock = new Mock<IImageTextExtractor>();
-        _parserMock = new Mock<IReceiptParser>();
-        _classificationMock = new Mock<IClassificationService>();
-        _currentUserMock = new Mock<ICurrentUser>();
         _currentUserMock.Setup(u => u.UserId).Returns(TestUserId);
+        _jobClientMock
+            .Setup(c => c.EnqueueAsync<ProcessReceiptFileJob>(
+                It.IsAny<Expression<Func<ProcessReceiptFileJob, Task>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("job-123");
 
         _handler = new UploadReceiptFilesHandler(
             _dbContext,
-            _pdfExtractorMock.Object,
-            _imageExtractorMock.Object,
-            new[] { _parserMock.Object },
-            _classificationMock.Object,
+            _blobStoreMock.Object,
+            _jobClientMock.Object,
             _currentUserMock.Object,
             Mock.Of<ILogger<UploadReceiptFilesHandler>>());
     }
 
     [Fact]
-    public async Task HandleAsync_ValidPdf_ProcessesAndReturnsReceiptDto()
+    public async Task HandleAsync_ThreeFiles_ReturnsThreedAcceptedEntries()
     {
-        SetupSuccessfulPipeline("Amazon.de Invoice 2025 Tinte EUR 9.99", "Amazon");
+        var command = MakeCommand("a.pdf", "b.pdf", "c.pdf");
 
-        var command = MakeCommand("test.pdf");
         var result = await _handler.HandleAsync(command);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().HaveCount(1);
-        result.Value!.Failed.Should().BeEmpty();
-        result.Value!.Successful[0].FileName.Should().Be("test.pdf");
-        result.Value!.Successful[0].Receipt.Vendor.Should().Be("Amazon");
-
-        var savedFile = await _dbContext.ReceiptFiles.FirstAsync();
-        savedFile.Status.Should().Be(FileStatus.Processed);
-        savedFile.ContentHash.Should().NotBeNullOrWhiteSpace();
-
-        var receipt = await _dbContext.Receipts.FirstAsync();
-        receipt.ReceiptFileId.Should().Be(savedFile.Id);
+        result.Value!.Files.Should().HaveCount(3);
+        result.Value!.Files.Should().AllSatisfy(f =>
+        {
+            f.ReceiptFileId.Should().NotBeEmpty();
+            f.JobId.Should().NotBeNullOrEmpty();
+            f.FileName.Should().NotBeNullOrEmpty();
+        });
     }
 
     [Fact]
-    public async Task HandleAsync_DuplicateFile_ReportsFailureWithoutAbortingBatch()
+    public async Task HandleAsync_ThreeFiles_PersistsThreeReceiptFilesAndThreeRuns()
     {
-        // Pre-seed a file with the same hash
-        var stream = new MemoryStream([1, 2, 3]);
-        var hash = Convert.ToHexString(
-            await System.Security.Cryptography.SHA256.HashDataAsync(stream));
+        var command = MakeCommand("a.pdf", "b.pdf", "c.pdf");
 
-        _dbContext.ReceiptFiles.Add(new ReceiptFile
-        {
-            Id = Guid.NewGuid(),
-            UserId = TestUserId,
-            OriginalFileName = "existing.pdf",
-            ContentHash = hash,
-            FileSize = 3,
-            UploadedAt = DateTime.UtcNow,
-            Status = FileStatus.Processed
-        });
-        await _dbContext.SaveChangesAsync();
+        await _handler.HandleAsync(command);
 
-        var command = MakeCommand("duplicate.pdf", new MemoryStream([1, 2, 3]));
-        var result = await _handler.HandleAsync(command);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().BeEmpty();
-        result.Value!.Failed.Should().HaveCount(1);
-        result.Value!.Failed[0].FileName.Should().Be("duplicate.pdf");
-        result.Value!.Failed[0].Kind.Should().Be(FailureKind.Duplicate);
-        result.Value!.Failed[0].Reason.Should().Contain("existing.pdf");
-    }
-
-    [Theory]
-    [InlineData(FileStatus.Failed)]
-    [InlineData(FileStatus.Processing)]
-    [InlineData(FileStatus.Uploaded)]
-    public async Task HandleAsync_NonSuccessfulDuplicateFile_RetrySucceeds(FileStatus stuckStatus)
-    {
-        // Pre-seed a file with the same hash in a non-terminal-success state
-        var stream = new MemoryStream([1, 2, 3]);
-        var hash = Convert.ToHexString(
-            await System.Security.Cryptography.SHA256.HashDataAsync(stream));
-
-        _dbContext.ReceiptFiles.Add(new ReceiptFile
-        {
-            Id = Guid.NewGuid(),
-            UserId = TestUserId,
-            OriginalFileName = "stuck.pdf",
-            ContentHash = hash,
-            FileSize = 3,
-            UploadedAt = DateTime.UtcNow,
-            Status = stuckStatus
-        });
-        await _dbContext.SaveChangesAsync();
-
-        // Now upload the same bytes again — should succeed
-        SetupSuccessfulPipeline("Amazon.de Tinte EUR 9.99", "Amazon");
-        var command = MakeCommand("retry.pdf", new MemoryStream([1, 2, 3]));
-        var result = await _handler.HandleAsync(command);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().HaveCount(1);
-        result.Value!.Failed.Should().BeEmpty();
-
-        // Old stuck record should be gone, new one with Processed status
         var files = await _dbContext.ReceiptFiles.ToListAsync();
-        files.Should().HaveCount(1);
-        files[0].Status.Should().Be(FileStatus.Processed);
-        files[0].OriginalFileName.Should().Be("retry.pdf");
-    }
-
-    [Fact]
-    public async Task HandleAsync_EmptyExtractedText_MarksFailedAndContinues()
-    {
-        _pdfExtractorMock
-            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(string.Empty);
-
-        var command = MakeCommand("empty.pdf");
-        var result = await _handler.HandleAsync(command);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().BeEmpty();
-        result.Value!.Failed.Should().HaveCount(1);
-        result.Value!.Failed[0].Kind.Should().Be(FailureKind.ProcessingError);
-        result.Value!.Failed[0].Reason.Should().Contain("extract any text");
-
-        var savedFile = await _dbContext.ReceiptFiles.FirstAsync();
-        savedFile.Status.Should().Be(FileStatus.Failed);
-    }
-
-    [Fact]
-    public async Task HandleAsync_NoMatchingParser_MarksFailedAndContinues()
-    {
-        _pdfExtractorMock
-            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("some extracted text");
-
-        _parserMock.Setup(p => p.CanParse(It.IsAny<string>(), It.IsAny<string?>()))
-            .Returns(false);
-
-        var command = MakeCommand("unknown.pdf");
-        var result = await _handler.HandleAsync(command);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().BeEmpty();
-        result.Value!.Failed.Should().HaveCount(1);
-        result.Value!.Failed[0].Reason.Should().Contain("No suitable parser");
-    }
-
-    [Fact]
-    public async Task HandleAsync_ImageFile_UsesImageExtractor()
-    {
-        _imageExtractorMock
-            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), "image/jpeg", It.IsAny<CancellationToken>()))
-            .ReturnsAsync("Amazon.de Tinte EUR 9.99");
-
-        var parsedReceipt = TestDataFactory.CreateReceipt(vendor: "Amazon");
-        parsedReceipt.Items.Add(TestDataFactory.CreateReceiptItem());
-        _parserMock.Setup(p => p.CanParse(It.IsAny<string>(), It.IsAny<string?>())).Returns(true);
-        _parserMock.Setup(p => p.Parse(It.IsAny<string>(), It.IsAny<ReceiptFile>())).Returns(parsedReceipt);
-        _classificationMock
-            .Setup(c => c.ClassifyItemsAsync(It.IsAny<IEnumerable<ReceiptItem>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([TestDataFactory.CreateClassification()]);
-
-        var command = MakeCommand("receipt.jpg");
-        var result = await _handler.HandleAsync(command);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().HaveCount(1);
-        _imageExtractorMock.Verify(
-            e => e.ExtractTextAsync(It.IsAny<Stream>(), "image/jpeg", It.IsAny<CancellationToken>()),
-            Times.Once);
-        _pdfExtractorMock.Verify(
-            e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task HandleAsync_SetsProcessedStatusAndCreatesProcessingRun()
-    {
-        SetupSuccessfulPipeline("text", "Vendor");
-
-        await _handler.HandleAsync(MakeCommand("r.pdf"));
-
-        var run = await _dbContext.ProcessingRuns.FirstAsync();
-        run.Status.Should().Be(ProcessingStatus.Completed);
-        run.CompletedAt.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task HandleAsync_BatchWithMixedOutcomes_ReturnsSuccessesAndFailures()
-    {
-        // Pre-seed a duplicate for one of the files in the batch
-        var duplicateBytes = new byte[] { 9, 9, 9 };
-        var duplicateHash = Convert.ToHexString(
-            System.Security.Cryptography.SHA256.HashData(duplicateBytes));
-
-        _dbContext.ReceiptFiles.Add(new ReceiptFile
+        files.Should().HaveCount(3);
+        files.Should().AllSatisfy(f =>
         {
-            Id = Guid.NewGuid(),
-            UserId = TestUserId,
-            OriginalFileName = "already-there.pdf",
-            ContentHash = duplicateHash,
-            FileSize = duplicateBytes.Length,
-            UploadedAt = DateTime.UtcNow,
-            Status = FileStatus.Processed
+            f.Status.Should().Be(FileStatus.Processing);
+            f.UploadBatchId.Should().NotBeNull();
         });
-        await _dbContext.SaveChangesAsync();
 
-        SetupSuccessfulPipeline("Amazon text", "Amazon");
+        // All files share the same UploadBatchId
+        var batchIds = files.Select(f => f.UploadBatchId).Distinct().ToList();
+        batchIds.Should().HaveCount(1);
 
-        var files = new List<FileUploadItem>
-        {
-            new("good1.pdf", 3, new MemoryStream([1, 2, 3])),
-            new("duplicate.pdf", duplicateBytes.Length, new MemoryStream(duplicateBytes)),
-            new("good2.pdf", 3, new MemoryStream([4, 5, 6]))
-        };
-        var command = new UploadReceiptFilesCommand(files, null, null, null);
+        var runs = await _dbContext.ProcessingRuns.ToListAsync();
+        runs.Should().HaveCount(3);
+        runs.Should().AllSatisfy(r => r.Status.Should().Be(ProcessingStatus.Pending));
+    }
+
+    [Fact]
+    public async Task HandleAsync_ThreeFiles_SavesThreeBlobsToStore()
+    {
+        var command = MakeCommand("a.pdf", "b.pdf", "c.pdf");
+
+        await _handler.HandleAsync(command);
+
+        _blobStoreMock.Verify(
+            b => b.SaveAsync(It.IsAny<Guid>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task HandleAsync_ThreeFiles_EnqueuesThreeProcessReceiptFileJobs()
+    {
+        var command = MakeCommand("a.pdf", "b.pdf", "c.pdf");
+
+        await _handler.HandleAsync(command);
+
+        _jobClientMock.Verify(
+            c => c.EnqueueAsync<ProcessReceiptFileJob>(
+                It.IsAny<Expression<Func<ProcessReceiptFileJob, Task>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task HandleAsync_BlobStoreThrows_ReturnsFailureAndRollsBackBlobs()
+    {
+        _blobStoreMock
+            .Setup(b => b.SaveAsync(It.IsAny<Guid>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("Disk full"));
+
+        var command = MakeCommand("a.pdf");
 
         var result = await _handler.HandleAsync(command);
 
-        // Batch must not abort on the duplicate — both good files should still process.
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Successful.Should().HaveCount(2);
-        result.Value!.Failed.Should().HaveCount(1);
-        result.Value!.Failed[0].FileName.Should().Be("duplicate.pdf");
-        result.Value!.Failed[0].Kind.Should().Be(FailureKind.Duplicate);
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("Upload fehlgeschlagen");
+
+        // No receipt file rows should have been committed
+        var files = await _dbContext.ReceiptFiles.ToListAsync();
+        files.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task HandleAsync_DoesNotReferenceClassificationService()
+    {
+        // D-02 invariant: upload time MUST NOT touch ITokenService or IClassificationService.
+        // Verify by ensuring the handler builds without those interfaces (constructor check).
+        var handlerType = typeof(UploadReceiptFilesHandler);
+        var ctor = handlerType.GetConstructors().Single();
+        var paramNames = ctor.GetParameters().Select(p => p.ParameterType.Name);
+
+        paramNames.Should().NotContain("IClassificationService",
+            "D-02: pre-charge deferred to ClassifyBatchJob — upload handler must not reference classification");
+        paramNames.Should().NotContain("ITokenService",
+            "D-02: no token charging at upload time");
     }
 
     // ── helpers ──────────────────────────────────────────────────────
 
-    private void SetupSuccessfulPipeline(string extractedText, string vendor)
+    private static UploadReceiptFilesCommand MakeCommand(params string[] fileNames)
     {
-        _pdfExtractorMock
-            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(extractedText);
-
-        _parserMock.Setup(p => p.CanParse(It.IsAny<string>(), It.IsAny<string?>())).Returns(true);
-        // Return a fresh receipt per call so repeated invocations in a batch don't
-        // share the same entity instance (EF would fail on duplicate key tracking).
-        _parserMock.Setup(p => p.Parse(It.IsAny<string>(), It.IsAny<ReceiptFile>()))
-            .Returns(() =>
-            {
-                var r = TestDataFactory.CreateReceipt(vendor: vendor);
-                r.Items.Add(TestDataFactory.CreateReceiptItem());
-                return r;
-            });
-        _classificationMock
-            .Setup(c => c.ClassifyItemsAsync(It.IsAny<IEnumerable<ReceiptItem>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => [TestDataFactory.CreateClassification()]);
-    }
-
-    private static UploadReceiptFilesCommand MakeCommand(
-        string fileName, MemoryStream? stream = null)
-    {
-        var files = new List<FileUploadItem>
-        {
-            new(fileName, 3, stream ?? new MemoryStream([1, 2, 3]))
-        };
+        var files = fileNames
+            .Select(name => new FileUploadItem(name, 3, new MemoryStream([1, 2, 3])))
+            .ToList();
         return new UploadReceiptFilesCommand(files, null, null, null);
     }
 

@@ -50,22 +50,22 @@ public class SerilogEnrichmentTests
     }
 
     [Fact]
-    public void UploadReceiptFilesHandler_Source_ContainsReceiptFileIdLogContextScope()
+    public void ProcessReceiptFileJob_Source_ContainsJobIdLogContextScope()
     {
-        // Structural assertion: the handler must wrap its per-file body in
-        // LogContext.PushProperty("ReceiptFileId", receiptFile.Id). Without this
-        // scope, OBS-02 cannot meet "Long-running upload handlers emit log lines
-        // correlated by ReceiptFileId." The grep is brittle by design — change
-        // the literal here only if the wiring legitimately moves.
+        // Structural assertion: Phase 3 moved the per-file LogContext scope from
+        // UploadReceiptFilesHandler to ProcessReceiptFileJob (D-05, D-18). The job
+        // now wraps its body in LogContext.PushProperty("JobId", receiptFileId) so
+        // every log line emitted during processing carries the JobId for correlation.
+        // This replaces the old OBS-02 check on the handler (handler is now thin).
         var path = Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
-            "src", "TaxReader.Application", "Commands", "UploadReceiptFilesHandler.cs");
-        File.Exists(path).Should().BeTrue($"handler not found at {Path.GetFullPath(path)}");
+            "src", "TaxReader.Application", "Jobs", "ProcessReceiptFileJob.cs");
+        File.Exists(path).Should().BeTrue($"job not found at {Path.GetFullPath(path)}");
 
         var source = File.ReadAllText(path);
-        source.Should().Contain("using Serilog.Context;");
-        source.Should().Contain("using (LogContext.PushProperty(\"ReceiptFileId\", receiptFile.Id))");
+        source.Should().Contain("LogContext.PushProperty(\"JobId\"",
+            "D-05 / D-18: per-file log correlation must be carried by the Hangfire job");
     }
 
     private static ILogger BuildLoggerFromAppsettings(CapturingSink sink, string environment)

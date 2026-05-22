@@ -107,10 +107,16 @@ try
     builder.Services.AddScoped<GetPendingSuggestionsHandler>();
     builder.Services.AddScoped<GetUserSettingsHandler>();
     builder.Services.AddScoped<UpdateUserSettingsHandler>();
+    builder.Services.AddScoped<GetReceiptFileStatusHandler>();
+    builder.Services.AddScoped<CancelReceiptFileHandler>();
 
     // D-23: cleanup jobs (Scoped so the IRecurringJobManager can resolve them per-fire).
     builder.Services.AddScoped<RefreshTokenCleanupJob>();
     builder.Services.AddScoped<HangfireFailedJobCleanupJob>();
+
+    // D-01: pipeline jobs (Scoped so each Hangfire worker resolves a fresh DbContext).
+    builder.Services.AddScoped<ProcessReceiptFileJob>();
+    builder.Services.AddScoped<ClassifyBatchJob>();
 
     // D-06 + RESEARCH Pitfall 1: real client IP behind Caddy reverse proxy.
     // .NET 10: KnownNetworks is OBSOLETE (ASPDEPR005) — use KnownIPNetworks with System.Net.IPNetwork

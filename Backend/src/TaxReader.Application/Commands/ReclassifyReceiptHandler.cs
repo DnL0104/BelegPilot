@@ -33,9 +33,11 @@ public class ReclassifyReceiptHandler(
                 "Receipt has no items to classify.");
 
         // Run AI classification on all items (creates new classification records,
-        // preserving the historical chain).
+        // preserving the historical chain). Phase 3: ClassifyItemsAsync now takes an
+        // explicit userId since Hangfire jobs are HTTP-context-free; the synchronous
+        // reclassify handler still uses ICurrentUser.UserId.
         var classifications = await classificationService.ClassifyItemsAsync(
-            receipt.Items, cancellationToken);
+            receipt.Items, currentUser.UserId, cancellationToken);
 
         foreach (var classification in classifications)
         {

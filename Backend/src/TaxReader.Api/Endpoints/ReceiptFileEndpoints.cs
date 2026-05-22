@@ -27,27 +27,13 @@ public static class ReceiptFileEndpoints
             var command = new UploadReceiptFilesCommand(fileItems, sourceHint, yearHint, uploadedBy);
             var result = await handler.HandleAsync(command, cancellationToken);
 
-            if (result.IsFailure)
-                return Results.BadRequest(new { error = result.Error });
-
-            var response = result.Value!;
-
-            // Partial success (or full success): 201 Created with per-file results.
-            // The client inspects `successful` / `failed` arrays to render outcomes.
-            if (response.Successful.Count > 0)
-                return Results.Created("/api/v1/receipts", response);
-
-            // No successes. Differentiate pure-duplicates (409) from other errors (400)
-            // so the frontend can show a specific message.
-            if (response.Failed.All(f => f.Kind == FailureKind.Duplicate))
-                return Results.Conflict(response);
-
-            return Results.BadRequest(response);
+            return result.IsSuccess
+                ? Results.Accepted(value: result.Value)
+                : Results.UnprocessableEntity(new { error = result.Error });
         })
         .DisableAntiforgery()
-        .RequireRateLimiting("upload-concurrency")
         .WithName("UploadReceiptFiles")
-        .WithSummary("Upload and process one or more receipt files (PDF, JPG, PNG, WEBP)");
+        .WithSummary("Upload one or more receipt files — returns 202 Accepted with per-file job IDs for polling");
 
         receiptFiles.MapGet("/", async (
             GetReceiptFilesHandler handler,
@@ -61,6 +47,40 @@ public static class ReceiptFileEndpoints
         })
         .WithName("GetReceiptFiles")
         .WithSummary("List all uploaded receipt files");
+
+        receiptFiles.MapGet("/{id:guid}/status", async (
+            Guid id,
+            GetReceiptFileStatusHandler handler,
+            CancellationToken ct) =>
+        {
+            var result = await handler.HandleAsync(new GetReceiptFileStatusQuery(id), ct);
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : Results.NotFound();
+        })
+        .WithName("GetReceiptFileStatus")
+        .WithSummary("Get the current processing status for a receipt file (D-13 polling endpoint)");
+
+        receiptFiles.MapPost("/{id:guid}/cancel", async (
+            Guid id,
+            CancelReceiptFileHandler handler,
+            CancellationToken ct) =>
+        {
+            var result = await handler.HandleAsync(new CancelReceiptFileCommand(id), ct);
+            if (result.IsSuccess) return Results.NoContent();
+            return result.Error switch
+            {
+                "NotFound" => Results.NotFound(),
+                "TerminalState" => Results.Conflict(new
+                {
+                    error = "Beleg ist bereits fertig verarbeitet — Abbruch nicht möglich.",
+                    errorCode = "TerminalState"
+                }),
+                _ => Results.BadRequest()
+            };
+        })
+        .WithName("CancelReceiptFile")
+        .WithSummary("Cancel processing of a receipt file; returns 204 on success, 409 for terminal state, 404 if not found");
 
         receiptFiles.MapDelete("/{id:guid}", async (
             Guid id,
