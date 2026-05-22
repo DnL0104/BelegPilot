@@ -63,11 +63,12 @@ const vendorColors: Record<string, string> = {
 
 interface ReceiptsTableProps {
   year?: number;
+  refetchInterval?: number | false;
 }
 
-export function ReceiptsTable({ year }: ReceiptsTableProps) {
+export function ReceiptsTable({ year, refetchInterval }: ReceiptsTableProps) {
   const router = useRouter();
-  const { data: receipts, isLoading } = useReceipts(year);
+  const { data: receipts, isLoading } = useReceipts(year, { refetchInterval });
   const bulkDeleteMutation = useBulkDeleteFiles();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 

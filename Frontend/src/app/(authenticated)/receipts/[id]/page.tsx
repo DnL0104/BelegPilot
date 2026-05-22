@@ -8,11 +8,13 @@ import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReceiptItemsTable } from "@/components/receipts/receipt-items-table";
 import { useReceiptById } from "@/hooks/use-receipts";
-import { useDeleteFile } from "@/hooks/use-receipt-files";
+import { useDeleteFile, useReceiptFileStatus } from "@/hooks/use-receipt-files";
 import { useReclassifyReceipt } from "@/hooks/use-receipt-items";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { isTerminal } from "@/types/api";
 
 export default function ReceiptDetailPage({
   params,
@@ -22,8 +24,14 @@ export default function ReceiptDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { data: receipt, isLoading } = useReceiptById(id);
+  const { data: statusData } = useReceiptFileStatus(id);
   const deleteMutation = useDeleteFile();
   const reclassifyMutation = useReclassifyReceipt();
+
+  const processingStatus = statusData?.status;
+  const isProcessing = processingStatus && !isTerminal(processingStatus);
+  const isFailed =
+    processingStatus === "Failed" || processingStatus === "Cancelled";
 
   const handleReclassify = async () => {
     try {
@@ -142,7 +150,24 @@ export default function ReceiptDetailPage({
                   Artikel ({receipt.itemCount})
                 </h3>
               </div>
-              <ReceiptItemsTable receiptId={id} />
+
+              {isFailed ? (
+                <div className="p-6">
+                  <Alert variant="destructive">
+                    <AlertTitle>Verarbeitung fehlgeschlagen</AlertTitle>
+                    <AlertDescription>
+                      {statusData?.errorMessage ?? "Unbekannter Fehler."}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              ) : isProcessing ? (
+                <div className="p-6 space-y-3">
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-8 w-2/3" />
+                </div>
+              ) : (
+                <ReceiptItemsTable receiptId={id} />
+              )}
             </div>
           </>
         ) : (
