@@ -124,7 +124,10 @@ public static class TestDataFactory
 
     public static ClassificationRule CreateRule(
         Guid? id = null,
-        string pattern = "Tinte",
+        string? descriptionPattern = "Tinte",
+        string? vendorPattern = null,
+        string? sourceFilePattern = null,
+        Guid? userId = null,
         Category category = Category.WerbungskostenBueromaterial,
         int priority = 10,
         bool isActive = true)
@@ -132,7 +135,10 @@ public static class TestDataFactory
         return new ClassificationRule
         {
             Id = id ?? Guid.NewGuid(),
-            Pattern = pattern,
+            UserId = userId,
+            DescriptionPattern = descriptionPattern,
+            VendorPattern = vendorPattern,
+            SourceFilePattern = sourceFilePattern,
             Category = category,
             Priority = priority,
             IsActive = isActive,
