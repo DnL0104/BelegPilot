@@ -123,9 +123,12 @@ public static class DependencyInjection
         // Token / credit system
         services.AddScoped<ITokenService, TokenService>();
 
-        // Classification — AI decides first, user confirms manually via UI.
-        // No keyword rules are used.
-        services.AddScoped<IClassificationService, AiOnlyClassificationService>();
+        // Phase 4 D-07: HybridClassificationService is the registered IClassificationService.
+        // AiOnlyClassificationService stays as a concrete registration so HybridClassificationService
+        // can inject it directly. RuleBasedClassifier is injected into HybridClassificationService.
+        services.AddScoped<AiOnlyClassificationService>();
+        services.AddScoped<RuleBasedClassifier>();
+        services.AddScoped<IClassificationService, HybridClassificationService>();
 
         // Parsers — order matters: specific parsers first, generic last
         services.AddScoped<IReceiptParser, AmazonParser>();
