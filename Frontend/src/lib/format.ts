@@ -21,14 +21,19 @@ export function formatFileSize(bytes: number): string {
 
 export function categoryLabel(category: string): string {
   const labels: Record<string, string> = {
-    ConsumablesAndOfficeSupplies: "Bürobedarf & Verbrauchsmaterial",
-    SpecialistLiterature: "Fachliteratur",
-    TeachingMaterials: "Unterrichtsmaterial",
-    DigitalToolsAndSoftware: "Digitale Tools & Software",
-    OfficeEquipment: "Büroausstattung",
-    TravelAndCommuting: "Fahrtkosten & Reisen",
-    ProfessionalDevelopment: "Fortbildung",
-    Unknown: "Nicht zugeordnet",
+    Unbekannt: "Nicht zugeordnet",
+    WerbungskostenArbeitsmittel: "Werbungskosten – Arbeitsmittel",
+    WerbungskostenFachliteratur: "Werbungskosten – Fachliteratur",
+    WerbungskostenBueromaterial: "Werbungskosten – Büromaterial",
+    WerbungskostenReisekosten: "Werbungskosten – Reisekosten",
+    WerbungskostenFortbildung: "Werbungskosten – Fortbildung",
+    WerbungskostenTelekommunikation: "Werbungskosten – Telekommunikation",
+    SonderausgabenSpenden: "Sonderausgaben – Spenden",
+    SonderausgabenVorsorgeaufwendungen: "Sonderausgaben – Vorsorgeaufwendungen",
+    AussergewoehnlicheBelastungenKrankheit: "Außergewöhnliche Belastungen – Krankheit",
+    HaushaltsnaheDienstleistung: "Haushaltsnahe Dienstleistung",
+    Handwerkerleistung: "Handwerkerleistung",
+    Privat: "Privat",
   };
   return labels[category] ?? category;
 }

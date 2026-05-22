@@ -30,13 +30,19 @@ interface ClassifyDialogProps {
 }
 
 const categories: Category[] = [
-  "ConsumablesAndOfficeSupplies",
-  "SpecialistLiterature",
-  "TeachingMaterials",
-  "DigitalToolsAndSoftware",
-  "OfficeEquipment",
-  "TravelAndCommuting",
-  "ProfessionalDevelopment",
+  "WerbungskostenArbeitsmittel",
+  "WerbungskostenFachliteratur",
+  "WerbungskostenBueromaterial",
+  "WerbungskostenReisekosten",
+  "WerbungskostenFortbildung",
+  "WerbungskostenTelekommunikation",
+  "SonderausgabenSpenden",
+  "SonderausgabenVorsorgeaufwendungen",
+  "AussergewoehnlicheBelastungenKrankheit",
+  "HaushaltsnaheDienstleistung",
+  "Handwerkerleistung",
+  "Privat",
+  "Unbekannt",
 ];
 
 export function ClassifyDialog({
@@ -51,11 +57,11 @@ export function ClassifyDialog({
   const isSuggested = item?.latestClassification?.status === "Suggested";
   const isConfirmed = item?.latestClassification?.status === "Confirmed";
   const isUnknown =
-    !suggestedCategory || suggestedCategory === "Unknown";
+    !suggestedCategory || suggestedCategory === "Unbekannt";
   const failureReason = item?.latestClassification?.reason ?? "";
 
   useEffect(() => {
-    if (open && suggestedCategory && suggestedCategory !== "Unknown") {
+    if (open && suggestedCategory && suggestedCategory !== "Unbekannt") {
       setCategory(suggestedCategory);
     } else if (open) {
       setCategory("");
@@ -76,7 +82,7 @@ export function ClassifyDialog({
   };
 
   const handleQuickConfirm = async () => {
-    if (!item || !suggestedCategory || suggestedCategory === "Unknown") return;
+    if (!item || !suggestedCategory || suggestedCategory === "Unbekannt") return;
 
     try {
       await mutation.mutateAsync({ itemId: item.id, category: suggestedCategory });
@@ -103,7 +109,7 @@ export function ClassifyDialog({
             <span className="text-lg font-semibold">{item ? formatCurrency(item.totalPrice) : "—"}</span>
           </div>
 
-          {isSuggested && suggestedCategory && suggestedCategory !== "Unknown" && (
+          {isSuggested && suggestedCategory && suggestedCategory !== "Unbekannt" && (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />

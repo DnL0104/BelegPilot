@@ -34,6 +34,7 @@ export interface Receipt {
   itemCount: number;
   suggestedCount: number;
   unknownCount: number;
+  hasSumMismatch: boolean;
 }
 
 // --- Batch upload response (202 Accepted — D-03) ---
@@ -68,6 +69,18 @@ export interface ItemClassification {
   status: string;
   reason: string;
   classifiedAt: string;
+}
+
+export interface ClassificationRule {
+  id: string;
+  userId: string | null;
+  vendorPattern: string | null;
+  sourceFilePattern: string | null;
+  descriptionPattern: string | null;
+  category: Category;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface CategoryTotal {
@@ -113,14 +126,19 @@ export interface PendingSuggestion {
 }
 
 export type Category =
-  | "Unknown"
-  | "ConsumablesAndOfficeSupplies"
-  | "SpecialistLiterature"
-  | "TeachingMaterials"
-  | "DigitalToolsAndSoftware"
-  | "OfficeEquipment"
-  | "TravelAndCommuting"
-  | "ProfessionalDevelopment";
+  | "Unbekannt"
+  | "WerbungskostenArbeitsmittel"
+  | "WerbungskostenFachliteratur"
+  | "WerbungskostenBueromaterial"
+  | "WerbungskostenReisekosten"
+  | "WerbungskostenFortbildung"
+  | "WerbungskostenTelekommunikation"
+  | "SonderausgabenSpenden"
+  | "SonderausgabenVorsorgeaufwendungen"
+  | "AussergewoehnlicheBelastungenKrankheit"
+  | "HaushaltsnaheDienstleistung"
+  | "Handwerkerleistung"
+  | "Privat";
 
 /** Mirrors backend ProcessingStatus enum (D-06). PascalCase to match string-serialised enum. */
 export type ProcessingStatus =
