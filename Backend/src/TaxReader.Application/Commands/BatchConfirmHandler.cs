@@ -34,7 +34,7 @@ public class BatchConfirmHandler(IAppDbContext dbContext, ICurrentUser currentUs
             // Only confirm items that have a Suggested classification with a real category.
             if (latest is null
                 || latest.Status != ClassificationStatus.Suggested
-                || latest.Category == Category.Unknown)
+                || latest.Category == Category.Unbekannt)
                 continue;
 
             var confirmation = new ItemClassification

@@ -44,9 +44,9 @@ public class GetCategoryTotalsHandlerTests : IDisposable
             receiptId: receipt.Id, description: "Fachbuch", unitPrice: 25.00m, lineNumber: 2);
 
         var class1 = TestDataFactory.CreateClassification(
-            receiptItemId: item1.Id, category: Category.ConsumablesAndOfficeSupplies);
+            receiptItemId: item1.Id, category: Category.WerbungskostenBueromaterial);
         var class2 = TestDataFactory.CreateClassification(
-            receiptItemId: item2.Id, category: Category.SpecialistLiterature);
+            receiptItemId: item2.Id, category: Category.WerbungskostenFachliteratur);
 
         _dbContext.ReceiptFiles.Add(file);
         _dbContext.Receipts.Add(receipt);
@@ -58,8 +58,8 @@ public class GetCategoryTotalsHandlerTests : IDisposable
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(2);
-        result.Value!.Should().Contain(c => c.Category == "ConsumablesAndOfficeSupplies" && c.TotalAmount == 15.00m);
-        result.Value.Should().Contain(c => c.Category == "SpecialistLiterature" && c.TotalAmount == 25.00m);
+        result.Value!.Should().Contain(c => c.Category == "WerbungskostenBueromaterial" && c.TotalAmount == 15.00m);
+        result.Value.Should().Contain(c => c.Category == "WerbungskostenFachliteratur" && c.TotalAmount == 25.00m);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class GetCategoryTotalsHandlerTests : IDisposable
             purchaseDate: new DateOnly(2025, 1, 1));
         var item = TestDataFactory.CreateReceiptItem(receiptId: receipt.Id, unitPrice: 10.00m);
         var classification = TestDataFactory.CreateClassification(
-            receiptItemId: item.Id, category: Category.Unknown);
+            receiptItemId: item.Id, category: Category.Unbekannt);
 
         _dbContext.ReceiptFiles.Add(file);
         _dbContext.Receipts.Add(receipt);

@@ -31,7 +31,7 @@ public class GetExportDataHandler(IAppDbContext dbContext, ICurrentUser currentU
                     .OrderByDescending(c => c.ClassifiedAt)
                     .FirstOrDefault();
 
-                var category = latest?.Category ?? Category.Unknown;
+                var category = latest?.Category ?? Category.Unbekannt;
                 var status = latest?.Status.ToString() ?? "None";
                 var method = latest?.Method.ToString() ?? "None";
                 var reason = latest?.Reason;

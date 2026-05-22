@@ -87,7 +87,7 @@ public class AiOnlyClassificationService(
             var item = itemList[i];
             var result = results[i];
 
-            if (result.Category == Category.Unknown)
+            if (result.Category == Category.Unbekannt)
             {
                 refunds.Add(new TokenLedgerEntry(
                     cost,
@@ -128,7 +128,7 @@ public class AiOnlyClassificationService(
     {
         Id = Guid.NewGuid(),
         ReceiptItemId = item.Id,
-        Category = Category.Unknown,
+        Category = Category.Unbekannt,
         Method = ClassificationMethod.AI,
         Status = ClassificationStatus.Suggested,
         Reason = reason,

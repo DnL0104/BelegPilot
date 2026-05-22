@@ -40,7 +40,7 @@ public class GetAnnualSummaryHandlerTests : IDisposable
             totalAmount: 30.00m);
         var item = TestDataFactory.CreateReceiptItem(receiptId: receipt.Id, unitPrice: 30.00m);
         var classification = TestDataFactory.CreateClassification(
-            receiptItemId: item.Id, category: Category.ConsumablesAndOfficeSupplies);
+            receiptItemId: item.Id, category: Category.WerbungskostenBueromaterial);
 
         _dbContext.ReceiptFiles.Add(file);
         _dbContext.Receipts.Add(receipt);
@@ -68,7 +68,7 @@ public class GetAnnualSummaryHandlerTests : IDisposable
             purchaseDate: new DateOnly(2025, 1, 1));
         var item = TestDataFactory.CreateReceiptItem(receiptId: receipt.Id);
         var classification = TestDataFactory.CreateClassification(
-            receiptItemId: item.Id, category: Category.Unknown);
+            receiptItemId: item.Id, category: Category.Unbekannt);
 
         _dbContext.ReceiptFiles.Add(file);
         _dbContext.Receipts.Add(receipt);

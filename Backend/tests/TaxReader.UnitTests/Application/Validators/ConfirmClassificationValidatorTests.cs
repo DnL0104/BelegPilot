@@ -15,7 +15,7 @@ public class ConfirmClassificationValidatorTests
     {
         var command = new ConfirmClassificationCommand(
             Guid.NewGuid(),
-            Category.ConsumablesAndOfficeSupplies);
+            Category.WerbungskostenBueromaterial);
 
         var result = _validator.TestValidate(command);
 
@@ -27,7 +27,7 @@ public class ConfirmClassificationValidatorTests
     {
         var command = new ConfirmClassificationCommand(
             Guid.Empty,
-            Category.ConsumablesAndOfficeSupplies);
+            Category.WerbungskostenBueromaterial);
 
         var result = _validator.TestValidate(command);
 
@@ -39,7 +39,7 @@ public class ConfirmClassificationValidatorTests
     {
         var command = new ConfirmClassificationCommand(
             Guid.NewGuid(),
-            Category.Unknown);
+            Category.Unbekannt);
 
         var result = _validator.TestValidate(command);
 

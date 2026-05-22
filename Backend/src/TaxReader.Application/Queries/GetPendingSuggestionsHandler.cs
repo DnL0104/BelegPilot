@@ -33,7 +33,7 @@ public partial class GetPendingSuggestionsHandler(IAppDbContext dbContext, ICurr
             })
             .Where(x => x.Latest is not null
                      && x.Latest.Status == ClassificationStatus.Suggested
-                     && x.Latest.Category != Category.Unknown)
+                     && x.Latest.Category != Category.Unbekannt)
             .Select(x => new PendingSuggestionDto(
                 x.Item.Id,
                 x.Item.ReceiptId,

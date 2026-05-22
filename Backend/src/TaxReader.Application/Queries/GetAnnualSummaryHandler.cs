@@ -31,12 +31,12 @@ public class GetAnnualSummaryHandler(IAppDbContext dbContext, ICurrentUser curre
                 var latest = item.Classifications
                     .OrderByDescending(c => c.ClassifiedAt)
                     .FirstOrDefault();
-                return new { Item = item, Category = latest?.Category ?? Category.Unknown };
+                return new { Item = item, Category = latest?.Category ?? Category.Unbekannt };
             })
             .ToList();
 
         var categoryBreakdown = classifiedItems
-            .Where(x => x.Category != Category.Unknown)
+            .Where(x => x.Category != Category.Unbekannt)
             .GroupBy(x => x.Category)
             .Select(g => new CategoryTotalDto(
                 g.Key.ToString(),
@@ -44,7 +44,7 @@ public class GetAnnualSummaryHandler(IAppDbContext dbContext, ICurrentUser curre
                 g.Count()))
             .ToList();
 
-        var unclassifiedCount = classifiedItems.Count(x => x.Category == Category.Unknown);
+        var unclassifiedCount = classifiedItems.Count(x => x.Category == Category.Unbekannt);
 
         var summary = new AnnualSummaryDto(
             query.Year,

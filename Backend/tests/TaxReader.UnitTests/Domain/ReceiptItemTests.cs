@@ -31,19 +31,19 @@ public class ReceiptItemTests
 
         var older = TestDataFactory.CreateClassification(
             receiptItemId: item.Id,
-            category: Category.Unknown);
+            category: Category.Unbekannt);
         older.ClassifiedAt = DateTime.UtcNow.AddHours(-2);
 
         var newer = TestDataFactory.CreateClassification(
             receiptItemId: item.Id,
-            category: Category.SpecialistLiterature);
+            category: Category.WerbungskostenFachliteratur);
         newer.ClassifiedAt = DateTime.UtcNow;
 
         item.Classifications.Add(older);
         item.Classifications.Add(newer);
 
         item.LatestClassification.Should().Be(newer);
-        item.LatestClassification!.Category.Should().Be(Category.SpecialistLiterature);
+        item.LatestClassification!.Category.Should().Be(Category.WerbungskostenFachliteratur);
     }
 
     [Fact]

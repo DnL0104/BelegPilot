@@ -48,14 +48,14 @@ public class DtoMappingExtensionsTests
         var item = TestDataFactory.CreateReceiptItem(description: "Tinte blau");
         var classification = TestDataFactory.CreateClassification(
             receiptItemId: item.Id,
-            category: Category.ConsumablesAndOfficeSupplies);
+            category: Category.WerbungskostenBueromaterial);
         item.Classifications.Add(classification);
 
         var dto = item.ToDto();
 
         dto.Description.Should().Be("Tinte blau");
         dto.LatestClassification.Should().NotBeNull();
-        dto.LatestClassification!.Category.Should().Be("ConsumablesAndOfficeSupplies");
+        dto.LatestClassification!.Category.Should().Be("WerbungskostenBueromaterial");
     }
 
     [Fact]
@@ -72,13 +72,13 @@ public class DtoMappingExtensionsTests
     public void ToDto_ItemClassification_MapsEnumsAsStrings()
     {
         var classification = TestDataFactory.CreateClassification(
-            category: Category.SpecialistLiterature,
+            category: Category.WerbungskostenFachliteratur,
             method: ClassificationMethod.Manual,
             status: ClassificationStatus.Confirmed);
 
         var dto = classification.ToDto();
 
-        dto.Category.Should().Be("SpecialistLiterature");
+        dto.Category.Should().Be("WerbungskostenFachliteratur");
         dto.Method.Should().Be("Manual");
         dto.Status.Should().Be("Confirmed");
     }

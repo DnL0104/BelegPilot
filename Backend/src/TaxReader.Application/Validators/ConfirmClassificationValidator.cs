@@ -17,7 +17,7 @@ public class ConfirmClassificationValidator : AbstractValidator<ConfirmClassific
             .WithMessage("Category must be a valid value.");
 
         RuleFor(x => x.Category)
-            .NotEqual(Category.Unknown)
-            .WithMessage("Category must not be Unknown when confirming.");
+            .NotEqual(Category.Unbekannt)
+            .WithMessage("Category must not be Unbekannt when confirming.");
     }
 }
