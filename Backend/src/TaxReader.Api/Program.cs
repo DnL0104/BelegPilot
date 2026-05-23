@@ -109,6 +109,8 @@ try
     builder.Services.AddScoped<UpdateUserSettingsHandler>();
     builder.Services.AddScoped<GetReceiptFileStatusHandler>();
     builder.Services.AddScoped<CancelReceiptFileHandler>();
+    builder.Services.AddScoped<SaveClassificationRuleHandler>();
+    builder.Services.AddScoped<AcknowledgeSumMismatchHandler>();
 
     // D-23: cleanup jobs (Scoped so the IRecurringJobManager can resolve them per-fire).
     builder.Services.AddScoped<RefreshTokenCleanupJob>();

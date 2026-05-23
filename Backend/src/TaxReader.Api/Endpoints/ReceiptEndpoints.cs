@@ -68,6 +68,21 @@ public static class ReceiptEndpoints
         .WithName("ReclassifyReceipt")
         .WithSummary("Re-run AI classification on all items of a receipt");
 
+        receipts.MapPost("/{id:guid}/acknowledge-sum", async (
+            Guid id,
+            AcknowledgeSumMismatchHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(
+                new AcknowledgeSumMismatchCommand(id), cancellationToken);
+
+            return result.IsSuccess
+                ? Results.NoContent()
+                : Results.NotFound(new { error = result.Error });
+        })
+        .WithName("AcknowledgeSumMismatch")
+        .WithSummary("Dismiss the sum-mismatch warning on a receipt");
+
         return group;
     }
 }

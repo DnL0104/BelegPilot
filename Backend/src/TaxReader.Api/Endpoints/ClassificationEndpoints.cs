@@ -11,6 +11,39 @@ public static class ClassificationEndpoints
         var classification = group.MapGroup("/receipt-items")
             .WithTags("Classification");
 
+        classification.MapPost("/{id:guid}/save-rule", async (
+            Guid id,
+            SaveRuleRequest request,
+            SaveClassificationRuleHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            // D-12: at least one pattern field must be non-empty
+            if (string.IsNullOrWhiteSpace(request.VendorPattern)
+                && string.IsNullOrWhiteSpace(request.DescriptionPattern)
+                && string.IsNullOrWhiteSpace(request.SourceFilePattern))
+                return Results.BadRequest(new { error = "Mindestens ein Musterfeld muss angegeben werden." });
+
+            if (!Enum.TryParse<Category>(request.Category, true, out var category))
+                return Results.BadRequest(new { error = $"Ungültige Kategorie: {request.Category}" });
+
+            var command = new SaveClassificationRuleCommand(
+                id,
+                string.IsNullOrWhiteSpace(request.VendorPattern) ? null : request.VendorPattern,
+                string.IsNullOrWhiteSpace(request.DescriptionPattern) ? null : request.DescriptionPattern,
+                string.IsNullOrWhiteSpace(request.SourceFilePattern) ? null : request.SourceFilePattern,
+                category);
+
+            var result = await handler.HandleAsync(command, cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/classification-rules/{result.Value!.Id}", result.Value)
+                : result.Error!.Contains("identische Regel")
+                    ? Results.Conflict(new { error = result.Error })
+                    : Results.NotFound(new { error = result.Error });
+        })
+        .WithName("SaveClassificationRule")
+        .WithSummary("Save a user classification rule derived from a manual override");
+
         classification.MapPost("/{id:guid}/confirm", async (
             Guid id,
             ConfirmClassificationRequest request,
@@ -63,3 +96,8 @@ public static class ClassificationEndpoints
 
 public record ConfirmClassificationRequest(string Category);
 public record BatchConfirmRequest(IReadOnlyList<Guid> ItemIds);
+public record SaveRuleRequest(
+    string? VendorPattern,
+    string? DescriptionPattern,
+    string? SourceFilePattern,
+    string Category);

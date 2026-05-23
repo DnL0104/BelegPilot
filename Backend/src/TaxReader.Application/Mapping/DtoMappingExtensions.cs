@@ -70,4 +70,15 @@ public static class DtoMappingExtensions
             entity.Status.ToString(),
             entity.Reason,
             entity.ClassifiedAt);
+
+    public static ClassificationRuleDto ToDto(this ClassificationRule rule) => new(
+        rule.Id,
+        rule.UserId,
+        rule.VendorPattern,
+        rule.DescriptionPattern,
+        rule.SourceFilePattern,
+        rule.Category.ToString(),
+        rule.Priority,
+        rule.IsActive,
+        rule.CreatedAt);
 }
