@@ -19,6 +19,9 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
         builder.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
         builder.Property(e => e.Currency).IsRequired().HasMaxLength(10).HasDefaultValue("EUR");
         builder.Property(e => e.RawExtractedText).IsRequired();
+        builder.Property(e => e.HasSumMismatch)
+            .HasDefaultValue(false)
+            .IsRequired();
 
         builder.HasIndex(e => e.ReceiptFileId).IsUnique();
         builder.HasIndex(e => e.PurchaseDate);
