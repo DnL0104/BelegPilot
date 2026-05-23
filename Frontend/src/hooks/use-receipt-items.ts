@@ -8,6 +8,8 @@ import {
   batchConfirmClassifications,
   reclassifyReceipt,
   getPendingSuggestions,
+  saveClassificationRule,
+  type SaveRulePayload,
 } from "@/lib/api-client";
 
 export function useReceiptItems(receiptId: string) {
@@ -64,5 +66,19 @@ export function useReclassifyReceipt() {
       queryClient.invalidateQueries({ queryKey: queryKeys.receipts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.classifications.pendingSuggestions });
     },
+  });
+}
+
+export function useSaveClassificationRule() {
+  return useMutation({
+    mutationFn: ({
+      itemId,
+      payload,
+    }: {
+      itemId: string;
+      payload: SaveRulePayload;
+    }) => saveClassificationRule(itemId, payload),
+    // Rules don't change existing classifications — no cache invalidation needed.
+    // The toast in the dialog signals success to the user.
   });
 }

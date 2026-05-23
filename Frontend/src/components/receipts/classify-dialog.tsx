@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Loader2, Check, Sparkles, AlertTriangle } from "lucide-react";
+import { Loader2, Check, Sparkles, AlertTriangle, BookmarkPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,11 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useConfirmClassification } from "@/hooks/use-receipt-items";
+import { SaveRuleDialog } from "./save-rule-dialog";
 import type { ReceiptItem, Category } from "@/types/api";
 import { categoryLabel, formatCurrency } from "@/lib/format";
 
 interface ClassifyDialogProps {
   item: ReceiptItem | null;
+  vendor: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -47,10 +49,12 @@ const categories: Category[] = [
 
 export function ClassifyDialog({
   item,
+  vendor,
   open,
   onOpenChange,
 }: ClassifyDialogProps) {
   const [category, setCategory] = useState<string>("");
+  const [saveRuleOpen, setSaveRuleOpen] = useState(false);
   const mutation = useConfirmClassification();
 
   const suggestedCategory = item?.latestClassification?.category;
@@ -94,6 +98,7 @@ export function ClassifyDialog({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -188,6 +193,16 @@ export function ClassifyDialog({
         </div>
 
         <DialogFooter>
+          {category && category !== item?.latestClassification?.category && (
+            <Button
+              variant="outline"
+              onClick={() => setSaveRuleOpen(true)}
+              disabled={mutation.isPending}
+            >
+              <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" />
+              Diese Regel speichern
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
@@ -203,5 +218,14 @@ export function ClassifyDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <SaveRuleDialog
+      item={item}
+      category={category}
+      vendor={vendor}
+      open={saveRuleOpen}
+      onOpenChange={setSaveRuleOpen}
+    />
+    </>
   );
 }

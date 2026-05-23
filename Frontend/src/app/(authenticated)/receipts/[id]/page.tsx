@@ -3,14 +3,14 @@
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trash2, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReceiptItemsTable } from "@/components/receipts/receipt-items-table";
-import { useReceiptById } from "@/hooks/use-receipts";
+import { useReceiptById, useAcknowledgeSumMismatch } from "@/hooks/use-receipts";
 import { useDeleteFile, useReceiptFileStatus } from "@/hooks/use-receipt-files";
 import { useReclassifyReceipt } from "@/hooks/use-receipt-items";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -27,6 +27,7 @@ export default function ReceiptDetailPage({
   const { data: statusData } = useReceiptFileStatus(id);
   const deleteMutation = useDeleteFile();
   const reclassifyMutation = useReclassifyReceipt();
+  const acknowledgeMutation = useAcknowledgeSumMismatch();
 
   const processingStatus = statusData?.status;
   const isProcessing = processingStatus && !isTerminal(processingStatus);
@@ -144,11 +145,39 @@ export default function ReceiptDetailPage({
               </div>
             </div>
 
+            {receipt.hasSumMismatch && (
+              <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle className="text-amber-800 dark:text-amber-300">
+                  Summe stimmt nicht überein
+                </AlertTitle>
+                <AlertDescription className="flex items-center justify-between gap-4">
+                  <span>
+                    Die Summe der Artikel weicht von der Belegsumme ab. Bitte prüfen.
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => acknowledgeMutation.mutate(id)}
+                    disabled={acknowledgeMutation.isPending}
+                  >
+                    {acknowledgeMutation.isPending && (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    )}
+                    Als geprüft markieren
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
               <div className="border-b border-border px-6 py-4">
                 <h3 className="text-[15px] font-semibold">
                   Artikel ({receipt.itemCount})
                 </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Warum wurde das so eingeordnet? Die Begründung erscheint unter jeder Kategorie.
+                </p>
               </div>
 
               {isFailed ? (
@@ -166,7 +195,7 @@ export default function ReceiptDetailPage({
                   <Skeleton className="h-8 w-2/3" />
                 </div>
               ) : (
-                <ReceiptItemsTable receiptId={id} />
+                <ReceiptItemsTable receiptId={id} vendor={receipt.vendor} />
               )}
             </div>
           </>

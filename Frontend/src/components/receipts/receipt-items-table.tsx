@@ -21,9 +21,10 @@ import type { ReceiptItem } from "@/types/api";
 
 interface ReceiptItemsTableProps {
   receiptId: string;
+  vendor?: string;
 }
 
-export function ReceiptItemsTable({ receiptId }: ReceiptItemsTableProps) {
+export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableProps) {
   const { data: items, isLoading } = useReceiptItems(receiptId);
   const batchConfirmMutation = useBatchConfirm();
   const [classifyItem, setClassifyItem] = useState<ReceiptItem | null>(null);
@@ -207,6 +208,12 @@ export function ReceiptItemsTable({ receiptId }: ReceiptItemsTableProps) {
                 <ClassificationBadge
                   classification={item.latestClassification}
                 />
+                {item.latestClassification?.reason && (
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    <span className="font-medium">Warum wurde das so eingeordnet?</span>{" "}
+                    {item.latestClassification.reason}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -280,6 +287,12 @@ export function ReceiptItemsTable({ receiptId }: ReceiptItemsTableProps) {
                     <ClassificationBadge
                       classification={item.latestClassification}
                     />
+                    {item.latestClassification?.reason && (
+                      <div className="text-xs text-muted-foreground mt-0.5 max-w-xs">
+                        <span className="font-medium">Warum wurde das so eingeordnet?</span>{" "}
+                        {item.latestClassification.reason}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <button
@@ -309,6 +322,7 @@ export function ReceiptItemsTable({ receiptId }: ReceiptItemsTableProps) {
 
       <ClassifyDialog
         item={classifyItem}
+        vendor={vendor}
         open={!!classifyItem}
         onOpenChange={(open) => {
           if (!open) setClassifyItem(null);

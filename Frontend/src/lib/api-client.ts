@@ -5,6 +5,7 @@ import type {
   Receipt,
   ReceiptItem,
   ItemClassification,
+  ClassificationRule,
   CategoryTotal,
   AnnualSummary,
   TokenBalance,
@@ -297,4 +298,28 @@ export async function getTokenTransactions(
 export async function purchaseTokens(amount: number): Promise<TokenBalance> {
   const { data } = await api.post<TokenBalance>("/tokens/purchase", { amount });
   return data;
+}
+
+// --- Classification rules ---
+
+export interface SaveRulePayload {
+  vendorPattern?: string | null;
+  descriptionPattern?: string | null;
+  sourceFilePattern?: string | null;
+  category: string;
+}
+
+export async function saveClassificationRule(
+  itemId: string,
+  payload: SaveRulePayload
+): Promise<ClassificationRule> {
+  const { data } = await api.post<ClassificationRule>(
+    `/receipt-items/${itemId}/save-rule`,
+    payload
+  );
+  return data;
+}
+
+export async function acknowledgeSumMismatch(receiptId: string): Promise<void> {
+  await api.post(`/receipts/${receiptId}/acknowledge-sum`);
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import { getReceipts, getReceiptById } from "@/lib/api-client";
+import { getReceipts, getReceiptById, acknowledgeSumMismatch } from "@/lib/api-client";
 
 export function useReceipts(
   year?: number,
@@ -20,5 +20,17 @@ export function useReceiptById(id: string) {
     queryKey: queryKeys.receipts.detail(id),
     queryFn: () => getReceiptById(id),
     enabled: !!id,
+  });
+}
+
+export function useAcknowledgeSumMismatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (receiptId: string) => acknowledgeSumMismatch(receiptId),
+    onSuccess: (_data, receiptId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.receipts.detail(receiptId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.receipts.all });
+    },
   });
 }
