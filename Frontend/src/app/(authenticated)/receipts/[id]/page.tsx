@@ -24,7 +24,12 @@ export default function ReceiptDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { data: receipt, isLoading } = useReceiptById(id);
-  const { data: statusData } = useReceiptFileStatus(id);
+  // Status polling uses the receipt FILE id, not the receipt id.
+  // The receipt file is the parent entity; the receipt is derived from it.
+  const { data: statusData } = useReceiptFileStatus(
+    receipt?.receiptFileId ?? "",
+    { enabled: !!receipt?.receiptFileId }
+  );
   const deleteMutation = useDeleteFile();
   const reclassifyMutation = useReclassifyReceipt();
   const acknowledgeMutation = useAcknowledgeSumMismatch();
