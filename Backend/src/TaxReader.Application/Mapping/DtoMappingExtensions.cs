@@ -47,6 +47,7 @@ public static class DtoMappingExtensions
             entity.Items.Count,
             suggestedCount,
             unknownCount,
+            entity.HasSumMismatch,
             includeRawText ? entity.RawExtractedText : null);
     }
 

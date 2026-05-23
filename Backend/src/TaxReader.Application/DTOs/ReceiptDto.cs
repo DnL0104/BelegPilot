@@ -13,4 +13,5 @@ public record ReceiptDto(
     int ItemCount,
     int SuggestedCount,
     int UnknownCount,
+    bool HasSumMismatch,
     string? RawExtractedText = null);

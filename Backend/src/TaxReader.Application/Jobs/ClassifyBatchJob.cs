@@ -116,6 +116,16 @@ public class ClassifyBatchJob(
             }
         }
 
+        // D-16: sum validation — compare item totals against receipt total (€0.50 absolute tolerance).
+        // Runs in the same SaveChangesAsync as the Completed status update.
+        foreach (var run in runs.Where(r => r.ReceiptFile.Receipt is not null))
+        {
+            var receipt = run.ReceiptFile.Receipt!;
+            var itemsSum = receipt.Items.Sum(i => i.TotalPrice);
+            if (Math.Abs(itemsSum - receipt.TotalAmount) > 0.50m)
+                receipt.HasSumMismatch = true;
+        }
+
         // Finalize: mark every run as Completed
         var now = DateTime.UtcNow;
         foreach (var r in runs)

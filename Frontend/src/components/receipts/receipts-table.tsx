@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Loader2, X, Check, Sparkles, HelpCircle } from "lucide-react";
+import { Trash2, Loader2, X, Check, Sparkles, HelpCircle, AlertTriangle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -213,6 +213,12 @@ export function ReceiptsTable({ year, refetchInterval }: ReceiptsTableProps) {
                       className={`h-2 w-2 rounded-full ${vendorColors[receipt.vendor] ?? "bg-muted-foreground"}`}
                     />
                     <span className="font-medium">{receipt.vendor}</span>
+                    {receipt.hasSumMismatch && (
+                      <AlertTriangle
+                        className="inline h-3.5 w-3.5 text-amber-500 ml-1"
+                        aria-label="Summe stimmt nicht überein"
+                      />
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
