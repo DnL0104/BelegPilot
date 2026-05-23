@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using TaxReader.Application.Interfaces;
+using TaxReader.Infrastructure.Data;
 
 namespace TaxReader.UnitTests.Helpers;
 
@@ -9,6 +13,11 @@ namespace TaxReader.UnitTests.Helpers;
 /// CorsConfigurationTests.BuildFactory but adds RefreshToken:HashKey seeding (32-byte
 /// zero pepper is fine for tests — only determinism matters) and accepts an arbitrary
 /// settings dictionary for per-test overrides.
+///
+/// EF Core is swapped to an in-memory provider so auth endpoints return 401 (user/token
+/// not found) rather than 500 (Postgres connection refused) when Postgres is not running.
+/// This lets rate-limit warm-up loops consume permits against clean 401s and the
+/// Nth+1 request can be asserted as 429. Pattern mirrors CookieAuthIntegrationTests.
 /// </summary>
 public static class RateLimitTestFactory
 {
@@ -17,6 +26,7 @@ public static class RateLimitTestFactory
         string? origins = null,
         Dictionary<string, string?>? extraSettings = null)
     {
+        var dbName = Guid.NewGuid().ToString();
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment(environment);
@@ -24,13 +34,6 @@ public static class RateLimitTestFactory
             builder.UseSetting("Jwt:Secret", "test-secret-test-secret-test-secret-1234");
             builder.UseSetting("Jwt:Issuer", "test");
             builder.UseSetting("Jwt:Audience", "test");
-            // Short connection timeout so rate-limit integration tests don't wait for
-            // a real Postgres handshake — the local DB isn't expected to be running.
-            // Each request fails fast (Npgsql times out in ~1 second) and the test
-            // can burn the per-minute policy budget well under the 60-second window.
-            builder.UseSetting(
-                "ConnectionStrings:DefaultConnection",
-                "Host=localhost;Port=5432;Database=test;Username=test;Password=test;Timeout=1;Command Timeout=1");
 
             // RefreshToken pepper — 32 zero bytes Base64-encoded. Tests that need a
             // non-zero pepper override this via extraSettings.
@@ -41,6 +44,30 @@ public static class RateLimitTestFactory
             // a Postgres database that isn't running. Tests that need real Postgres
             // (none today) override via extraSettings.
             builder.UseSetting("Hangfire:UseInMemoryStorage", "true");
+
+            // Swap EF Core from Npgsql to in-memory so auth endpoints return 401 (record
+            // not found) instead of 500 (Npgsql connection refused). Strip every EF/Npgsql
+            // descriptor before re-registering — UseInMemoryDatabase and UseNpgsql cannot
+            // share a service provider. Same pattern as CookieAuthIntegrationTests.
+            builder.ConfigureServices(services =>
+            {
+                var efDescriptors = services
+                    .Where(d => d.ServiceType.FullName is { } name
+                                && (name.Contains("Microsoft.EntityFrameworkCore", StringComparison.Ordinal)
+                                 || name.Contains("Npgsql", StringComparison.Ordinal)
+                                 || d.ServiceType == typeof(AppDbContext)
+                                 || d.ServiceType == typeof(IAppDbContext)))
+                    .ToList();
+                foreach (var descriptor in efDescriptors)
+                {
+                    services.Remove(descriptor);
+                }
+
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseInMemoryDatabase(dbName));
+                services.AddScoped<IAppDbContext>(sp =>
+                    sp.GetRequiredService<AppDbContext>());
+            });
 
             if (extraSettings is not null)
             {
