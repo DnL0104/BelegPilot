@@ -48,6 +48,21 @@ public partial class GenericParser : IReceiptParser
             ? ExtractTotal(rawText)
             : receipt.SubTotal + receipt.TaxAmount;
 
+        // Safety net: if exactly one item was found but its price differs substantially
+        // from the extracted total, the parser grabbed the wrong line (e.g. a quantity "1 €"
+        // instead of the actual price). Override with the reliably-extracted total so the
+        // item and subtotal are at least consistent. Same logic as AmazonParser.
+        if (receipt.Items.Count == 1 && receipt.TotalAmount > 0)
+        {
+            var singleItem = receipt.Items.First();
+            if (Math.Abs(singleItem.TotalPrice - receipt.TotalAmount) > 0.50m)
+            {
+                singleItem.TotalPrice = receipt.TotalAmount;
+                singleItem.UnitPrice  = receipt.TotalAmount / singleItem.Quantity;
+                receipt.SubTotal = receipt.TotalAmount;
+            }
+        }
+
         return receipt;
     }
 
@@ -102,14 +117,20 @@ public partial class GenericParser : IReceiptParser
         foreach (var line in lines)
         {
             // Only match prices with € symbol to avoid matching dates like 18.03.2026
-            var priceMatch = PriceRegex().Match(line);
-            if (!priceMatch.Success) continue;
+            var priceMatches = PriceRegex().Matches(line);
+            if (priceMatches.Count == 0) continue;
 
-            var priceStr = priceMatch.Groups["price"].Value.Replace(",", ".");
+            // Take the LAST price on the line — that's the line total (column layout
+            // puts unit price first, then quantity × unit = line total at the end).
+            // Taking the first price would grab "1 €" quantity markers or unit prices.
+            var lastMatch = priceMatches[^1];
+            var priceStr = lastMatch.Groups["price"].Value.Replace(",", ".");
             if (!decimal.TryParse(priceStr, CultureInfo.InvariantCulture, out var price) || price <= 0)
                 continue;
 
-            var description = line[..priceMatch.Index].Trim();
+            // Description = everything before the FIRST price (avoids carrying intermediate
+            // prices like unit price into the description string).
+            var description = line[..priceMatches[0].Index].Trim();
 
             // Skip total/sum lines and metadata lines
             if (string.IsNullOrWhiteSpace(description) || description.Length < 3)
