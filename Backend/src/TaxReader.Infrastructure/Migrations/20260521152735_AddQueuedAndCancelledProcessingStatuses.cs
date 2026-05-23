@@ -42,11 +42,15 @@ namespace TaxReader.Infrastructure.Migrations
             // are retained so the data-migration guarantee survives any future move to
             // integer storage. Source-grep tests in ProcessingRunStatusMigrationTests
             // lock the wording in place.
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 6 WHERE status = 5;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 5 WHERE status = 4;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 4 WHERE status = 3;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 3 WHERE status = 2;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 2 WHERE status = 1;");
+            // status column is character varying — use quoted string literals so the
+            // comparison is varchar = varchar (PostgreSQL rejects varchar = integer).
+            // These are still no-ops on a string-enum column (no row has status '5');
+            // quoted literals preserve the data-safety intent for any future integer migration.
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '6' WHERE status = '5';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '5' WHERE status = '4';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '4' WHERE status = '3';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '3' WHERE status = '2';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '2' WHERE status = '1';");
 
             migrationBuilder.AddColumn<Guid>(
                 name: "upload_batch_id",
@@ -97,11 +101,11 @@ namespace TaxReader.Infrastructure.Migrations
             // Note: any rows currently in Queued (1) or Cancelled (7) post-migration would
             // collide on Down(). They are post-Phase-3 data; rolling back is an emergency
             // operation that operator handles with a separate cleanup script.
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 1 WHERE status = 2;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 2 WHERE status = 3;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 3 WHERE status = 4;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 4 WHERE status = 5;");
-            migrationBuilder.Sql("UPDATE processing_runs SET status = 5 WHERE status = 6;");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '1' WHERE status = '2';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '2' WHERE status = '3';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '3' WHERE status = '4';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '4' WHERE status = '5';");
+            migrationBuilder.Sql("UPDATE processing_runs SET status = '5' WHERE status = '6';");
         }
     }
 }

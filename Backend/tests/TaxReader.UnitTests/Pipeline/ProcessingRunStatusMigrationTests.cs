@@ -49,11 +49,13 @@ public class ProcessingRunStatusMigrationTests
 
         // Descending order: 5→6, 4→5, 3→4, 2→3, 1→2. Order matters per Pitfall 8 — process
         // from highest old value to lowest so we never collide with a row we're about to write.
-        source.Should().Contain("UPDATE processing_runs SET status = 6 WHERE status = 5");
-        source.Should().Contain("UPDATE processing_runs SET status = 5 WHERE status = 4");
-        source.Should().Contain("UPDATE processing_runs SET status = 4 WHERE status = 3");
-        source.Should().Contain("UPDATE processing_runs SET status = 3 WHERE status = 2");
-        source.Should().Contain("UPDATE processing_runs SET status = 2 WHERE status = 1");
+        // Values are quoted strings ('6', '5', …) because the column is character varying —
+        // PostgreSQL rejects varchar = integer comparison (42883 operator does not exist).
+        source.Should().Contain("UPDATE processing_runs SET status = '6' WHERE status = '5'");
+        source.Should().Contain("UPDATE processing_runs SET status = '5' WHERE status = '4'");
+        source.Should().Contain("UPDATE processing_runs SET status = '4' WHERE status = '3'");
+        source.Should().Contain("UPDATE processing_runs SET status = '3' WHERE status = '2'");
+        source.Should().Contain("UPDATE processing_runs SET status = '2' WHERE status = '1'");
     }
 
     [Fact]
@@ -75,11 +77,11 @@ public class ProcessingRunStatusMigrationTests
         var source = File.ReadAllText(FindMigrationFile());
 
         // Reverse order (ascending) on Down: 2→1, 3→2, 4→3, 5→4, 6→5. Same collision-
-        // avoidance logic reversed (lowest first so we never collide).
-        source.Should().Contain("UPDATE processing_runs SET status = 1 WHERE status = 2");
-        source.Should().Contain("UPDATE processing_runs SET status = 2 WHERE status = 3");
-        source.Should().Contain("UPDATE processing_runs SET status = 3 WHERE status = 4");
-        source.Should().Contain("UPDATE processing_runs SET status = 4 WHERE status = 5");
-        source.Should().Contain("UPDATE processing_runs SET status = 5 WHERE status = 6");
+        // avoidance logic reversed (lowest first so we never collide). Quoted string literals.
+        source.Should().Contain("UPDATE processing_runs SET status = '1' WHERE status = '2'");
+        source.Should().Contain("UPDATE processing_runs SET status = '2' WHERE status = '3'");
+        source.Should().Contain("UPDATE processing_runs SET status = '3' WHERE status = '4'");
+        source.Should().Contain("UPDATE processing_runs SET status = '4' WHERE status = '5'");
+        source.Should().Contain("UPDATE processing_runs SET status = '5' WHERE status = '6'");
     }
 }
