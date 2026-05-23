@@ -10,17 +10,18 @@ WORKDIR /app
 
 # Install Tesseract OCR with German + English language packs.
 #
-# Symlink note: the Tesseract .NET NuGet 5.2.0 (InteropDotNet) resolves native
-# libraries via dlopen() using the unversioned names:
-#   libleptonica-1.82.0.so   and   libtesseract.so
+# InteropDotNet (bundled with Tesseract .NET 5.2.0) calls dlopen() with the
+# unversioned names:  libleptonica-1.82.0.so   libtesseract.so
 #
-# Runtime apt packages only ship versioned SONAME symlinks:
-#   Debian 12:       libleptonica-1.82.0.so.6    libtesseract.so.5
-#   Ubuntu 24.04:    libleptonica-1.82.0.so.6t64  libtesseract.so.5
+# Why plain symlinks don't work:
+#   dlopen() resolves library names via the ldconfig cache first. The cache is
+#   indexed by ELF SONAME (e.g. libleptonica-1.82.0.so.6t64 on Ubuntu 24.04),
+#   NOT by the filename of our unversioned symlink. Cache miss → fallback to
+#   /lib + /usr/lib only (NOT /usr/lib/x86_64-linux-gnu/ without LD_LIBRARY_PATH).
 #
-# Use `find` to locate whatever variant is installed (handles both distros),
-# then create the unversioned symlink dlopen() needs. xargs -r is a no-op
-# if find returns nothing so the build fails loudly if the package is absent.
+# Fix: create unversioned symlinks (find handles .so.6 on Debian 12 and .so.6t64
+# on Ubuntu 24.04) AND set LD_LIBRARY_PATH so dlopen() scans the x86_64-linux-gnu
+# directory by filename BEFORE consulting the cache.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       tesseract-ocr \
@@ -34,6 +35,10 @@ RUN apt-get update \
         | sort -V | tail -1 \
         | xargs -r -I{} ln -sf {} /usr/lib/x86_64-linux-gnu/libtesseract.so \
  && rm -rf /var/lib/apt/lists/*
+
+# LD_LIBRARY_PATH is searched before the ldconfig cache, so dlopen() finds
+# libleptonica-1.82.0.so and libtesseract.so in /usr/lib/x86_64-linux-gnu/.
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
 
 COPY --from=build /app/publish .
 EXPOSE 8080
