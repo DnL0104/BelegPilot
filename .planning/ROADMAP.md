@@ -208,5 +208,15 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 **Coverage:** 47 v1 requirements mapped to 7 phases (29 plans). Zero unmapped.
 
+## Backlog
+
+### Phase 999.1: Follow-up — Phase 3 missing 03-02-SUMMARY.md (BACKLOG)
+
+**Goal:** Document the 03-02 execution record that was not captured during Phase 3 execution.
+**Source phase:** 03 (background-pipeline-tesseract-pool)
+**Deferred at:** 2026-05-24 during /gsd-next advancement from Phase 4 → Phase 5
+**Plans:**
+- [ ] 03-02: `ProcessReceiptFileJob` + `ClassifyBatchJob` + `202 Accepted` + status/cancel endpoints + ProcessingStatus enum migration + IUploadBlobStore — ran (confirmed by STATE.md + Phase 4 builds on its output), but no SUMMARY.md produced.
+
 ---
 *Roadmap created: 2026-05-03*
