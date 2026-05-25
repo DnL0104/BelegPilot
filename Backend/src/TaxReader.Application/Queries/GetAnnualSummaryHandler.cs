@@ -28,9 +28,10 @@ public class GetAnnualSummaryHandler(IAppDbContext dbContext, ICurrentUser curre
         var classifiedItems = items
             .Select(item =>
             {
+                // WR-01: only count confirmed classifications in financial totals
                 var latest = item.Classifications
                     .OrderByDescending(c => c.ClassifiedAt)
-                    .FirstOrDefault();
+                    .FirstOrDefault(c => c.Status == ClassificationStatus.Confirmed);
                 return new { Item = item, Category = latest?.Category ?? Category.Unbekannt };
             })
             .ToList();
