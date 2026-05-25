@@ -44,9 +44,11 @@ public class GetCategoryTotalsHandlerTests : IDisposable
             receiptId: receipt.Id, description: "Fachbuch", unitPrice: 25.00m, lineNumber: 2);
 
         var class1 = TestDataFactory.CreateClassification(
-            receiptItemId: item1.Id, category: Category.WerbungskostenBueromaterial);
+            receiptItemId: item1.Id, category: Category.WerbungskostenBueromaterial,
+            status: ClassificationStatus.Confirmed);
         var class2 = TestDataFactory.CreateClassification(
-            receiptItemId: item2.Id, category: Category.WerbungskostenFachliteratur);
+            receiptItemId: item2.Id, category: Category.WerbungskostenFachliteratur,
+            status: ClassificationStatus.Confirmed);
 
         _dbContext.ReceiptFiles.Add(file);
         _dbContext.Receipts.Add(receipt);

@@ -40,7 +40,8 @@ public class GetAnnualSummaryHandlerTests : IDisposable
             totalAmount: 30.00m);
         var item = TestDataFactory.CreateReceiptItem(receiptId: receipt.Id, unitPrice: 30.00m);
         var classification = TestDataFactory.CreateClassification(
-            receiptItemId: item.Id, category: Category.WerbungskostenBueromaterial);
+            receiptItemId: item.Id, category: Category.WerbungskostenBueromaterial,
+            status: ClassificationStatus.Confirmed);
 
         _dbContext.ReceiptFiles.Add(file);
         _dbContext.Receipts.Add(receipt);
