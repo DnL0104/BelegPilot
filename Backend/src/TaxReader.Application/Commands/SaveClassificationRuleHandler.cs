@@ -32,12 +32,13 @@ public class SaveClassificationRuleHandler(IAppDbContext dbContext, ICurrentUser
             return Result<ClassificationRuleDto>.Failure(
                 $"Artikel mit id '{command.ReceiptItemId}' nicht gefunden.");
 
-        // D-12: 409 Conflict if an identical user rule already exists
+        // D-12: 409 Conflict if an identical user rule already exists (same patterns AND same category)
         var duplicate = await dbContext.ClassificationRules
             .AnyAsync(r => r.UserId == currentUser.UserId
                 && r.DescriptionPattern == command.DescriptionPattern
                 && r.VendorPattern == command.VendorPattern
-                && r.SourceFilePattern == command.SourceFilePattern, cancellationToken);
+                && r.SourceFilePattern == command.SourceFilePattern
+                && r.Category == command.Category, cancellationToken);
 
         if (duplicate)
             return Result<ClassificationRuleDto>.Failure("Eine identische Regel existiert bereits.");
