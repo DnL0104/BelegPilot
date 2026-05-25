@@ -15,6 +15,9 @@ public class BatchConfirmHandler(IAppDbContext dbContext, ICurrentUser currentUs
         if (command.ReceiptItemIds.Count == 0)
             return Result<int>.Failure("Keine Artikel angegeben.");
 
+        if (command.ReceiptItemIds.Count > 500)
+            return Result<int>.Failure("Maximal 500 Artikel pro Anfrage erlaubt.");
+
         var items = await dbContext.ReceiptItems
             .Include(i => i.Classifications)
             .Include(i => i.Receipt)
