@@ -22,7 +22,7 @@ public class ConfirmClassificationHandler(IAppDbContext dbContext, ICurrentUser 
 
         if (item is null)
             return Result<ItemClassificationDto>.Failure(
-                $"Receipt item with id '{command.ReceiptItemId}' not found.");
+                $"Artikel mit id '{command.ReceiptItemId}' nicht gefunden.");
 
         var classification = new ItemClassification
         {
@@ -31,7 +31,7 @@ public class ConfirmClassificationHandler(IAppDbContext dbContext, ICurrentUser 
             Category = command.Category,
             Method = ClassificationMethod.Manual,
             Status = ClassificationStatus.Confirmed,
-            Reason = $"Manually confirmed as {command.Category}",
+            Reason = $"Manuell bestätigt als {command.Category}",
             ClassifiedAt = DateTime.UtcNow
         };
 

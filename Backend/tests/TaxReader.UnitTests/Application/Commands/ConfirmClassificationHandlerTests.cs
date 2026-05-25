@@ -61,7 +61,7 @@ public class ConfirmClassificationHandlerTests : IDisposable
         var result = await _handler.HandleAsync(command);
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("not found");
+        result.Error.Should().Contain("nicht gefunden");
     }
 
     public void Dispose() => _dbContext.Dispose();
