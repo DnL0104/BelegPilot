@@ -58,11 +58,13 @@ public class RuleBasedClassifier(
             return false;
 
         if (rule.DescriptionPattern is not null
-            && !Regex.IsMatch(description, rule.DescriptionPattern, RegexOptions.IgnoreCase))
+            && !Regex.IsMatch(description, rule.DescriptionPattern,
+                              RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200)))
             return false;
 
         if (rule.SourceFilePattern is not null
-            && !Regex.IsMatch(fileName, rule.SourceFilePattern, RegexOptions.IgnoreCase))
+            && !Regex.IsMatch(fileName, rule.SourceFilePattern,
+                              RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200)))
             return false;
 
         return true;

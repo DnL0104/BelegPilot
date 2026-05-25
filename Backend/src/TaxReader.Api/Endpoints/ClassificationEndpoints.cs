@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using TaxReader.Application.Commands;
 using TaxReader.Application.Queries;
 using TaxReader.Domain.Enums;
@@ -25,6 +26,25 @@ public static class ClassificationEndpoints
 
             if (!Enum.TryParse<Category>(request.Category, true, out var category))
                 return Results.BadRequest(new { error = $"Ungültige Kategorie: {request.Category}" });
+
+            // CR-01: validate that user-supplied regex patterns are syntactically valid
+            // before storing them — prevents ReDoS payloads in classification rules.
+            if (request.DescriptionPattern is not null)
+            {
+                try { _ = new Regex(request.DescriptionPattern, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100)); }
+                catch (ArgumentException)
+                {
+                    return Results.BadRequest(new { error = "DescriptionPattern ist kein gültiger regulärer Ausdruck." });
+                }
+            }
+            if (request.SourceFilePattern is not null)
+            {
+                try { _ = new Regex(request.SourceFilePattern, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100)); }
+                catch (ArgumentException)
+                {
+                    return Results.BadRequest(new { error = "SourceFilePattern ist kein gültiger regulärer Ausdruck." });
+                }
+            }
 
             var command = new SaveClassificationRuleCommand(
                 id,
