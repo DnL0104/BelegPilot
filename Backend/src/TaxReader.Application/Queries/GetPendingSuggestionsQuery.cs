@@ -1,3 +1,3 @@
 namespace TaxReader.Application.Queries;
 
-public record GetPendingSuggestionsQuery;
+public record GetPendingSuggestionsQuery(int? Year = null);

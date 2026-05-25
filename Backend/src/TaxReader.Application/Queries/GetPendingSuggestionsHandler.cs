@@ -21,6 +21,8 @@ public partial class GetPendingSuggestionsHandler(IAppDbContext dbContext, ICurr
             .Include(i => i.Receipt)
                 .ThenInclude(r => r.ReceiptFile)
             .Where(i => i.Receipt.ReceiptFile.UserId == currentUser.UserId)
+            // WR-06: scope to year when provided to reduce in-memory load
+            .Where(i => query.Year == null || i.Receipt.PurchaseDate.Year == query.Year)
             .ToListAsync(cancellationToken);
 
         var suggestions = items

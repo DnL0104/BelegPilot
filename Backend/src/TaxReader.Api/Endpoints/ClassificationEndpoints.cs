@@ -99,10 +99,11 @@ public static class ClassificationEndpoints
         .WithSummary("Confirm AI-suggested classifications for multiple items at once");
 
         classification.MapGet("/pending-suggestions", async (
+            int? year,
             GetPendingSuggestionsHandler handler,
             CancellationToken cancellationToken) =>
         {
-            var result = await handler.HandleAsync(new GetPendingSuggestionsQuery(), cancellationToken);
+            var result = await handler.HandleAsync(new GetPendingSuggestionsQuery(year), cancellationToken);
             return result.IsSuccess
                 ? Results.Ok(result.Value)
                 : Results.BadRequest(new { error = result.Error });
