@@ -45,6 +45,11 @@ public class ReclassifyReceiptHandler(
             dbContext.ItemClassifications.Add(classification);
         }
 
+        // WR-02: recalculate sum-mismatch flag after reclassification so stale
+        // acknowledgements do not permanently hide a real discrepancy.
+        var itemsSum = receipt.Items.Sum(i => i.TotalPrice);
+        receipt.HasSumMismatch = Math.Abs(itemsSum - receipt.TotalAmount) > 0.50m;
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // Reload items with the fresh classifications so LatestClassification reflects the new ones.
