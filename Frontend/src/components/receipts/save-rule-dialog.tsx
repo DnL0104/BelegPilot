@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2, BookmarkPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,17 @@ export function SaveRuleDialog({ item, category, vendor, open, onOpenChange }: S
   const [includeVendor, setIncludeVendor] = useState(true);
   const [includeDesc, setIncludeDesc] = useState(true);
   const mutation = useSaveClassificationRule();
+
+  // WR-05: reset patterns when the dialog opens so stale values from a previous item
+  // are not shown if the component stays mounted between uses.
+  useEffect(() => {
+    if (open) {
+      setVendorPattern(vendor);
+      setDescPattern(item?.description ?? "");
+      setIncludeVendor(true);
+      setIncludeDesc(true);
+    }
+  }, [open, vendor, item?.description]);
 
   const handleSave = async () => {
     if (!item) return;
