@@ -11,6 +11,40 @@ public class RuleBasedClassifier(
     IAppDbContext dbContext,
     ILogger<RuleBasedClassifier> logger)
 {
+    /// <summary>
+    /// WR-03: Classify a single item using pre-loaded rule lists, avoiding per-item DB queries.
+    /// Call this from batch contexts (HybridClassificationService) after hoisting rule queries.
+    /// </summary>
+    public ItemClassification? Classify(
+        ReceiptItem item,
+        string vendor,
+        string sourceFileName,
+        IReadOnlyList<ClassificationRule> userRules,
+        IReadOnlyList<ClassificationRule> systemRules)
+    {
+        var matched = userRules.FirstOrDefault(r => Matches(r, item.Description, vendor, sourceFileName));
+        if (matched is not null)
+        {
+            logger.LogInformation(
+                "User rule {RuleId} matched item {ItemId}",
+                matched.Id, item.Id);
+            return BuildClassification(item, matched);
+        }
+
+        matched = systemRules.FirstOrDefault(r => Matches(r, item.Description, vendor, sourceFileName));
+        if (matched is not null)
+        {
+            logger.LogInformation(
+                "System rule {RuleId} matched item {ItemId}",
+                matched.Id, item.Id);
+        }
+        return matched is null ? null : BuildClassification(item, matched);
+    }
+
+    /// <summary>
+    /// Classify a single item by loading rules from the database.
+    /// For batch contexts prefer <see cref="Classify"/> with pre-loaded rules.
+    /// </summary>
     public async Task<ItemClassification?> ClassifyItemAsync(
         ReceiptItem item,
         string vendor,
@@ -24,29 +58,12 @@ public class RuleBasedClassifier(
             .OrderByDescending(r => r.Priority)
             .ToListAsync(cancellationToken);
 
-        var matched = userRules.FirstOrDefault(r => Matches(r, item.Description, vendor, sourceFileName));
-        if (matched is not null)
-        {
-            logger.LogInformation(
-                "User rule {RuleId} matched item {ItemId} for user {UserId}",
-                matched.Id, item.Id, userId);
-            return BuildClassification(item, matched);
-        }
-
-        // System rules fallback (UserId == null)
         var systemRules = await dbContext.ClassificationRules
             .Where(r => r.UserId == null && r.IsActive)
             .OrderByDescending(r => r.Priority)
             .ToListAsync(cancellationToken);
 
-        matched = systemRules.FirstOrDefault(r => Matches(r, item.Description, vendor, sourceFileName));
-        if (matched is not null)
-        {
-            logger.LogInformation(
-                "System rule {RuleId} matched item {ItemId}",
-                matched.Id, item.Id);
-        }
-        return matched is null ? null : BuildClassification(item, matched);
+        return Classify(item, vendor, sourceFileName, userRules, systemRules);
     }
 
     // D-05: VendorPattern = substring OrdinalIgnoreCase; Description/SourceFile = regex IgnoreCase

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TaxReader.Application.Interfaces;
 using TaxReader.Domain.Entities;
@@ -14,6 +15,7 @@ namespace TaxReader.Infrastructure.Services;
 public class HybridClassificationService(
     RuleBasedClassifier ruleBasedClassifier,
     AiOnlyClassificationService aiClassifier,
+    IAppDbContext dbContext,
     ILogger<HybridClassificationService> logger) : IClassificationService
 {
     public async Task<IReadOnlyList<ItemClassification>> ClassifyItemsAsync(
@@ -24,6 +26,17 @@ public class HybridClassificationService(
         var itemList = items as IReadOnlyList<ReceiptItem> ?? items.ToList();
         if (itemList.Count == 0) return [];
 
+        // WR-03: hoist rule queries out of the per-item loop — 2 DB round-trips total
+        // instead of 2×N. Rules are loaded once and passed to the synchronous Classify method.
+        var userRules = await dbContext.ClassificationRules
+            .Where(r => r.UserId == userId && r.IsActive)
+            .OrderByDescending(r => r.Priority)
+            .ToListAsync(cancellationToken);
+        var systemRules = await dbContext.ClassificationRules
+            .Where(r => r.UserId == null && r.IsActive)
+            .OrderByDescending(r => r.Priority)
+            .ToListAsync(cancellationToken);
+
         var results = new List<ItemClassification>(itemList.Count);
         var aiItems = new List<ReceiptItem>();
 
@@ -33,8 +46,7 @@ public class HybridClassificationService(
             var vendor = item.Receipt?.Vendor ?? string.Empty;
             var fileName = item.Receipt?.ReceiptFile?.OriginalFileName ?? string.Empty;
 
-            var ruleMatch = await ruleBasedClassifier.ClassifyItemAsync(
-                item, vendor, fileName, userId, cancellationToken);
+            var ruleMatch = ruleBasedClassifier.Classify(item, vendor, fileName, userRules, systemRules);
 
             if (ruleMatch is not null)
                 results.Add(ruleMatch);
