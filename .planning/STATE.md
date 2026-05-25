@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 complete — advancing to Phase 5 discussion
+stopped_at: Phase 5 context gathered — ready for /gsd-plan-phase 5
 last_updated: "2026-05-25T00:00:00.000Z"
-last_activity: 2026-05-25 -- Phase 4 complete. 4/4 plans executed (04-01–04-04). VERIFICATION.md status human_needed (13/13 must-haves verified, 4 manual UAT items pending). Advancing to Phase 5 (commercial-surface-payments) via /gsd-next.
+last_activity: 2026-05-25 -- Phase 5 context discussion complete. 16 decisions captured (D-01–D-16): token pack pricing locked, Stripe hosted checkout, Widerrufsrecht gate in TopUpDialog, Bruttopreise + Kleinunternehmer §19 UStG, /billing route + nav label, negative balance UX, test/live key guard, DemoMode toggle. CONTEXT.md committed.
 progress:
   total_phases: 7
   completed_phases: 4
