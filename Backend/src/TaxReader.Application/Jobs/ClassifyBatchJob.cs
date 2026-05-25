@@ -107,6 +107,17 @@ public class ClassifyBatchJob(
                     r.ErrorMessage = error.GermanMessage;
                     r.ReceiptFile.Status = FileStatus.Failed;
                 }
+
+                // WR-07: run sum validation on the failure path too — partial classifications
+                // may have been added before the failure, so the flag must be accurate.
+                foreach (var run in runs.Where(r => r.ReceiptFile.Receipt is not null))
+                {
+                    var receipt = run.ReceiptFile.Receipt!;
+                    var itemsSum = receipt.Items.Sum(i => i.TotalPrice);
+                    if (Math.Abs(itemsSum - receipt.TotalAmount) > 0.50m)
+                        receipt.HasSumMismatch = true;
+                }
+
                 await dbContext.SaveChangesAsync(CancellationToken.None);
 
                 // For user-initiated cancellation: suppress re-throw (Hangfire marks Succeeded).
