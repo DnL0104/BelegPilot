@@ -1,6 +1,5 @@
 using TaxReader.Application.DTOs;
 using TaxReader.Application.Interfaces;
-using TaxReader.Domain.Enums;
 
 namespace TaxReader.Api.Endpoints;
 
@@ -39,27 +38,9 @@ public static class TokenEndpoints
         .WithName("GetTokenTransactions")
         .WithSummary("Returns the most recent token transactions.");
 
-        tokens.MapPost("/purchase", async (
-            PurchaseTokensRequest request,
-            ITokenService tokenService,
-            CancellationToken cancellationToken) =>
-        {
-            if (request.Amount <= 0 || request.Amount > 10_000)
-                return Results.BadRequest(new { error = "Amount must be between 1 and 10000." });
-
-            var balance = await tokenService.AddTokensAsync(
-                request.Amount,
-                TokenTransactionType.Purchase,
-                $"Token purchase ({request.Amount} credits)",
-                cancellationToken);
-
-            return Results.Ok(new TokenBalanceDto(balance.Balance, balance.UpdatedAt));
-        })
-        .WithName("PurchaseTokens")
-        .WithSummary("Simulated token top-up. No payment processing yet.");
+        // POST /tokens/purchase stub removed — replaced by real POST /payments/checkout endpoint
+        // that creates a Stripe Checkout session (PAY-01, Phase 5)
 
         return group;
     }
 }
-
-public record PurchaseTokensRequest(int Amount);

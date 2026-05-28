@@ -44,6 +44,14 @@ public static class RateLimitTestFactory
             // a Postgres database that isn't running. Tests that need real Postgres
             // (none today) override via extraSettings.
             builder.UseSetting("Hangfire:UseInMemoryStorage", "true");
+            builder.UseSetting("Hangfire:SeedAdminEmails", string.Empty);
+
+            // Phase 5 plan 05-01: StripeOptionsValidator.ValidateOnStart() requires these.
+            // Tests run in Production environment so we use a sk_live_ prefix to bypass
+            // the D-13 guard (Production + sk_test_ → throws). No real Stripe calls are made.
+            builder.UseSetting("Stripe:SecretKey", "sk_live_test_placeholder_for_unit_tests");
+            builder.UseSetting("Stripe:PublishableKey", "pk_live_test_placeholder_for_unit_tests");
+            builder.UseSetting("Stripe:WebhookSecret", "whsec_placeholder_for_unit_tests");
 
             // Swap EF Core from Npgsql to in-memory so auth endpoints return 401 (record
             // not found) instead of 500 (Npgsql connection refused). Strip every EF/Npgsql

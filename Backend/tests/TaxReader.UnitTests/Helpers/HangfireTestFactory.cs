@@ -47,6 +47,13 @@ public static class HangfireTestFactory
             // unreachable test Postgres and fail at startup.
             builder.UseSetting("RUN_MIGRATIONS", "false");
 
+            // Stripe options — minimal values to pass StripeOptionsValidator.ValidateOnStart().
+            // Tests run in Production environment so we use a sk_live_ prefix to bypass
+            // the D-13 guard (Production + sk_test_ → throws). No real Stripe calls are made.
+            builder.UseSetting("Stripe:SecretKey", "sk_live_test_placeholder_for_unit_tests");
+            builder.UseSetting("Stripe:PublishableKey", "pk_live_test_placeholder_for_unit_tests");
+            builder.UseSetting("Stripe:WebhookSecret", "whsec_placeholder_for_unit_tests");
+
             if (extraSettings is not null)
             {
                 foreach (var (key, value) in extraSettings)

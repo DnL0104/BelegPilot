@@ -1,5 +1,6 @@
 using TaxReader.Application.Commands;
 using TaxReader.Application.DTOs;
+using TaxReader.Application.Interfaces;
 using TaxReader.Application.Queries;
 
 namespace TaxReader.Api.Endpoints;
@@ -17,8 +18,17 @@ public static class ReceiptFileEndpoints
             int? yearHint,
             string? uploadedBy,
             UploadReceiptFilesHandler handler,
+            ITokenService tokenService,
             CancellationToken cancellationToken) =>
         {
+            // D-11: block uploads when balance is negative (after refund via RevokeTokensJob)
+            var balance = await tokenService.GetOrCreateBalanceAsync(cancellationToken);
+            if (balance.Balance < 0)
+                return Results.Problem(
+                    detail: "Ihr Guthaben ist erschöpft. Bitte laden Sie Credits auf.",
+                    statusCode: 402,
+                    title: "Guthaben erschöpft");
+
             var fileItems = files.Select(f => new FileUploadItem(
                 f.FileName,
                 f.Length,
