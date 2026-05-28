@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ProcessingRun> ProcessingRuns => Set<ProcessingRun>();
     public DbSet<UserTokenBalance> UserTokenBalances => Set<UserTokenBalance>();
     public DbSet<TokenTransaction> TokenTransactions => Set<TokenTransaction>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
