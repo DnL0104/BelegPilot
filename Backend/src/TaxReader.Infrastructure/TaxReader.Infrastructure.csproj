@@ -20,6 +20,7 @@
     <PackageReference Include="Sentry" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Tesseract" />
+    <PackageReference Include="Stripe.net" />
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="Hangfire.MemoryStorage" />

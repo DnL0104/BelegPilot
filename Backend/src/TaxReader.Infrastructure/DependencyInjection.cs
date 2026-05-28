@@ -45,6 +45,15 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(RefreshTokenOptions.SectionName))
             .ValidateOnStart();
 
+        // Stripe payment integration (D-12, D-13, PAY-01)
+        services.AddSingleton<IValidateOptions<StripeOptions>, StripeOptionsValidator>();
+        services
+            .AddOptions<StripeOptions>()
+            .Bind(configuration.GetSection(StripeOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IStripePaymentProvider, StripePaymentProvider>();
+        services.AddScoped<StripeWebhookHandler>();
+
         // Anthropic / AI classification
         services.Configure<AnthropicOptions>(configuration.GetSection(AnthropicOptions.SectionName));
         services.AddHttpClient<IAiClassifier, ClaudeAiClassifier>(client =>

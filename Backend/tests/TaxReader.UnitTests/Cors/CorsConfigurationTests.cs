@@ -59,6 +59,14 @@ public class CorsConfigurationTests
             // Phase 3 plan 03-01: Hangfire boots on every WAF host. Use in-memory
             // storage here so this CORS-only test doesn't try to connect to Postgres.
             builder.UseSetting("Hangfire:UseInMemoryStorage", "true");
+            builder.UseSetting("Hangfire:SeedAdminEmails", string.Empty);
+            // Phase 5 plan 05-01: StripeOptionsValidator.ValidateOnStart() requires these.
+            // Production environment uses sk_live_ prefix to bypass D-13 guard.
+            // Development environment is unaffected (sk_test_ is allowed there).
+            builder.UseSetting("Stripe:SecretKey", "sk_live_test_placeholder_for_unit_tests");
+            builder.UseSetting("Stripe:PublishableKey", "pk_live_test_placeholder_for_unit_tests");
+            builder.UseSetting("Stripe:WebhookSecret", "whsec_placeholder_for_unit_tests");
+            builder.UseSetting("RUN_MIGRATIONS", "false");
         });
     }
 

@@ -119,6 +119,8 @@ try
     // D-01: pipeline jobs (Scoped so each Hangfire worker resolves a fresh DbContext).
     builder.Services.AddScoped<ProcessReceiptFileJob>();
     builder.Services.AddScoped<ClassifyBatchJob>();
+    // PAY-01: payment token grant job (Scoped — accesses IAppDbContext directly, no ITokenService)
+    builder.Services.AddScoped<GrantTokensJob>();
 
     // D-06 + RESEARCH Pitfall 1: real client IP behind Caddy reverse proxy.
     // .NET 10: KnownNetworks is OBSOLETE (ASPDEPR005) — use KnownIPNetworks with System.Net.IPNetwork
@@ -278,6 +280,17 @@ try
         resolvedAnthropicOptions.Model,
         resolvedAnthropicOptions.CostPerClassification);
 
+    // D-13: warn loudly if a live Stripe key is used outside Production.
+    // (The StripeOptionsValidator throws if Production + test key — this covers the reverse.)
+    var stripeOpts = app.Services
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<TaxReader.Infrastructure.Configuration.StripeOptions>>().Value;
+    if (!app.Environment.IsProduction() && stripeOpts.SecretKey.StartsWith("sk_live_", StringComparison.Ordinal))
+    {
+        app.Logger.LogWarning(
+            "Stripe SecretKey ist ein Live-Schlüssel in einer {Environment}-Umgebung — stellen Sie sicher, dass Sie dies beabsichtigen.",
+            app.Environment.EnvironmentName);
+    }
+
     // Middleware
     // D-06: UseForwardedHeaders MUST be FIRST so anything that reads RemoteIpAddress
     // (rate limiter, request logging) sees the real client IP, not Caddy's docker IP.
@@ -344,7 +357,12 @@ try
     api.MapClassificationEndpoints();
     api.MapReportEndpoints();
     api.MapTokenEndpoints();
+    api.MapPaymentEndpoints();
     api.MapSettingsEndpoints();
+
+    // D-15: Stripe webhook endpoint — anonymous, NOT under /api/v1 auth group.
+    // Raw body must reach the handler before any JSON binding consumes the stream (Pitfall 1).
+    app.MapStripeWebhookEndpoint();
 
     // D-23: register recurring cleanup jobs (RESEARCH Pattern 9). Idempotent across
     // reboots — AddOrUpdate keys by recurringJobId, so duplicate registrations are safe.
