@@ -56,14 +56,14 @@ Inherits project-wide typography. No new type ramp introduced in Phase 5.
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
+| Page title | 24px (`text-2xl`) | 600 (semibold) | snug (~1.25) — `/billing` page `<h1>` |
+| Heading (card) | 16px (`text-base`) | 600 (semibold) | snug (~1.25) — matches `CardTitle` |
 | Body | 14px (`text-sm`) | 400 (regular) | 1.5 |
-| Label | 13px (`text-[13px]`) | 500 (medium) | 1.4 |
-| Heading (card) | 16px (`text-base`) | 500 (medium) | snug (~1.25) — matches `CardTitle` |
 | Display (balance figure) | 28px (`text-3xl`) | 600 (semibold) | 1.2 |
 
 Notes:
 - Legal checkbox text (Widerrufsrecht + AGB) renders at body size (14px / `text-sm`) to remain readable without visual subordination — do not downsize to `text-xs`
-- Section labels in sidebar: 11px / `text-[11px]` uppercase tracking — inherited from existing `SidebarGroupLabel` pattern; do not change
+- Labels (form labels, table column headers, badge text) use body size (14px / `text-sm`), distinguished by context and uppercase/tracking where needed
 
 Source: `globals.css` (`--font-sans`), `card.tsx` (`CardTitle` class), `app-sidebar.tsx`, `top-up-dialog.tsx`
 
@@ -78,12 +78,12 @@ Inherits the existing CSS-variable color system from `globals.css` (base-nova pr
 | Dominant (60%) | `--background` | `oklch(0.975 0.002 250)` — near-white blue-gray | Page background, billing page surface |
 | Secondary (30%) | `--card` | `oklch(1 0 0)` — white | Cards (balance card, invoice card, transaction table) |
 | Sidebar | `--sidebar` | `oklch(0.165 0.042 265)` — dark navy | Sidebar background (new "Credits & Abrechnung" item lives here) |
-| Accent (10%) | `--primary` (`emerald-600` light / `emerald-500` dark) | `oklch(0.534 0.135 163)` | "Aufladen" CTA button, selected package ring, balance display icon |
+| Accent (10%) | `--primary` (`emerald-600` light / `emerald-500` dark) | `oklch(0.534 0.135 163)` | "Credits aufladen" CTA button, selected package ring, balance display icon |
 | Destructive | `--destructive` | `oklch(0.577 0.245 27.325)` | Negative balance indicator, refund/revoke state badge |
 | Warning | amber tokens (`amber-50 / amber-500`) | existing palette | Low-balance state (balance ≤ 3 — inherited from `TokenBalanceBadge`) |
 
 **Accent reserved for:**
-- "Aufladen" / "Kaufen" primary CTA button (`bg-primary`)
+- "Credits aufladen" / "Kaufen" primary CTA button (`bg-primary`)
 - Selected package card ring (`ring-primary`, `border-primary`, `bg-primary/5`)
 - Balance icon (`text-primary`) in the balance display card
 - "Beliebt" badge chip on 200-credit pack (`bg-primary/10 text-primary`)
@@ -111,7 +111,7 @@ All components used in Phase 5. No new shadcn components are required — everyt
 |-----------|--------|---------|
 | `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter`, `CardAction` | `@/components/ui/card` (existing) | Billing page: balance card, invoice section |
 | `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter` | `@/components/ui/dialog` (existing) | `TopUpDialog` (modified) |
-| `Button` | `@/components/ui/button` (existing) | "Aufladen", "Kaufen", "Abbrechen", "Zahlungsmethode verwalten", "Herunterladen" |
+| `Button` | `@/components/ui/button` (existing) | "Credits aufladen", "Kaufen", "Abbrechen", "Zahlungsmethode verwalten", "PDF herunterladen" |
 | `Badge` | `@/components/ui/badge` (existing) | Payment status (Pending / Granted / Revoked), DemoMode chip |
 | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` | `@/components/ui/table` (existing) | Transaction history table, invoice list table |
 | `Skeleton` | `@/components/ui/skeleton` (existing) | Loading states on balance card, invoice list |
@@ -155,7 +155,7 @@ Source: `Frontend/src/components/ui/` directory audit
 
 #### Section 1.3: Token Balance Card
 - Component: `Card` (default size)
-- `CardHeader`: Title "Guthaben", `CardAction` contains `Button` variant `default` label "Aufladen" (opens `TopUpDialog`)
+- `CardHeader`: Title "Guthaben", `CardAction` contains `Button` variant `default` label "Credits aufladen" (opens `TopUpDialog`)
 - `CardContent`: Large balance figure — `text-3xl font-semibold` — format: `{N} Credits`
   - Positive: `text-foreground`
   - Zero: `text-muted-foreground`
@@ -179,7 +179,7 @@ Source: `Frontend/src/components/ui/` directory audit
 - `CardHeader` title: "Rechnungen"
 - Table columns: Rechnungsnummer | Datum | Betrag | Aktionen
   - Betrag: `Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' })` format
-  - Aktionen: `Button` variant `outline` size `sm` label "Herunterladen" — `href={invoice.invoicePdfUrl}` target `_blank`; disabled + `text-muted-foreground` when `invoicePdfUrl` is null (invoice not yet finalized)
+  - Aktionen: `Button` variant `outline` size `sm` label "PDF herunterladen" — `href={invoice.invoicePdfUrl}` target `_blank`; disabled + `text-muted-foreground` when `invoicePdfUrl` is null (invoice not yet finalized)
 - Empty state: "Noch keine Rechnungen vorhanden." — same treatment as transaction history
 - Loading: 3 `Skeleton` rows
 
@@ -307,7 +307,7 @@ All copy in German Sie-form. No informal "du".
 | Element | Copy |
 |---------|------|
 | Page title (h1) | "Credits & Abrechnung" |
-| Primary CTA (header button) | "Aufladen" |
+| Primary CTA (header button) | "Credits aufladen" |
 | Purchase CTA (dialog footer) | "{N} Credits kaufen – {price}" (e.g. "200 Credits kaufen – 14,99 €") |
 | Dialog title | "AI Credits aufladen" |
 | Dialog description | "Jede automatische KI-Klassifizierung verbraucht 1 Credit. Regel-basierte Klassifizierungen sind kostenlos." |
@@ -325,7 +325,7 @@ All copy in German Sie-form. No informal "du".
 | Transaction type: refund | "Rückerstattung" |
 | Transaction type: welcome | "Willkommens-Credits" |
 | Invoice table title | "Rechnungen" |
-| Invoice download button | "Herunterladen" |
+| Invoice download button | "PDF herunterladen" |
 | Invoice pending (no PDF yet) | "Ausstehend" (replaces download link) |
 | Payment method card title | "Zahlungsmethode" |
 | Payment method card description | "Zahlungsmethoden verwalten, gespeicherte Karten ändern oder Zahlungshistorie einsehen." |
@@ -398,7 +398,7 @@ POLLING STOPS (15s elapsed)
 
 - All `Checkbox` components must have associated `Label` via `htmlFor`/`id` pairing
 - The Widerrufsrecht label wraps to multiple lines — use `items-start` on the flex container, not `items-center`
-- "Herunterladen" links open in `target="_blank"` — add `rel="noopener noreferrer"`
+- "PDF herunterladen" links open in `target="_blank"` — add `rel="noopener noreferrer"`
 - Balance figure uses `aria-label="{N} Credits Guthaben"` for screen reader context
 - Negative balance state: use `role="status"` on the warning `CardFooter` content
 - DemoMode banner: use `role="alert"` so screen readers announce it on mount
@@ -437,8 +437,8 @@ POLLING STOPS (15s elapsed)
 | base-nova preset, CSS variables, lucide icons | components.json |
 | Existing color tokens (emerald primary, destructive red, amber warning) | globals.css |
 | Existing Card, Table, Badge, Alert, Dialog, Button, Skeleton | component directory audit |
-| 14px body / 13px label / semibold weight pattern | existing component code |
-| `text-[13px]` label size | token-balance-badge.tsx, app-sidebar.tsx |
+| 14px body / semibold weight pattern | existing component code |
+| `text-2xl` page title size | billing page h1 layout structure |
 | `items-start` for multi-line checkbox alignment | WCAG + wrap analysis |
 | CreditCard lucide icon | lucide-react (available — confirmed in package.json) |
 
