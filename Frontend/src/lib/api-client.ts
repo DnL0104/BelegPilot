@@ -13,6 +13,10 @@ import type {
   PendingSuggestion,
   UploadAcceptedResponse,
   ReceiptFileStatus,
+  CheckoutSession,
+  Invoice,
+  PortalSession,
+  CreateCheckoutSessionRequest,
 } from "@/types/api";
 
 const api = axios.create({
@@ -322,4 +326,23 @@ export async function saveClassificationRule(
 
 export async function acknowledgeSumMismatch(receiptId: string): Promise<void> {
   await api.post(`/receipts/${receiptId}/acknowledge-sum`);
+}
+
+// --- Payments API ---
+
+export async function createCheckoutSession(
+  req: CreateCheckoutSessionRequest
+): Promise<CheckoutSession> {
+  const { data } = await api.post<CheckoutSession>("/payments/checkout", req);
+  return data;
+}
+
+export async function createPortalSession(): Promise<PortalSession> {
+  const { data } = await api.post<PortalSession>("/payments/portal");
+  return data;
+}
+
+export async function getInvoices(): Promise<Invoice[]> {
+  const { data } = await api.get<Invoice[]>("/payments/invoices");
+  return data;
 }

@@ -177,3 +177,30 @@ export const TERMINAL_STATUSES: readonly ProcessingStatus[] = [
 export function isTerminal(status: ProcessingStatus): boolean {
   return TERMINAL_STATUSES.includes(status);
 }
+
+// --- Payments ---
+
+export interface CheckoutSession {
+  checkoutUrl: string;
+  isDemoMode: boolean;
+}
+
+export interface Invoice {
+  id: string;
+  number: string | null;
+  amountPaid: number;
+  currency: string;
+  created: string;
+  invoicePdfUrl: string | null;
+  hostedInvoiceUrl: string | null;
+}
+
+export interface PortalSession {
+  url: string;
+}
+
+export interface CreateCheckoutSessionRequest {
+  credits: number;
+  waiverAccepted: boolean;
+  agbAccepted: boolean;
+}
