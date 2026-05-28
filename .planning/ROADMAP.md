@@ -1,4 +1,4 @@
-# Roadmap: TaxReader
+﻿# Roadmap: TaxReader
 
 ## Overview
 
@@ -140,11 +140,15 @@ Plans:
   7. Stripe Customer Portal embed allows user to manage payment methods without custom UI
 **Plans**: 4 plans
 
-Plans:
-- [ ] 05-01: `StripePaymentProvider` + checkout-session endpoint + signature-verified webhook + idempotent `payments` table + `GrantTokensJob`
-- [ ] 05-02: Pre-checkout Widerrufsrecht waiver flow (active checkbox + AGB acceptance before Stripe redirect)
-- [ ] 05-03: Account → Billing page (token balance, transaction history, Stripe Invoicing-driven Rechnungen, Customer Portal embed)
-- [ ] 05-04: Refund/chargeback handling (`RevokeTokensJob`, audit log) + multi-environment safety (test/live key separation, startup-time guards)
+**Wave 1** *(no dependencies — start here)*
+- [ ] 05-01-PLAN.md — Stripe backend foundation: Payment entity, EF migration, StripeOptions, StripePaymentProvider, PaymentEndpoints, webhook, GrantTokensJob, 402 balance guard
+
+**Wave 2** *(blocked on Wave 1; 05-02 and 05-04 run in parallel)*
+- [ ] 05-02-PLAN.md — Frontend legal gate: TopUpDialog with AGB + Widerrufsrecht checkboxes, real checkout redirect, sidebar nav, TokenBalanceBadge negative state
+- [ ] 05-04-PLAN.md — RevokeTokensJob + charge.refunded webhook wiring + StripeOptionsValidator tests
+
+**Wave 3** *(blocked on Waves 1+2)*
+- [ ] 05-03-PLAN.md — /billing page: balance card, transaction history, invoice list, Stripe Customer Portal redirect
 
 ### Phase 6: Legal + Consent + Data Export + AVVs
 **Goal**: Launch-ready legal posture — all mandated DE pages, TTDSG cookie consent, signed AVVs/DPAs with all sub-processors, DSGVO Art. 20 self-serve data export, audit log for sensitive operations, and Markenrechte clearance.
