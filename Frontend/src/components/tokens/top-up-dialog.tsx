@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Coins, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useTokenBalance, usePurchaseTokens } from "@/hooks/use-tokens";
+import { useTokenBalance } from "@/hooks/use-tokens";
+import { useCreateCheckoutSession } from "@/hooks/use-billing";
 
 interface TopUpDialogProps {
   open: boolean;
@@ -27,21 +30,42 @@ const PACKAGES = [
 
 export function TopUpDialog({ open, onOpenChange }: TopUpDialogProps) {
   const { data: balance } = useTokenBalance();
-  const purchase = usePurchaseTokens();
+  const checkout = useCreateCheckoutSession();
   const [selected, setSelected] = useState<number>(200);
+  const [agbChecked, setAgbChecked] = useState(false);
+  const [widerrufsrechtChecked, setWiderrufsrechtChecked] = useState(false);
 
-  const handlePurchase = async () => {
+  const handleOpenChange = (v: boolean) => {
+    if (!v) {
+      // Reset checkboxes on close — D-05: never pre-ticked on re-open
+      setAgbChecked(false);
+      setWiderrufsrechtChecked(false);
+    }
+    onOpenChange(v);
+  };
+
+  const handleKaufen = async () => {
     try {
-      await purchase.mutateAsync(selected);
-      toast.success(`${selected} Credits aufgeladen`);
-      onOpenChange(false);
+      const data = await checkout.mutateAsync({
+        credits: selected,
+        waiverAccepted: true,
+        agbAccepted: true,
+      });
+      // D-14: DemoMode — redirect to billing with demo flag so billing page can show banner
+      if (data.isDemoMode) {
+        window.location.href = "/billing?payment=success&demo=true";
+      } else {
+        window.location.href = data.checkoutUrl;
+      }
     } catch {
-      toast.error("Aufladen fehlgeschlagen");
+      toast.error("Bezahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.");
     }
   };
 
+  const selectedPkg = PACKAGES.find((p) => p.credits === selected);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -95,17 +119,58 @@ export function TopUpDialog({ open, onOpenChange }: TopUpDialogProps) {
           ))}
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Hinweis: Im Demo-Modus erfolgt keine echte Zahlung. Credits werden direkt gutgeschrieben.
-        </p>
+        {/* Legal gate — D-05: both checkboxes required, neither pre-ticked */}
+        <div className="space-y-3 py-2">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="agb-checkbox"
+              checked={agbChecked}
+              onCheckedChange={(v) => setAgbChecked(!!v)}
+            />
+            <label
+              htmlFor="agb-checkbox"
+              className="text-sm leading-normal cursor-pointer"
+            >
+              Ich akzeptiere die{" "}
+              <Link href="/agb" className="underline underline-offset-2">
+                Allgemeinen Geschäftsbedingungen
+              </Link>
+              .
+            </label>
+          </div>
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="widerrufsrecht-checkbox"
+              checked={widerrufsrechtChecked}
+              onCheckedChange={(v) => setWiderrufsrechtChecked(!!v)}
+            />
+            <label
+              htmlFor="widerrufsrecht-checkbox"
+              className="text-sm leading-normal cursor-pointer"
+            >
+              Ich verlange ausdrücklich, dass mit der Ausführung des Vertrags
+              sofort begonnen wird. Mir ist bekannt, dass ich hierdurch mein
+              Widerrufsrecht verliere.
+            </label>
+          </div>
+        </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={checkout.isPending}
+          >
             Abbrechen
           </Button>
-          <Button onClick={handlePurchase} disabled={purchase.isPending}>
-            {purchase.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {selected} Credits kaufen
+          <Button
+            onClick={handleKaufen}
+            disabled={!agbChecked || !widerrufsrechtChecked || checkout.isPending}
+          >
+            {checkout.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {checkout.isPending
+              ? "Weiterleitung..."
+              : `${selected} Credits kaufen – ${selectedPkg?.price}`}
           </Button>
         </DialogFooter>
       </DialogContent>

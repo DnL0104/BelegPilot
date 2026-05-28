@@ -11,6 +11,7 @@ import {
   LogOut,
   FileText,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +33,7 @@ const navItems = [
   { title: "Belege", href: "/receipts", icon: Receipt },
   { title: "Berichte", href: "/reports", icon: BarChart3 },
   { title: "Einstellungen", href: "/settings", icon: Settings },
+  { title: "Credits & Abrechnung", href: "/billing", icon: CreditCard },
 ];
 
 const legalItems = [
