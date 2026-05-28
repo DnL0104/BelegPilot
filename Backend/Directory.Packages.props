@@ -1,3 +1,8 @@
+<!-- Central NuGet package version management for Backend/ (ManagePackageVersionsCentrally=true).
+     Per-project .csproj files reference packages WITHOUT versions — all versions live here.
+     Before adding or bumping packages:
+       - Run /dotnet-msbuild:msbuild-antipatterns to catch version-pinning anti-patterns
+       - For transitive conflicts, check advisory notes in inline comments below -->
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -30,6 +35,7 @@
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Tesseract" Version="5.2.0" />
+    <PackageVersion Include="Stripe.net" Version="51.2.0" />
     <PackageVersion Include="Hangfire.Core" Version="1.8.23" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />

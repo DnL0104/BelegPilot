@@ -15,6 +15,7 @@ public interface IAppDbContext
     DbSet<ProcessingRun> ProcessingRuns { get; }
     DbSet<UserTokenBalance> UserTokenBalances { get; }
     DbSet<TokenTransaction> TokenTransactions { get; }
+    DbSet<Payment> Payments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

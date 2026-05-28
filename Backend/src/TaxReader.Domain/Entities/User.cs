@@ -19,6 +19,13 @@ public class User
     /// flipped to true via SeedAdminUsersHostedService at startup or manual UPDATE.</summary>
     public bool IsAdmin { get; set; } = false;
 
+    /// <summary>
+    /// Stripe customer ID (cus_...). Persisted from checkout.session.completed webhook.
+    /// Used for invoice list and Customer Portal sessions — prevents duplicate customer records
+    /// for repeat buyers.
+    /// </summary>
+    public string? StripeCustomerId { get; set; }
+
     public ICollection<ReceiptFile> ReceiptFiles { get; set; } = [];
     public UserTokenBalance? TokenBalance { get; set; }
     public ICollection<TokenTransaction> TokenTransactions { get; set; } = [];
