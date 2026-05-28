@@ -108,8 +108,39 @@ public class StripeWebhookHandler(
         }
         else if (stripeEvent.Type == EventTypes.ChargeRefunded)
         {
-            // RevokeTokensJob wired in Plan 05-04
-            logger.LogInformation("Received charge.refunded event {StripeEventId} — RevokeTokensJob not yet registered", stripeEvent.Id);
+            var charge = stripeEvent.Data.Object as Stripe.Charge;
+            if (charge is null) return Results.Ok();
+
+            // Correlate via StripePaymentIntentId — reliable even when user has multiple
+            // same-priced purchases (AmountCents matching would be ambiguous in that case).
+            var paymentIntentId = charge.PaymentIntentId;
+            if (string.IsNullOrEmpty(paymentIntentId))
+            {
+                logger.LogWarning(
+                    "charge.refunded event {StripeEventId}: no PaymentIntentId on charge — cannot correlate",
+                    stripeEvent.Id);
+                return Results.Ok();
+            }
+
+            var matchingPayment = await dbContext.Payments
+                .Where(p => p.StripePaymentIntentId == paymentIntentId && p.Status == TaxReader.Domain.Enums.PaymentStatus.Granted)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (matchingPayment is null)
+            {
+                logger.LogWarning(
+                    "charge.refunded event {StripeEventId}: no Granted payment found for PaymentIntentId {PaymentIntentId}",
+                    stripeEvent.Id, paymentIntentId);
+                return Results.Ok();
+            }
+
+            await jobClient.EnqueueAsync<TaxReader.Application.Jobs.RevokeTokensJob>(
+                j => j.HandleAsync(matchingPayment.UserId, matchingPayment.CreditsGranted, CancellationToken.None),
+                cancellationToken);
+
+            logger.LogInformation(
+                "Enqueued RevokeTokensJob for User {UserId}, {Credits} credits, charge.refunded event {StripeEventId}",
+                matchingPayment.UserId, matchingPayment.CreditsGranted, stripeEvent.Id);
         }
 
         return Results.Ok();

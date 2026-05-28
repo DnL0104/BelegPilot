@@ -121,6 +121,8 @@ try
     builder.Services.AddScoped<ClassifyBatchJob>();
     // PAY-01: payment token grant job (Scoped — accesses IAppDbContext directly, no ITokenService)
     builder.Services.AddScoped<GrantTokensJob>();
+    // PAY-05: refund/chargeback token revocation job (Scoped — mirrors GrantTokensJob, balance can go negative per D-11)
+    builder.Services.AddScoped<RevokeTokensJob>();
 
     // D-06 + RESEARCH Pitfall 1: real client IP behind Caddy reverse proxy.
     // .NET 10: KnownNetworks is OBSOLETE (ASPDEPR005) — use KnownIPNetworks with System.Net.IPNetwork
