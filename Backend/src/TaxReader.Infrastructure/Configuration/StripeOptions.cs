@@ -36,8 +36,9 @@ public sealed class StripeOptionsValidator(IWebHostEnvironment env)
         if (string.IsNullOrWhiteSpace(options.WebhookSecret))
             return ValidateOptionsResult.Fail("Stripe:WebhookSecret ist nicht konfiguriert.");
 
-        // D-13: Production + test key = hard fail — prevents accidental test-mode launch
-        if (env.IsProduction() && options.SecretKey.StartsWith("sk_test_", StringComparison.Ordinal))
+        // D-13: Production + test key = hard fail — prevents accidental test-mode launch.
+        // DemoMode bypasses this check: no real Stripe calls are made when DemoMode=true.
+        if (env.IsProduction() && !options.DemoMode && options.SecretKey.StartsWith("sk_test_", StringComparison.Ordinal))
             throw new InvalidOperationException(
                 "Stripe SecretKey ist ein Testschlüssel in einer Production-Umgebung.");
 
