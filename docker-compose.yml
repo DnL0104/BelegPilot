@@ -45,6 +45,11 @@ services:
       Tesseract__PoolSize: ${TESSERACT_POOLSIZE:-3}
       RUN_MIGRATIONS: "true"
       UploadStorage__Path: /var/lib/taxreader/uploads
+      Stripe__SecretKey: ${Stripe__SecretKey}
+      Stripe__PublishableKey: ${Stripe__PublishableKey}
+      Stripe__WebhookSecret: ${Stripe__WebhookSecret}
+      Stripe__DemoMode: ${Stripe__DemoMode:-false}
+      Stripe__AppBaseUrl: ${Stripe__AppBaseUrl:-http://localhost:3000}
     volumes:
       - taxreader_uploads:/var/lib/taxreader/uploads
     # No ports: — API is only reachable via the web container.
