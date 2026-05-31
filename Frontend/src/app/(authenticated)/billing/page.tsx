@@ -295,7 +295,7 @@ export default function BillingPage() {
                           </TableCell>
                           <TableCell>{formatDate(invoice.created)}</TableCell>
                           <TableCell>
-                            {formatCurrency(invoice.amountPaid / 100)}
+                            {formatCurrency(invoice.amountPaid)}
                           </TableCell>
                           <TableCell>
                             {invoice.invoicePdfUrl ? (

@@ -48,8 +48,8 @@ export function TopUpDialog({ open, onOpenChange }: TopUpDialogProps) {
     try {
       const data = await checkout.mutateAsync({
         credits: selected,
-        waiverAccepted: true,
-        agbAccepted: true,
+        waiverAccepted: widerrufsrechtChecked,
+        agbAccepted: agbChecked,
       });
       // D-14: DemoMode — redirect to billing with demo flag so billing page can show banner
       if (data.isDemoMode) {
