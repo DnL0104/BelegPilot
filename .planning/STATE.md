@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 context gathered — ready for /gsd-plan-phase 5
-last_updated: "2026-05-25T00:00:00.000Z"
-last_activity: 2026-05-25 -- Phase 5 context discussion complete. 16 decisions captured (D-01–D-16): token pack pricing locked, Stripe hosted checkout, Widerrufsrecht gate in TopUpDialog, Bruttopreise + Kleinunternehmer §19 UStG, /billing route + nav label, negative balance UX, test/live key guard, DemoMode toggle. CONTEXT.md committed.
+stopped_at: Phase 5 complete — UAT approved 2026-05-31. Ready for Phase 6.
+last_updated: "2026-05-31T00:00:00.000Z"
+last_activity: 2026-05-31 -- Phase 5 complete. All 4 plans executed (05-01 through 05-04). Stripe DemoMode smoke test passed (checkout flow, transaction history). PAY-01 through PAY-06 verified. 2 code review criticals fixed (invoice double-divide, consent passthrough).
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
+  completed_phases: 5
+  total_plans: 19
+  completed_plans: 19
   percent: 100
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03)
 
 **Core value:** Trustworthy classification — every line item correctly categorized into the right tax category, with reasoning the user can audit and override.
-**Current focus:** Phase 05 — commercial-surface-payments
+**Current focus:** Phase 06 — legal-consent-data-export
 
 ## Current Position
 
@@ -145,6 +145,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22T00:00:00Z
-Stopped at: Phase 3 complete — all plans executed; 03-04-SUMMARY.md written
-Resume file: None — start Phase 4 planning
+Last session: 2026-05-31T00:00:00Z
+Stopped at: Session resumed — proceeding to execute Phase 5, Plan 05-03 (/billing page)
+Resume file: None

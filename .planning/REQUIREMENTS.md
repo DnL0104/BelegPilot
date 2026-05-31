@@ -50,12 +50,12 @@
 
 ### Commercial Layer
 
-- [ ] **PAY-01**: `StripePaymentProvider` + `POST /payments/checkout` endpoint creating Stripe Checkout sessions for token packs; `/webhooks/stripe` anonymous endpoint with signature verification; `payments` table with `(stripe_event_id UNIQUE)` for idempotency; `GrantTokensJob` enqueued from webhook
-- [ ] **PAY-02**: DE-compliant Rechnung per purchase via Stripe Invoicing — vendor name, address, USt-ID where applicable, invoice number, line items, VAT line, sequential numbering; user can download from billing page
-- [ ] **PAY-03**: Pre-checkout flow — Widerrufsbelehrung shown, active checkbox waiver ("Ich verlange ausdrücklich…") required before Stripe redirect; checkbox not pre-ticked; AGB acceptance also required
-- [ ] **PAY-04**: Account → Billing page surfacing token balance, transaction history, invoice list with download links, embedded Stripe Customer Portal for payment-method management
-- [ ] **PAY-05**: Refund / chargeback flow — Stripe `charge.refunded` webhook enqueues `RevokeTokensJob`; balance can go negative until reconciled; audit-logged with reason
-- [ ] **PAY-06**: Multi-environment safety — separate `Stripe__SecretKey_Test` / `Stripe__SecretKey_Live` env vars; startup-time guard throws if Production runs with `sk_test_*`; loud warning if Development runs with `sk_live_*`
+- [x] **PAY-01**: `StripePaymentProvider` + `POST /payments/checkout` endpoint creating Stripe Checkout sessions for token packs; `/webhooks/stripe` anonymous endpoint with signature verification; `payments` table with `(stripe_event_id UNIQUE)` for idempotency; `GrantTokensJob` enqueued from webhook
+- [x] **PAY-02**: DE-compliant Rechnung per purchase via Stripe Invoicing — vendor name, address, USt-ID where applicable, invoice number, line items, VAT line, sequential numbering; user can download from billing page
+- [x] **PAY-03**: Pre-checkout flow — Widerrufsbelehrung shown, active checkbox waiver ("Ich verlange ausdrücklich…") required before Stripe redirect; checkbox not pre-ticked; AGB acceptance also required
+- [x] **PAY-04**: Account → Billing page surfacing token balance, transaction history, invoice list with download links, embedded Stripe Customer Portal for payment-method management
+- [x] **PAY-05**: Refund / chargeback flow — Stripe `charge.refunded` webhook enqueues `RevokeTokensJob`; balance can go negative until reconciled; audit-logged with reason
+- [x] **PAY-06**: Multi-environment safety — separate `Stripe__SecretKey_Test` / `Stripe__SecretKey_Live` env vars; startup-time guard throws if Production runs with `sk_test_*`; loud warning if Development runs with `sk_live_*`
 
 ### Legal & Consent
 

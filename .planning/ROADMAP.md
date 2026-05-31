@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Auth + Rate-Limit Hardening** — Refresh-token table, rate limiter, account-deletion friction _(3/3 plans complete; pending `/gsd-verify-phase`)_ (completed 2026-05-15)
 - [x] **Phase 3: Background Pipeline + Tesseract Pool** — Hangfire jobs, async upload, OCR pool, error UX _(4/4 plans complete; UAT pending)_ (completed 2026-05-22)
 - [x] **Phase 4: Classification Trustworthiness** — DE category expansion, rule + AI hybrid, audit/override UX, sum validation _(4/4 plans complete; UAT pending)_ (completed 2026-05-24)
-- [ ] **Phase 5: Commercial Surface (Payments)** — Stripe checkout + webhooks, Widerrufsrecht waiver, billing page, multi-env safety
+- [x] **Phase 5: Commercial Surface (Payments)** — Stripe checkout + webhooks, Widerrufsrecht waiver, billing page, multi-env safety _(4/4 plans complete; UAT approved 2026-05-31)_ (completed 2026-05-31)
 - [ ] **Phase 6: Legal + Consent + Data Export** — Impressum, Datenschutz, AGB, Widerrufsbelehrung, cookie banner, AVVs, DSGVO data export, audit log, Marken search
 - [ ] **Phase 7: Test Depth + Launch QA** — PG integration tests, Vitest + Playwright, BetterStack live, DE localization audit, mobile QA, lawyer final review
 
@@ -141,14 +141,14 @@ Plans:
 **Plans**: 4 plans
 
 **Wave 1** *(no dependencies — start here)*
-- [ ] 05-01-PLAN.md — Stripe backend foundation: Payment entity, EF migration, StripeOptions, StripePaymentProvider, PaymentEndpoints, webhook, GrantTokensJob, 402 balance guard
+- [x] 05-01-PLAN.md — Stripe backend foundation: Payment entity, EF migration, StripeOptions, StripePaymentProvider, PaymentEndpoints, webhook, GrantTokensJob, 402 balance guard *(complete 2026-05-28)*
 
 **Wave 2** *(blocked on Wave 1; 05-02 and 05-04 run in parallel)*
-- [ ] 05-02-PLAN.md — Frontend legal gate: TopUpDialog with AGB + Widerrufsrecht checkboxes, real checkout redirect, sidebar nav, TokenBalanceBadge negative state
-- [ ] 05-04-PLAN.md — RevokeTokensJob + charge.refunded webhook wiring + StripeOptionsValidator tests
+- [x] 05-02-PLAN.md — Frontend legal gate: TopUpDialog with AGB + Widerrufsrecht checkboxes, real checkout redirect, sidebar nav, TokenBalanceBadge negative state *(complete 2026-05-28)*
+- [x] 05-04-PLAN.md — RevokeTokensJob + charge.refunded webhook wiring + StripeOptionsValidator tests *(complete 2026-05-28)*
 
 **Wave 3** *(blocked on Waves 1+2)*
-- [ ] 05-03-PLAN.md — /billing page: balance card, transaction history, invoice list, Stripe Customer Portal redirect
+- [x] 05-03-PLAN.md — /billing page: balance card, transaction history, invoice list, Stripe Customer Portal redirect *(complete 2026-05-31)*
 
 ### Phase 6: Legal + Consent + Data Export + AVVs
 **Goal**: Launch-ready legal posture — all mandated DE pages, TTDSG cookie consent, signed AVVs/DPAs with all sub-processors, DSGVO Art. 20 self-serve data export, audit log for sensitive operations, and Markenrechte clearance.
@@ -206,7 +206,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Auth + Rate-Limit Hardening | 3/3 | Complete    | 2026-05-15 |
 | 3. Background Pipeline + Tesseract Pool | 4/4 | Complete (UAT pending) | 2026-05-22 |
 | 4. Classification Trustworthiness | 4/4 | Complete (UAT pending) | 2026-05-24 |
-| 5. Commercial Surface (Payments) | 0/4 | Not started | - |
+| 5. Commercial Surface (Payments) | 4/4 | Complete | 2026-05-31 |
 | 6. Legal + Consent + Data Export | 0/5 | Not started | - |
 | 7. Test Depth + Launch QA | 0/5 | Not started | - |
 
