@@ -485,7 +485,7 @@ interface ConsentContextValue {
 // Consistent across all four legal pages
 function DraftWarning() {
   return (
-    <div className="rounded border border-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-200">
+    <div className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
       ⚠ Entwurf – anwaltliche Prüfung ausstehend
     </div>
   );
@@ -716,22 +716,25 @@ This phase is not a rename/refactor. No runtime state migration required. Skippe
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Export token persistence strategy (in-memory vs DB table)**
    - What we know: D-10 says "transient"; in-memory ConcurrentDictionary is simplest.
    - What's unclear: How often do container restarts actually happen in practice? Is the "re-request" UX acceptable to the operator?
    - Recommendation: Proceed with in-memory `ExportTokenStore` Singleton. If Phase 7 UAT surfaces complaints, add a lightweight `user_exports` DB table as a follow-up.
+   - **RESOLVED:** In-memory `ExportTokenStore` Singleton (per 06-04 plans). DB-table follow-up deferred to Phase 7 if UAT surfaces complaints.
 
 2. **AGB content scope for StBerG-safe positioning**
    - What we know: D-01 locks the structure. The executor generates draft copy.
    - What's unclear: The exact SLA commitment in "support response SLA" (LEG-03) — unspecified in CONTEXT or REQUIREMENTS.
    - Recommendation: Use a conservative "Wir bemühen uns, Anfragen innerhalb von 5 Werktagen zu beantworten." (5 business days is manageable for a solo dev) and flag in 06-LEGAL-REVIEW.md for lawyer to adjust.
+   - **RESOLVED:** "5 Werktage" placeholder SLA wording, flagged to the lawyer in `06-LEGAL-REVIEW.md` for adjustment (per 06-01 T2/T3).
 
 3. **Footer position in authenticated layout**
    - What we know: The authenticated layout uses `SidebarInset` which has `overflow-hidden` [VERIFIED: codebase line 34 `className="overflow-hidden"`].
    - What's unclear: Whether a footer inside `SidebarInset` will be visible or clipped by the overflow hidden.
    - Recommendation: Place the Footer outside `SidebarInset` but still within `SidebarProvider`; or use `sticky bottom-0` within the scrollable content area. The planner should prototype this layout at plan time.
+   - **RESOLVED:** Footer placed outside `SidebarInset` as a sibling within `SidebarProvider` (per 06-01 T1 action).
 
 ---
 

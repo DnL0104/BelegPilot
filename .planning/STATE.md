@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 complete — UAT approved 2026-05-31. Ready for Phase 6.
-last_updated: "2026-05-31T00:00:00.000Z"
-last_activity: 2026-05-31 -- Phase 5 complete. All 4 plans executed (05-01 through 05-04). Stripe DemoMode smoke test passed (checkout flow, transaction history). PAY-01 through PAY-06 verified. 2 code review criticals fixed (invoice double-divide, consent passthrough).
+stopped_at: Phase 06 UI-SPEC approved
+last_updated: "2026-06-02T19:53:03.876Z"
+last_activity: 2026-06-02 -- Phase 06 planning complete
 progress:
-  total_phases: 7
-  completed_phases: 5
-  total_plans: 19
-  completed_plans: 19
-  percent: 100
+  total_phases: 8
+  completed_phases: 4
+  total_plans: 24
+  completed_plans: 18
+  percent: 75
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 Phase: 03 (background-pipeline-tesseract-pool) — EXECUTING
 Plan: 4 plans planned, plan-checker PASS (iteration 2), VERIFICATION.md drafted (Nyquist scaffolds in Plan 03-01 T1)
-Status: Phase 03 COMPLETE — all 4 plans executed (03-01, 03-03, 03-02, 03-04)
-Last activity: 2026-05-22 -- Phase 3 complete. 217 backend tests passing. Frontend build green. UAT checklist in 03-HUMAN-UAT.md pending manual operator sign-off.
+Status: Ready to execute
+Last activity: 2026-06-02 -- Phase 06 planning complete
 
 Progress: ██████████ 100% of Phase 1 + Phase 2 + Phase 3
 
@@ -145,6 +145,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02
-Stopped at: Session resumed. Phase 5 confirmed complete; Phase 6 CONTEXT.md ready (no PLAN yet). Proceeding to plan Phase 6 pending user selection.
-Resume file: .planning/phases/06-legal-consent-data-export/06-CONTEXT.md
+Last session: 2026-06-02T19:23:33.615Z
+Stopped at: Phase 06 UI-SPEC approved
+Resume file: .planning/phases/06-legal-consent-data-export/06-UI-SPEC.md
