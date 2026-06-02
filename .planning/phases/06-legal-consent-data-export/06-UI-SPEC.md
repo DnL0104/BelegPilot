@@ -1,10 +1,11 @@
 ---
 phase: 06
 slug: legal-consent-data-export
-status: draft
+status: approved
 shadcn_initialized: true
 preset: base-nova
 created: 2026-06-02
+reviewed_at: 2026-06-02
 ---
 
 # Phase 06 — UI Design Contract
