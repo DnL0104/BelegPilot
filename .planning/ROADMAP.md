@@ -1,4 +1,4 @@
-﻿# Roadmap: TaxReader
+# Roadmap: TaxReader
 
 ## Overview
 
@@ -166,11 +166,21 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 06-01: Legal pages content (Impressum, Datenschutz, AGB, Widerrufsbelehrung) + lawyer review track
-- [ ] 06-02: TTDSG cookie banner + consent gating for Sentry/analytics
-- [ ] 06-03: AVVs/DPAs sign-off (Anthropic, Stripe, Sentry, BetterStack) + `audit_log` table + `AuditLogger` for sensitive operations
-- [ ] 06-04: Self-serve data export (`ExportUserDataJob`, JSON+CSV bundle, email-link delivery)
-- [ ] 06-05: DPMA + EUIPO Marken search + optional registration
+
+**Wave 1** *(no dependencies — start here; 06-01 frontend, 06-03 backend audit, 06-05 docs run in parallel — disjoint files)*
+- [ ] 06-01-PLAN.md — Legal pages (Impressum/Datenschutz drafts replaced, AGB + Widerruf new) + site-wide Footer + branding fix + PUBLIC_PATHS + `06-LEGAL-REVIEW.md` gate [LEG-01..LEG-04]
+- [ ] 06-03-PLAN.md — `audit_log` entity/enum/EF-config/migration + `IAuditLogger`/`AuditLogger` + wire 5 sensitive-op call sites (append-only, PII-min) [LEG-08]
+- [ ] 06-05-PLAN.md — `06-AVV-TRACKING.md` (AVV/DPA sign-off, Datenschutz-coupled) + `06-MARKEN-SEARCH.md` (DPMA/EUIPO classes 9+42) + operator HUMAN-UAT [LEG-06, LEG-09]
+
+**Wave 2** *(06-02 blocked on 06-01 footer/layout overlap; 06-04 blocked on 06-03 audit log per D-15)*
+- [ ] 06-02-PLAN.md — TTDSG cookie banner + `ConsentProvider` + consent-settings dialog + Sentry runtime-consent gate in `instrumentation-client.ts` + footer revoke link [LEG-05]
+- [ ] 06-04-PLAN.md — Self-serve data export: `ExportUserDataJob` (JSON+CSV zip incl. own audit rows) + `ExportTokenStore` + ownership-validated one-time download endpoint + 24h purge job + settings trigger UI (in-app delivery per D-09) [LEG-07]
+
+**Cross-cutting constraints:** *(must_haves.truths shared across ≥ 2 plans)*
+- 06-04 reads the user's own `audit_log` rows (D-15) — 06-03 must land first; enforced via `depends_on: [06-03]` + Wave 2.
+- 06-02 modifies `app/layout.tsx`, `(authenticated)/layout.tsx`, and the `cookie-settings-link.tsx` created by 06-01 — file overlap forces 06-02 into Wave 2 after 06-01.
+- All plans honour CLAUDE.md conventions: layered architecture (Application defines `IAuditLogger`, Infrastructure implements), `Result<T>`, primary-constructor DI, file-scoped namespaces, structured logging with named placeholders, German `Sie`-form user-facing copy.
+- ASVS L1 threat-model controls applied across all 5 plans (security_enforcement=true). Block-on: high. Sensitive surfaces: export download IDOR/one-time token (06-04), append-only audit log + PII minimization (06-03), consent-gated Sentry (06-02).
 
 ### Phase 7: Test Depth + Launch QA
 **Goal**: Final quality gates and ops readiness before commercial launch — Postgres integration tests catch schema bugs, Vitest + Playwright cover frontend, BetterStack monitors are live, all user-facing copy is German, mobile flows work, lawyer's final sign-off complete.
@@ -207,7 +217,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. Background Pipeline + Tesseract Pool | 4/4 | Complete (UAT pending) | 2026-05-22 |
 | 4. Classification Trustworthiness | 4/4 | Complete (UAT pending) | 2026-05-24 |
 | 5. Commercial Surface (Payments) | 4/4 | Complete | 2026-05-31 |
-| 6. Legal + Consent + Data Export | 0/5 | Not started | - |
+| 6. Legal + Consent + Data Export | 0/5 | Planned | - |
 | 7. Test Depth + Launch QA | 0/5 | Not started | - |
 
 **Coverage:** 47 v1 requirements mapped to 7 phases (29 plans). Zero unmapped.
