@@ -64,13 +64,13 @@ All values confirmed from existing components (`impressum/page.tsx`, `settings/p
 | Role | Size | Weight | Line Height | CSS class |
 |------|------|--------|-------------|-----------|
 | Body | 14px | 400 (regular) | 1.6 (leading-relaxed) | `text-sm leading-relaxed` |
-| Label | 14px | 500 (medium) | 1.5 | `text-sm font-medium` |
+| Label | 14px | 600 (semibold) | 1.5 | `text-sm font-semibold` |
 | Section heading | 16px | 600 (semibold) | 1.4 | `text-base font-semibold` |
-| Page heading | 24px | 700 (bold) | 1.2 | `text-2xl font-bold tracking-tight` |
+| Page heading | 24px | 600 (semibold) | 1.2 | `text-2xl font-semibold tracking-tight` |
 
 Notes:
 - Legal pages use `text-sm leading-relaxed` for body content — matches existing `impressum/page.tsx:9`
-- Muted secondary text: `text-muted-foreground` (CSS var `--muted-foreground: oklch(0.556 0.02 250)`)
+- Muted secondary text: `text-muted-foreground` (CSS var `--muted-foreground: oklch(0.556 0.02 250)`) — rendered at weight 400 (body)
 - No display-size heading needed — largest heading is `text-2xl` for page titles
 - Font is `--font-sans` (Geist) throughout; `--font-mono` only for code blocks (none in this phase)
 
@@ -124,7 +124,7 @@ New components required for this phase and which primitives they compose.
 - Layout: max-width `max-w-2xl mx-auto` — matches legal page content width for visual alignment
 - Primary action "Alle akzeptieren": `<Button variant="default">` (emerald primary)
 - Secondary action "Nur notwendige": `<Button variant="outline">` — equal visual weight per TTDSG D-06
-- "Einstellungen" link: opens `consent-settings-dialog.tsx`
+- "Cookie-Einstellungen" link: opens `consent-settings-dialog.tsx`
 - No pre-ticked checkboxes anywhere in this component
 
 ### `components/consent/consent-settings-dialog.tsx` (NEW)
@@ -180,7 +180,7 @@ All copy in German `Sie`-form. Source: D-01 (CONTEXT.md), D-06, D-07, D-09, D-12
 |---------|-------------|
 | Primary CTA — cookie banner accept | "Alle akzeptieren" |
 | Secondary CTA — cookie banner reject | "Nur notwendige" |
-| Cookie banner settings link | "Einstellungen" |
+| Cookie banner settings link | "Cookie-Einstellungen" |
 | Cookie banner heading | "Wir verwenden Cookies" |
 | Cookie banner body | "Diese Website verwendet notwendige Cookies für Authentifizierung und Sicherheit. Mit Ihrer Zustimmung aktivieren wir außerdem Fehlerberichte (Sentry), um die Qualität zu verbessern." |
 | Consent category 1 name | "Notwendig" |
@@ -227,7 +227,7 @@ All copy in German `Sie`-form. Source: D-01 (CONTEXT.md), D-06, D-07, D-09, D-12
 | First page load, `decided === false` | Banner renders fixed bottom, visible |
 | "Alle akzeptieren" clicked | Sets `{ notwendig: true, fehleranalyse: true, decided: true }` in localStorage → calls `grantSentry()` if env-enabled + not already initialized → hides banner |
 | "Nur notwendige" clicked | Sets `{ notwendig: true, fehleranalyse: false, decided: true }` → hides banner |
-| "Einstellungen" clicked | Opens `ConsentSettingsDialog` |
+| "Cookie-Einstellungen" clicked | Opens `ConsentSettingsDialog` |
 | Footer "Cookie-Einstellungen" clicked | Sets `settingsPanelOpen = true` → opens `ConsentSettingsDialog` |
 | ConsentSettingsDialog "Einstellungen speichern" | Writes updated state → calls `grantSentry()` or `revokeSentry()` as appropriate → closes dialog |
 | Consent revoke ("Fehleranalyse" unchecked + saved) | Calls `await Sentry.close(2000)` → no page reload |
@@ -321,7 +321,7 @@ Identical to existing `impressum/page.tsx`: `mx-auto max-w-2xl space-y-8 px-6 py
 
 | Requirement | Implementation |
 |-------------|---------------|
-| Cookie banner keyboard-navigable | Tab order: banner heading → body → "Einstellungen" → "Nur notwendige" → "Alle akzeptieren" |
+| Cookie banner keyboard-navigable | Tab order: banner heading → body → "Cookie-Einstellungen" → "Nur notwendige" → "Alle akzeptieren" |
 | "Notwendig" toggle must not be operable | `disabled` attribute on Checkbox + `aria-disabled="true"` |
 | "Fehleranalyse" checkbox label association | `<label htmlFor="fehleranalyse-checkbox">` with matching `id` |
 | Banner announces to screen readers | `role="region"` + `aria-label="Cookie-Einstellungen"` on banner wrapper |
