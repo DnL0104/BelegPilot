@@ -129,6 +129,9 @@ public static class DependencyInjection
         services.Configure<UploadStorageOptions>(configuration.GetSection(UploadStorageOptions.SectionName));
         services.AddSingleton<IUploadBlobStore, FileSystemUploadBlobStore>();
 
+        // Audit log (LEG-08)
+        services.AddScoped<IAuditLogger, AuditLogger>();
+
         // Token / credit system
         services.AddScoped<ITokenService, TokenService>();
 
