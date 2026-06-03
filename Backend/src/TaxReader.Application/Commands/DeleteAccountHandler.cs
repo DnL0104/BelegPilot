@@ -1,14 +1,18 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using TaxReader.Application.DTOs;
 using TaxReader.Application.Interfaces;
 using TaxReader.Domain.Common;
+using TaxReader.Domain.Enums;
 
 namespace TaxReader.Application.Commands;
 
 public class DeleteAccountHandler(
     IAppDbContext dbContext,
     ICurrentUser currentUser,
-    IRefreshTokenService refreshTokenService)
+    IRefreshTokenService refreshTokenService,
+    IAuditLogger auditLogger)
 {
     public async Task<Result<bool>> HandleAsync(
         DeleteAccountRequest request,
@@ -34,6 +38,15 @@ public class DeleteAccountHandler(
         // could otherwise re-issue against a user-row mid-delete.
         await refreshTokenService.RevokeAllForUserAsync(userId, cancellationToken);
 
+        // LEG-08: record account deletion BEFORE cascade delete — user row must still exist
+        // when the audit entry is written (T-06-11). Store email hash, not raw email (T-06-12).
+        await auditLogger.RecordAsync(
+            AuditAction.AccountDeleted,
+            actorUserId: userId,
+            subjectUserId: userId,
+            metadata: new Dictionary<string, object?> { ["email_hash"] = HashEmail(user.Email) },
+            cancellationToken);
+
         // D-13 step 3: cascade delete via FK. Drops refresh_tokens, receipt_files,
         //   ReceiptFiles -> ProcessingRuns
         //               -> Receipts -> ReceiptItems -> ItemClassifications
@@ -43,5 +56,12 @@ public class DeleteAccountHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result<bool>.Success(true);
+    }
+
+    // V9 DSGVO Art. 5(1)(c): store SHA-256 hex of email rather than the raw address.
+    private static string HashEmail(string email)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(email.ToLowerInvariant()));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }

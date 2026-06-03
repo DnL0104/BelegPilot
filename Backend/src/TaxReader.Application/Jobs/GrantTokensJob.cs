@@ -8,7 +8,7 @@ using TaxReader.Domain.Enums;
 
 namespace TaxReader.Application.Jobs;
 
-public class GrantTokensJob(IAppDbContext dbContext, ILogger<GrantTokensJob> logger)
+public class GrantTokensJob(IAppDbContext dbContext, ILogger<GrantTokensJob> logger, IAuditLogger auditLogger)
 {
     [AutomaticRetry(Attempts = 3, DelaysInSeconds = new[] { 30, 120, 300 })]
     public async Task HandleAsync(Guid userId, int credits, CancellationToken cancellationToken)
@@ -59,6 +59,15 @@ public class GrantTokensJob(IAppDbContext dbContext, ILogger<GrantTokensJob> log
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // LEG-08: record token grant after successful save
+        await auditLogger.RecordAsync(
+            AuditAction.TokensGranted,
+            actorUserId: null,
+            subjectUserId: userId,
+            metadata: new Dictionary<string, object?> { ["credits"] = credits },
+            cancellationToken);
+
         logger.LogInformation("Granted {Credits} tokens to User {UserId} — new balance: {Balance}",
             credits, userId, balance.Balance);
     }

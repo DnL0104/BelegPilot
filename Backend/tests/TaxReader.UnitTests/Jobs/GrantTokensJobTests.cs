@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using TaxReader.Application.Interfaces;
 using TaxReader.Application.Jobs;
 using TaxReader.Domain.Entities;
 using TaxReader.Domain.Enums;
@@ -11,12 +12,14 @@ namespace TaxReader.UnitTests.Jobs;
 
 /// <summary>
 /// Behavioural tests for GrantTokensJob (PAY-01).
-/// Verifies token crediting, balance creation for new users, and Payment status transition.
+/// Verifies token crediting, balance creation for new users, Payment status transition,
+/// and LEG-08 audit logging.
 /// </summary>
 public class GrantTokensJobTests : IDisposable
 {
     private static readonly Guid TestUserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     private readonly AppDbContext _dbContext;
+    private readonly Mock<IAuditLogger> _auditLoggerMock;
     private readonly GrantTokensJob _job;
 
     public GrantTokensJobTests()
@@ -36,7 +39,17 @@ public class GrantTokensJobTests : IDisposable
         });
         _dbContext.SaveChanges();
 
-        _job = new GrantTokensJob(_dbContext, Mock.Of<ILogger<GrantTokensJob>>());
+        _auditLoggerMock = new Mock<IAuditLogger>();
+        _auditLoggerMock
+            .Setup(a => a.RecordAsync(
+                It.IsAny<AuditAction>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Dictionary<string, object?>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _job = new GrantTokensJob(_dbContext, Mock.Of<ILogger<GrantTokensJob>>(), _auditLoggerMock.Object);
     }
 
     [Fact]
@@ -104,6 +117,27 @@ public class GrantTokensJobTests : IDisposable
         var payment = await _dbContext.Payments
             .FirstAsync(p => p.UserId == TestUserId);
         payment.Status.Should().Be(PaymentStatus.Granted);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SuccessfulGrant_RecordsTokensGrantedAuditEntry()
+    {
+        // Arrange
+        const int credits = 50;
+
+        // Act
+        await _job.HandleAsync(TestUserId, credits, CancellationToken.None);
+
+        // Assert — LEG-08
+        _auditLoggerMock.Verify(
+            a => a.RecordAsync(
+                AuditAction.TokensGranted,
+                null,
+                TestUserId,
+                It.Is<Dictionary<string, object?>>(m => m.ContainsKey("credits")),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "LEG-08: TokensGranted audit entry must be recorded after successful grant");
     }
 
     public void Dispose() => _dbContext.Dispose();

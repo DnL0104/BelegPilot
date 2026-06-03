@@ -15,7 +15,7 @@ public record SaveClassificationRuleCommand(
     string? SourceFilePattern,
     Category Category);
 
-public class SaveClassificationRuleHandler(IAppDbContext dbContext, ICurrentUser currentUser)
+public class SaveClassificationRuleHandler(IAppDbContext dbContext, ICurrentUser currentUser, IAuditLogger auditLogger)
 {
     public async Task<Result<ClassificationRuleDto>> HandleAsync(
         SaveClassificationRuleCommand command,
@@ -59,6 +59,18 @@ public class SaveClassificationRuleHandler(IAppDbContext dbContext, ICurrentUser
 
         dbContext.ClassificationRules.Add(rule);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // LEG-08: record rule creation after successful save
+        await auditLogger.RecordAsync(
+            AuditAction.ClassificationRuleCreated,
+            actorUserId: currentUser.UserId,
+            subjectUserId: currentUser.UserId,
+            metadata: new Dictionary<string, object?>
+            {
+                ["rule_id"] = rule.Id,
+                ["category"] = command.Category.ToString()
+            },
+            cancellationToken);
 
         return Result<ClassificationRuleDto>.Success(rule.ToDto());
     }

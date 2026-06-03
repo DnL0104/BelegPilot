@@ -9,6 +9,7 @@ using Serilog.Context;
 using TaxReader.Application.Interfaces;
 using TaxReader.Domain.Common;
 using TaxReader.Domain.Entities;
+using TaxReader.Domain.Enums;
 using TaxReader.Infrastructure.Configuration;
 
 namespace TaxReader.Infrastructure.Services;
@@ -24,7 +25,8 @@ public class RefreshTokenService(
     IAppDbContext dbContext,
     IOptions<RefreshTokenOptions> refreshTokenOptions,
     IOptions<JwtOptions> jwtOptions,
-    ILogger<RefreshTokenService> logger) : IRefreshTokenService
+    ILogger<RefreshTokenService> logger,
+    IAuditLogger auditLogger) : IRefreshTokenService
 {
     private const string GenericFailure = "Ungültiges oder abgelaufenes Refresh-Token.";
 
@@ -92,6 +94,14 @@ public class RefreshTokenService(
                     "Refresh token replay detected",
                     scope => scope.SetExtra("user.id_hash", HashUserId(existing.UserId)),
                     SentryLevel.Warning);
+
+                // LEG-08: record replay detection before revoking all tokens
+                await auditLogger.RecordAsync(
+                    AuditAction.RefreshTokenReplayDetected,
+                    actorUserId: existing.UserId,
+                    subjectUserId: existing.UserId,
+                    metadata: new Dictionary<string, object?> { ["token_id_hash"] = HashUserId(existing.Id) },
+                    cancellationToken);
 
                 await RevokeAllForUserAsync(existing.UserId, cancellationToken);
                 return Result<(Guid, string)>.Failure(GenericFailure);

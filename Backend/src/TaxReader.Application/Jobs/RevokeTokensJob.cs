@@ -8,7 +8,7 @@ using TaxReader.Domain.Enums;
 
 namespace TaxReader.Application.Jobs;
 
-public class RevokeTokensJob(IAppDbContext dbContext, ILogger<RevokeTokensJob> logger)
+public class RevokeTokensJob(IAppDbContext dbContext, ILogger<RevokeTokensJob> logger, IAuditLogger auditLogger)
 {
     [AutomaticRetry(Attempts = 3, DelaysInSeconds = new[] { 30, 120, 300 })]
     public async Task HandleAsync(Guid userId, int credits, CancellationToken cancellationToken)
@@ -62,6 +62,15 @@ public class RevokeTokensJob(IAppDbContext dbContext, ILogger<RevokeTokensJob> l
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // LEG-08: record token revocation after successful save
+        await auditLogger.RecordAsync(
+            AuditAction.TokensRevoked,
+            actorUserId: null,
+            subjectUserId: userId,
+            metadata: new Dictionary<string, object?> { ["credits"] = credits },
+            cancellationToken);
+
         logger.LogInformation(
             "Revoked {Credits} tokens from User {UserId} — new balance: {Balance}",
             credits, userId, balance.Balance);

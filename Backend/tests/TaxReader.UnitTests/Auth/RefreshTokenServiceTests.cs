@@ -2,7 +2,10 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Moq;
+using TaxReader.Application.Interfaces;
 using TaxReader.Domain.Entities;
+using TaxReader.Domain.Enums;
 using TaxReader.Infrastructure.Configuration;
 using TaxReader.Infrastructure.Data;
 using TaxReader.Infrastructure.Services;
@@ -36,6 +39,16 @@ public class RefreshTokenServiceTests : IDisposable
         });
         _dbContext.SaveChanges();
 
+        var auditLoggerMock = new Mock<IAuditLogger>();
+        auditLoggerMock
+            .Setup(a => a.RecordAsync(
+                It.IsAny<AuditAction>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Dictionary<string, object?>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         _service = new RefreshTokenService(
             _dbContext,
             Options.Create(new RefreshTokenOptions { HashKey = Convert.ToBase64String(new byte[32]) }),
@@ -46,7 +59,8 @@ public class RefreshTokenServiceTests : IDisposable
                 Audience = "test",
                 RefreshTokenExpirationDays = 30
             }),
-            NullLogger<RefreshTokenService>.Instance);
+            NullLogger<RefreshTokenService>.Instance,
+            auditLoggerMock.Object);
     }
 
     [Fact]
