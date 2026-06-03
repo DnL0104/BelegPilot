@@ -346,3 +346,33 @@ export async function getInvoices(): Promise<Invoice[]> {
   const { data } = await api.get<Invoice[]>("/payments/invoices");
   return data;
 }
+
+// --- Data Export (DSGVO Art. 20 / LEG-07) ---
+
+export type ExportStatus = "Generating" | "Ready" | "Expired";
+
+export async function requestDataExport(): Promise<{ exportToken: string }> {
+  const { data } = await api.post<{ exportToken: string }>("/export/request");
+  return data;
+}
+
+export async function getExportStatus(
+  exportToken: string
+): Promise<{ status: ExportStatus }> {
+  const { data } = await api.get<{ status: ExportStatus }>("/export/status", {
+    params: { token: exportToken },
+  });
+  return data;
+}
+
+/**
+ * Downloads the export bundle as a Blob, carrying the JWT Authorization header.
+ * Using the api instance (not a bare <a href>) ensures the token is attached (T-06-40).
+ */
+export async function downloadExportBundle(exportToken: string): Promise<Blob> {
+  const { data } = await api.get<Blob>("/export/download", {
+    params: { token: exportToken },
+    responseType: "blob",
+  });
+  return data;
+}

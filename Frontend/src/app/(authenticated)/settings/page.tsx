@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Sparkles, Info, TriangleAlert } from "lucide-react";
+import { Loader2, Save, Sparkles, Info, TriangleAlert, Download } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { deleteAccount } from "@/lib/api-client";
+import { deleteAccount, downloadExportBundle } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
+import { useDataExport } from "@/hooks/use-data-export";
 
 const THRESHOLD_STEPS = [
   { value: null, label: "Aus", description: "Alle Vorschläge manuell bestätigen" },
@@ -42,6 +43,35 @@ export default function SettingsPage() {
   const [password, setPassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Data export state (DSGVO Art. 20 / LEG-07)
+  const {
+    requestExport,
+    isRequesting,
+    exportToken,
+    status: exportStatus,
+  } = useDataExport();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadExport = async () => {
+    if (!exportToken) return;
+    setIsDownloading(true);
+    try {
+      const blob = await downloadExportBundle(exportToken);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "taxreader-export.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Export fehlgeschlagen. Bitte erneut versuchen.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   useEffect(() => {
     if (settings) {
@@ -181,6 +211,83 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+          {/* Data Export — DSGVO Art. 20 */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400">
+                <Download className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Meine Daten exportieren</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Erstellt einen vollständigen Export Ihrer Daten (Belege, Klassifizierungen, Token-Transaktionen) als ZIP-Archiv gemäß DSGVO Art. 20. Der Link ist 24 Stunden gültig.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {/* Idle or error state: show trigger button */}
+              {(exportStatus === null || exportStatus === "Expired") && (
+                <>
+                  {exportStatus === "Expired" && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      Der Export-Link ist abgelaufen. Bitte fordern Sie einen neuen Export an.
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => requestExport()}
+                    disabled={isRequesting}
+                  >
+                    {isRequesting ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        Wird erstellt…
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-1.5 h-3.5 w-3.5" />
+                        Daten exportieren
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+
+              {/* Generating state */}
+              {exportStatus === "Generating" && (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Ihr Export wird erstellt. Dies kann einige Sekunden dauern.
+                  </p>
+                </div>
+              )}
+
+              {/* Ready state */}
+              {exportStatus === "Ready" && (
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    Export bereit
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={handleDownloadExport}
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    Herunterladen
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Danger Zone */}
           <div className="rounded-xl border border-destructive/40 bg-card p-6 shadow-sm">
             <div className="flex items-start gap-3 mb-5">
