@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 06 UI-SPEC approved
 last_updated: "2026-06-02T19:53:03.876Z"
-last_activity: 2026-06-02 -- Phase 06 planning complete
+last_activity: 2026-06-03 -- Phase 06 executed, verification gaps_found
 progress:
   total_phases: 8
   completed_phases: 4
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 03 (background-pipeline-tesseract-pool) — EXECUTING
-Plan: 4 plans planned, plan-checker PASS (iteration 2), VERIFICATION.md drafted (Nyquist scaffolds in Plan 03-01 T1)
-Status: Ready to execute
-Last activity: 2026-06-02 -- Phase 06 planning complete
+Phase: 06 (legal-consent-data-export) — EXECUTED, verification gaps_found (NOT complete)
+Plan: 5/5 plans built + committed (sequential on master); verifier 7/9 must-haves; 2 code gaps + operator/lawyer HUMAN-UAT pending
+Status: Gap closure needed — run /gsd-plan-phase 6 --gaps (see 06-VERIFICATION.md)
+Last activity: 2026-06-03 -- Phase 06 executed, gaps_found
 
 Progress: ██████████ 100% of Phase 1 + Phase 2 + Phase 3
 
@@ -145,6 +145,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-02T19:23:33.615Z
-Stopped at: Phase 06 UI-SPEC approved
-Resume file: .planning/phases/06-legal-consent-data-export/06-UI-SPEC.md
+Last session: 2026-06-03 -- Phase 06 executed (all 5 plans built), verification gaps_found
+Stopped at: Phase 06 verification = gaps_found (7/9). 2 code gaps: (1) parsedReceipts queried but not written to DSGVO export bundle [LEG-07]; (2) placeholder contact details/broken mailto in 4 legal pages [CR-04, operator data fill]. Plus 8 HUMAN-UAT items (browser/docker UAT, AVV signing, Marken search, lawyer review). Code review: 4 critical / 7 warning / 3 info in 06-REVIEW.md.
+Resume file: .planning/phases/06-legal-consent-data-export/06-VERIFICATION.md
+Next: /gsd-plan-phase 6 --gaps
