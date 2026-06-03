@@ -132,6 +132,11 @@ public static class DependencyInjection
         // Audit log (LEG-08)
         services.AddScoped<IAuditLogger, AuditLogger>();
 
+        // Data export token store (LEG-07 / D-10): Singleton so token mappings persist
+        // across requests and Hangfire workers within the same container lifetime.
+        // Lost on restart — accepted tradeoff (RESEARCH Pitfall 4).
+        services.AddSingleton<IExportTokenStore, ExportTokenStore>();
+
         // Token / credit system
         services.AddScoped<ITokenService, TokenService>();
 

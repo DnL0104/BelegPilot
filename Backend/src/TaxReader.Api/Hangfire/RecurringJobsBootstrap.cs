@@ -30,5 +30,12 @@ public static class RecurringJobsBootstrap
             methodCall: job => job.HandleAsync(CancellationToken.None),
             cronExpression: "0 4 * * 0",
             options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+        // LEG-07: daily at 02:00 UTC. Purges /tmp/taxreader-exports/*.zip older than 24h.
+        manager.AddOrUpdate<ExportCleanupJob>(
+            recurringJobId: "export-cleanup",
+            methodCall: job => job.HandleAsync(CancellationToken.None),
+            cronExpression: "0 2 * * *",
+            options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
     }
 }

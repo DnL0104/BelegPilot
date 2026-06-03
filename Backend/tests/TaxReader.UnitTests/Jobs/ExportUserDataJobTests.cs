@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -90,7 +89,7 @@ public class ExportUserDataJobTests : IDisposable
         {
             Id = Guid.NewGuid(),
             ReceiptItemId = itemId,
-            Category = Category.ConsumablesAndOfficeSupplies,
+            Category = Category.WerbungskostenBueromaterial,
             Method = ClassificationMethod.AI,
             Status = ClassificationStatus.Confirmed,
             Reason = "Office supplies keyword match"
