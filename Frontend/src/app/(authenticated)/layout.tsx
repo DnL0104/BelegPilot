@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Footer } from "@/components/layout/footer";
+import { CookieBanner } from "@/components/consent/cookie-banner";
 import { useAuth } from "@/providers/auth-provider";
 
 export default function AuthenticatedLayout({
@@ -31,6 +32,7 @@ export default function AuthenticatedLayout({
       <AppSidebar />
       <SidebarInset className="overflow-hidden">{children}</SidebarInset>
       <Footer />
+      <CookieBanner />
     </SidebarProvider>
   );
 }

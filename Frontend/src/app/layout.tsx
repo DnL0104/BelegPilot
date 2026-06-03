@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { ConsentProvider } from "@/providers/consent-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -37,9 +38,11 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>
             <TooltipProvider>
-              <AuthProvider>
-                {children}
-              </AuthProvider>
+              <ConsentProvider>
+                <AuthProvider>
+                  {children}
+                </AuthProvider>
+              </ConsentProvider>
               <Toaster richColors />
             </TooltipProvider>
           </QueryProvider>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Footer } from "@/components/layout/footer";
+import { CookieBanner } from "@/components/consent/cookie-banner";
 
 export default function LegalLayout({
   children,
@@ -21,6 +22,7 @@ export default function LegalLayout({
       </header>
       <main>{children}</main>
       <Footer />
+      <CookieBanner />
     </div>
   );
 }
