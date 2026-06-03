@@ -1,168 +1,246 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Datenschutzerklärung – BelegPilot",
+  title: "Datenschutzerklärung – TaxReader",
 };
+
+function DraftWarning() {
+  return (
+    <div className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
+      ⚠ Entwurf – anwaltliche Prüfung ausstehend
+    </div>
+  );
+}
 
 export default function DatenschutzPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-6 py-10 text-sm leading-relaxed">
+      <DraftWarning />
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Datenschutzerklärung
-        </h1>
-        <p className="mt-1 text-xs text-muted-foreground">Stand: April 2025</p>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        Datenschutzerklärung
+      </h1>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">1. Verantwortlicher</h2>
-        {/* ⚠️  PLATZHALTER – vor dem Launch mit echten Daten ersetzen */}
+        <h2 className="mb-2 text-base font-semibold">1. Verantwortlicher</h2>
         <p className="text-muted-foreground">
           Verantwortlich im Sinne der DSGVO ist:
           <br />
           <br />
-          [VOLLSTÄNDIGER NAME]
+          [Name]
           <br />
-          [STRAßE UND HAUSNUMMER]
+          [Anschrift]
           <br />
-          [PLZ ORT]
+          [PLZ Ort]
           <br />
           E-Mail:{" "}
           <a
-            href="mailto:[E-MAIL-ADRESSE]"
+            href="mailto:[kontakt@taxreader.de]"
             className="text-primary hover:underline"
           >
-            [E-MAIL-ADRESSE]
+            [kontakt@taxreader.de]
           </a>
         </p>
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">
-          2. Welche Daten werden erhoben?
+        <h2 className="mb-2 text-base font-semibold">
+          2. Zwecke und Rechtsgrundlagen der Verarbeitung (Art. 13 DSGVO)
         </h2>
-        <div className="space-y-4 text-muted-foreground">
-          <div>
-            <h3 className="mb-1 font-medium text-foreground">
-              Bei der Registrierung
-            </h3>
-            <p>
-              Zur Nutzung von BelegPilot erfassen wir Name, E-Mail-Adresse sowie
-              ein Passwort (gespeichert als sicherer Hash, niemals im Klartext).
-            </p>
-          </div>
-          <div>
-            <h3 className="mb-1 font-medium text-foreground">
-              Bei der Belegverarbeitung
-            </h3>
-            <p>
-              Du kannst PDF-Belege hochladen. Wir extrahieren daraus den Text
-              (Händlername, Kaufdatum, Beträge, Artikelbeschreibungen) und
-              speichern diese strukturierten Daten in deinem Konto. Die
-              ursprüngliche PDF-Datei wird unmittelbar nach der Textextraktion
-              automatisch und unwiderruflich gelöscht — sie verbleibt nicht auf
-              unseren Servern.
-            </p>
-          </div>
-          <div>
-            <h3 className="mb-1 font-medium text-foreground">Nutzungsdaten</h3>
-            <p>
-              Wir speichern keine Serverprotokolle mit IP-Adressen oder
-              ähnlichen Verbindungsdaten über die für den Betrieb technisch
-              notwendige Dauer hinaus.
-            </p>
-          </div>
+        <div className="space-y-3 text-muted-foreground">
+          <p>
+            TaxReader verarbeitet personenbezogene Daten ausschließlich für die
+            folgenden Zwecke:
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <strong className="text-foreground">Kontoverwaltung</strong> –
+              Name, E-Mail-Adresse und Passwort (gespeichert als sicherer Hash,
+              niemals im Klartext) zur Bereitstellung des Dienstes.
+              Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung).
+            </li>
+            <li>
+              <strong className="text-foreground">Belegverarbeitung</strong> –
+              Aus hochgeladenen Belegen (PDF/Bild) werden Text (Händlername,
+              Kaufdatum, Beträge, Artikelbeschreibungen) und strukturierte Daten
+              extrahiert. Die ursprüngliche Datei wird nach der Textextraktion
+              automatisch und unwiderruflich gelöscht. Rechtsgrundlage:
+              Art. 6 Abs. 1 lit. b DSGVO.
+            </li>
+            <li>
+              <strong className="text-foreground">KI-Klassifizierung</strong> –
+              Artikelbeschreibungen werden zur automatischen steuerlichen
+              Kategorisierung an Anthropic übermittelt (kein PDF, kein Passwort,
+              keine E-Mail-Adresse). Rechtsgrundlage: Art. 6 Abs. 1 lit. b
+              DSGVO.
+            </li>
+            <li>
+              <strong className="text-foreground">Zahlungsabwicklung</strong> –
+              Zahlungsdaten werden durch Stripe verarbeitet. TaxReader speichert
+              keine vollständigen Zahlungsdaten. Rechtsgrundlage: Art. 6
+              Abs. 1 lit. b DSGVO.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Betrieb und Sicherheit
+              </strong>{" "}
+              – Technische Protokolldaten zur Sicherstellung des Betriebs und
+              zum Missbrauchsschutz. Rechtsgrundlage: Art. 6 Abs. 1 lit. f
+              DSGVO (berechtigtes Interesse).
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Fehleranalyse (optional, mit Einwilligung)
+              </strong>{" "}
+              – Anonyme Fehlerberichte über Sentry nur bei erteilter
+              Einwilligung. Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO.
+            </li>
+          </ul>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">
-          3. KI-gestützte Klassifizierung (Anthropic)
+        <h2 className="mb-2 text-base font-semibold">
+          3. Automatisierte Klassifizierung (Art. 22 DSGVO)
         </h2>
         <p className="text-muted-foreground">
-          Zur automatischen steuerlichen Kategorisierung werden
-          Artikelbeschreibungen und Belegdaten (kein PDF, kein Passwort, keine
-          E-Mail-Adresse) an die API von{" "}
-          <strong className="text-foreground">Anthropic PBC</strong> (San
-          Francisco, USA) übermittelt. Anthropic verarbeitet diese Daten
-          ausschließlich zur Erbringung des API-Dienstes gemäß seiner eigenen
-          Datenschutzrichtlinie (
+          TaxReader nutzt KI-gestützte Klassifizierung zur Kategorisierung von
+          Belegpositionen. Diese Verarbeitung erfolgt automatisiert, enthält
+          jedoch{" "}
+          <strong className="text-foreground">keine ausschließlich automatisierte
+          Entscheidungsfindung</strong> im Sinne des Art. 22 DSGVO: Alle
+          Klassifizierungsvorschläge sind für Sie als Nutzer sichtbar,
+          überprüfbar und jederzeit manuell korrigierbar. Die finale
+          steuerliche Einordnung obliegt stets Ihnen oder Ihrem Steuerberater.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-base font-semibold">
+          4. Auftragsverarbeiter (Art. 28 DSGVO)
+        </h2>
+        <p className="mb-3 text-muted-foreground">
+          TaxReader setzt folgende Auftragsverarbeiter ein, mit denen
+          Auftragsverarbeitungsverträge (AVV) gemäß Art. 28 DSGVO bestehen
+          oder angebahnt werden:
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="pb-2 pr-4 font-semibold text-foreground">Dienst</th>
+                <th className="pb-2 pr-4 font-semibold text-foreground">Zweck</th>
+                <th className="pb-2 pr-4 font-semibold text-foreground">Sitz</th>
+                <th className="pb-2 font-semibold text-foreground">AVV / DPA</th>
+              </tr>
+            </thead>
+            <tbody className="text-muted-foreground">
+              <tr className="border-b border-border">
+                <td className="py-2 pr-4">Anthropic</td>
+                <td className="py-2 pr-4">KI-Klassifizierung</td>
+                <td className="py-2 pr-4">USA</td>
+                <td className="py-2">
+                  <a
+                    href="https://www.anthropic.com/legal/dpa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    DPA
+                  </a>
+                </td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-4">Stripe</td>
+                <td className="py-2 pr-4">Zahlungsabwicklung</td>
+                <td className="py-2 pr-4">Irland / USA</td>
+                <td className="py-2">
+                  <a
+                    href="https://stripe.com/de/legal/dpa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    DPA
+                  </a>
+                </td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-4">Sentry</td>
+                <td className="py-2 pr-4">Fehleranalyse</td>
+                <td className="py-2 pr-4">EU (Functional Software, USA)</td>
+                <td className="py-2">
+                  <a
+                    href="https://sentry.io/legal/dpa/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    DPA
+                  </a>
+                </td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-4">BetterStack</td>
+                <td className="py-2 pr-4">Uptime-Monitoring</td>
+                <td className="py-2 pr-4">EU</td>
+                <td className="py-2">
+                  <a
+                    href="https://betterstack.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Datenschutz
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-base font-semibold">
+          5. Drittland-Übermittlung (USA)
+        </h2>
+        <p className="text-muted-foreground">
+          Anthropic (KI-Klassifizierung) und Stripe (Zahlungsabwicklung)
+          verarbeiten Daten in den USA. Die Übermittlung in dieses Drittland
+          erfolgt auf Grundlage des EU-U.S. Data Privacy Framework (TADPF),
+          an dem Anthropic und Stripe teilnehmen, sowie ergänzend auf Basis
+          von Standardvertragsklauseln gemäß Art. 46 DSGVO. Die
+          Angemessenheitsentscheidung der Europäischen Kommission vom Juli 2023
+          (Schrems II-Nachfolgerahmen) bildet die Grundlage für den
+          Datentransfer. Weitere Informationen finden Sie in der{" "}
           <a
-            href="https://www.anthropic.com/privacy"
+            href="https://www.anthropic.com/legal/dpa"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
-            anthropic.com/privacy
+            DPA von Anthropic
           </a>
-          ). Die Übermittlung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b
-          DSGVO sowie Standardvertragsklauseln nach Art. 46 DSGVO für die
-          Drittlandsübermittlung in die USA.
+          .
         </p>
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">4. Rechtsgrundlagen</h2>
-        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-          <li>
-            <strong className="text-foreground">
-              Art. 6 Abs. 1 lit. b DSGVO
-            </strong>{" "}
-            – Vertragserfüllung: Verarbeitung der Kontodaten und Belegdaten zur
-            Bereitstellung des Dienstes.
-          </li>
-          <li>
-            <strong className="text-foreground">
-              Art. 6 Abs. 1 lit. f DSGVO
-            </strong>{" "}
-            – Berechtigtes Interesse: Sicherstellung des technischen Betriebs
-            und Missbrauchsschutz.
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-base font-semibold">5. Speicherdauer</h2>
+        <h2 className="mb-2 text-base font-semibold">6. Speicherdauer</h2>
         <p className="text-muted-foreground">
-          Deine Daten werden gespeichert, solange dein Konto aktiv ist. Nach
-          einer Kontolöschung werden alle zugehörigen Daten (Konto, Belege,
-          Klassifizierungen) vollständig entfernt. Du kannst die Löschung
-          deines Kontos jederzeit über die Einstellungen veranlassen.
+          Ihre Daten werden gespeichert, solange Ihr Konto aktiv ist. Nach
+          Kontolöschung werden alle zugehörigen Daten (Konto, Belege,
+          Klassifizierungen) vollständig und unwiderruflich gelöscht. Die
+          Kontolöschung ist jederzeit über die Einstellungen möglich.
+          Transaktionsdaten können für steuerliche Aufbewahrungsfristen
+          anonymisiert vorgehalten werden.
         </p>
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">
-          6. Cookies und lokale Speicherung
-        </h2>
-        <p className="text-muted-foreground">
-          BelegPilot verwendet ausschließlich technisch notwendige
-          Authentifizierungs-Token (JWT), die für den Login erforderlich sind.
-          Es werden{" "}
-          <strong className="text-foreground">
-            keine Tracking- oder Analyse-Cookies
-          </strong>{" "}
-          eingesetzt. Ein Cookie-Consent-Banner ist daher nicht erforderlich.
-        </p>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-base font-semibold">
-          7. Datenweitergabe an Dritte
-        </h2>
-        <p className="text-muted-foreground">
-          Deine Daten werden nicht an Werbetreibende, Analysedienste oder
-          andere Dritte weitergegeben. Ausnahme: die unter Punkt 3 beschriebene
-          Übermittlung an Anthropic zum Zweck der KI-Klassifizierung.
-        </p>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-base font-semibold">8. Deine Rechte</h2>
+        <h2 className="mb-2 text-base font-semibold">7. Ihre Rechte</h2>
         <p className="mb-3 text-muted-foreground">
-          Du hast gemäß DSGVO folgende Rechte bezüglich deiner
-          personenbezogenen Daten:
+          Sie haben gemäß DSGVO folgende Rechte:
         </p>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
           <li>
@@ -186,28 +264,32 @@ export default function DatenschutzPage() {
             DSGVO)
           </li>
           <li>
-            <strong className="text-foreground">Portabilität</strong> (Art. 20
-            DSGVO)
+            <strong className="text-foreground">Datenportabilität</strong>{" "}
+            (Art. 20 DSGVO) — Sie können Ihre Daten jederzeit über die{" "}
+            <Link href="/settings" className="text-primary hover:underline">
+              Einstellungen
+            </Link>{" "}
+            exportieren.
           </li>
         </ul>
         <p className="mt-3 text-muted-foreground">
-          Zur Ausübung dieser Rechte:{" "}
+          Zur Ausübung Ihrer Rechte:{" "}
           <a
-            href="mailto:[E-MAIL-ADRESSE]"
+            href="mailto:[kontakt@taxreader.de]"
             className="text-primary hover:underline"
           >
-            [E-MAIL-ADRESSE]
+            [kontakt@taxreader.de]
           </a>
         </p>
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">
-          9. Beschwerderecht bei der Aufsichtsbehörde
+        <h2 className="mb-2 text-base font-semibold">
+          8. Beschwerderecht
         </h2>
         <p className="text-muted-foreground">
-          Du hast das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu
-          beschweren. Eine Liste der deutschen Behörden findest du auf der
+          Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu
+          beschweren. Eine Liste der deutschen Behörden finden Sie auf der
           Website des{" "}
           <a
             href="https://www.bfdi.bund.de/DE/Infothek/Anschriften_Links/anschriften_links-node.html"
@@ -221,24 +303,11 @@ export default function DatenschutzPage() {
         </p>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-base font-semibold">
-          10. Kein Steuerberater
-        </h2>
-        <p className="text-muted-foreground">
-          BelegPilot ist ein Softwarewerkzeug und stellt keine Steuerberatung
-          dar. Die automatisch vorgenommenen Klassifizierungen sind Vorschläge
-          und ersetzen nicht die individuelle Beratung durch einen zugelassenen
-          Steuerberater oder Lohnsteuerhilfeverein.
-        </p>
-      </section>
-
       <div className="border-t pt-6 text-xs text-muted-foreground">
         <Link href="/impressum" className="hover:underline">
           Impressum
         </Link>
       </div>
-
     </div>
   );
 }

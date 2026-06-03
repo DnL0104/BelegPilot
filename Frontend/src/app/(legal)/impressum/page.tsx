@@ -1,24 +1,30 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Impressum – BelegPilot",
+  title: "Impressum – TaxReader",
 };
+
+function DraftWarning() {
+  return (
+    <div className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
+      ⚠ Entwurf – anwaltliche Prüfung ausstehend
+    </div>
+  );
+}
 
 export default function ImpressumPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-6 py-10 text-sm leading-relaxed">
+      <DraftWarning />
 
-      <h1 className="text-2xl font-bold tracking-tight">Impressum</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Impressum</h1>
 
       <section>
-        <h2 className="mb-2 text-base font-semibold">
-          Angaben gemäß § 5 TMG
-        </h2>
-        {/* ⚠️  PLATZHALTER – vor dem Launch mit echten Daten ersetzen */}
+        <h2 className="mb-2 text-base font-semibold">Angaben gemäß § 5 TMG</h2>
         <p className="whitespace-pre-line text-muted-foreground">
-          [VOLLSTÄNDIGER NAME]{"\n"}
-          [STRAßE UND HAUSNUMMER]{"\n"}
-          [PLZ ORT]
+          [Name]{"\n"}
+          [Anschrift]{"\n"}
+          [PLZ Ort]
         </p>
       </section>
 
@@ -27,48 +33,26 @@ export default function ImpressumPage() {
         <p className="text-muted-foreground">
           E-Mail:{" "}
           <a
-            href="mailto:[E-MAIL-ADRESSE]"
+            href="mailto:[kontakt@taxreader.de]"
             className="text-primary hover:underline"
           >
-            [E-MAIL-ADRESSE]
+            [kontakt@taxreader.de]
           </a>
         </p>
       </section>
 
       <section>
-        <h2 className="mb-2 text-base font-semibold">Umsatzsteuer-ID</h2>
+        <h2 className="mb-2 text-base font-semibold">Umsatzsteuer</h2>
         <p className="text-muted-foreground">
-          Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:{" "}
-          [UST-ID oder „nicht vorhanden"]
+          Gemäß § 19 UStG wird keine Umsatzsteuer berechnet; es wird keine
+          Umsatzsteuer-Identifikationsnummer (USt-IdNr.) geführt.
         </p>
       </section>
 
       <section>
         <h2 className="mb-2 text-base font-semibold">
-          Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV
+          Verbraucherstreitbeilegung / Online-Streitbeilegung
         </h2>
-        <p className="text-muted-foreground">
-          [VOLLSTÄNDIGER NAME]
-          <br />
-          [ANSCHRIFT]
-        </p>
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-base font-semibold">Haftungsausschluss</h2>
-        <p className="text-muted-foreground">
-          BelegPilot ist ein Werkzeug zur Unterstützung bei der Verwaltung von
-          Belegen und Ausgaben. Die von BelegPilot vorgenommenen
-          Klassifizierungen und Auswertungen stellen{" "}
-          <strong className="text-foreground">keine Steuerberatung</strong> dar
-          und ersetzen nicht die Beratung durch einen zugelassenen
-          Steuerberater. Für die steuerliche Richtigkeit der Angaben übernehmen
-          wir keine Haftung.
-        </p>
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-base font-semibold">Streitschlichtung</h2>
         <p className="text-muted-foreground">
           Die Europäische Kommission stellt eine Plattform zur
           Online-Streitbeilegung (OS) bereit:{" "}
@@ -86,12 +70,21 @@ export default function ImpressumPage() {
         </p>
       </section>
 
+      <section>
+        <h2 className="mb-2 text-base font-semibold">Haftungsausschluss</h2>
+        <p className="text-muted-foreground">
+          TaxReader ist ein Hilfsmittel zur Strukturierung von Belegen und
+          leistet keine Steuerberatung im Sinne des StBerG. Die von TaxReader
+          vorgenommenen Klassifizierungen sind Vorschläge und ersetzen nicht die
+          Beratung durch einen zugelassenen Steuerberater.
+        </p>
+      </section>
+
       <div className="border-t pt-6 text-xs text-muted-foreground">
         <Link href="/datenschutz" className="hover:underline">
           Datenschutzerklärung
         </Link>
       </div>
-
     </div>
   );
 }
