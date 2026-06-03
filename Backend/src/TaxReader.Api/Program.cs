@@ -361,6 +361,7 @@ try
     api.MapTokenEndpoints();
     api.MapPaymentEndpoints();
     api.MapSettingsEndpoints();
+    api.MapExportEndpoints();
 
     // D-15: Stripe webhook endpoint — anonymous, NOT under /api/v1 auth group.
     // Raw body must reach the handler before any JSON binding consumes the stream (Pitfall 1).
