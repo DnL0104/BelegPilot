@@ -163,7 +163,7 @@ Plans:
   6. `audit_log` table records account deletions, payment grants, refresh-token revocations, classification-override-rule creations
   7. DPMA + EUIPO Marken search complete; results documented (cleared, conflicted, or registered)
   8. AGB explicit on StBerG-safe positioning ("Vertragsgegenstand ist Strukturierung, keine Steuerberatung") and GoBD non-applicability
-**Plans**: 5 plans
+**Plans**: 7 plans (5 original + 2 gap-closure)
 
 Plans:
 
@@ -175,6 +175,10 @@ Plans:
 **Wave 2** *(06-02 blocked on 06-01 footer/layout overlap; 06-04 blocked on 06-03 audit log per D-15)*
 - [ ] 06-02-PLAN.md — TTDSG cookie banner + `ConsentProvider` + consent-settings dialog + Sentry runtime-consent gate in `instrumentation-client.ts` + footer revoke link [LEG-05]
 - [ ] 06-04-PLAN.md — Self-serve data export: `ExportUserDataJob` (JSON+CSV zip incl. own audit rows) + `ExportTokenStore` + ownership-validated one-time download endpoint + 24h purge job + settings trigger UI (in-app delivery per D-09) [LEG-07]
+
+**Gap closure** *(post-verification — VERIFICATION.md scored 7/9; both new plans Wave 1, disjoint files, run in parallel)*
+- [ ] 06-06-PLAN.md — Export bundle completeness + resource safety: write parsed_receipts.json/csv (GAP 1), FileStream/one-time-token safety in download endpoint (CR-01), job failure path + token expiry recovery (WR-02/WR-04) [LEG-07]
+- [ ] 06-07-PLAN.md — CI guard failing the build on any [bracket] placeholder in (legal) pages, blocking deploy with placeholders (CR-04); operator fill-in tracked [LEG-01..LEG-04]
 
 **Cross-cutting constraints:** *(must_haves.truths shared across ≥ 2 plans)*
 - 06-04 reads the user's own `audit_log` rows (D-15) — 06-03 must land first; enforced via `depends_on: [06-03]` + Wave 2.
