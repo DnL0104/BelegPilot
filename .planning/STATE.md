@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 06 UI-SPEC approved
-last_updated: "2026-06-02T19:53:03.876Z"
-last_activity: 2026-06-03 -- Phase 06 executed, verification gaps_found
+stopped_at: Phase 06 gap-closure plans created (06-06, 06-07)
+last_updated: "2026-06-04T00:00:00.000Z"
+last_activity: 2026-06-04 -- Phase 06 gap-closure planned (2 plans), ready to execute
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 24
+  total_plans: 26
   completed_plans: 18
   percent: 75
 ---
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 06 (legal-consent-data-export) — EXECUTED, verification gaps_found (NOT complete)
-Plan: 5/5 plans built + committed (sequential on master); verifier 7/9 must-haves; 2 code gaps + operator/lawyer HUMAN-UAT pending
-Status: Gap closure needed — run /gsd-plan-phase 6 --gaps (see 06-VERIFICATION.md)
-Last activity: 2026-06-03 -- Phase 06 executed, gaps_found
+Phase: 06 (legal-consent-data-export) — EXECUTED + GAP-CLOSURE PLANNED (NOT yet re-executed)
+Plan: 5/5 original plans built; 2 gap-closure plans created (06-06, 06-07) — checker PASSED (0 blockers, 0 warnings)
+Status: Ready to execute gap-closure — run /gsd-execute-phase 6 (then re-verify; operator/lawyer HUMAN-UAT still pending)
+Last activity: 2026-06-04 -- Phase 06 gap-closure planned (06-06 export completeness/resource-safety, 06-07 CI placeholder guard)
 
 Progress: ██████████ 100% of Phase 1 + Phase 2 + Phase 3
 
@@ -145,7 +145,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-03 -- Phase 06 executed (all 5 plans built), verification gaps_found
-Stopped at: Phase 06 verification = gaps_found (7/9). 2 code gaps: (1) parsedReceipts queried but not written to DSGVO export bundle [LEG-07]; (2) placeholder contact details/broken mailto in 4 legal pages [CR-04, operator data fill]. Plus 8 HUMAN-UAT items (browser/docker UAT, AVV signing, Marken search, lawyer review). Code review: 4 critical / 7 warning / 3 info in 06-REVIEW.md.
-Resume file: .planning/phases/06-legal-consent-data-export/06-VERIFICATION.md
-Next: /gsd-plan-phase 6 --gaps
+Last session: 2026-06-04 -- Phase 06 gap-closure planned (2 plans, checker PASSED)
+Stopped at: Phase 06 gap-closure plans created. 06-06 (LEG-07): write parsedReceipts to export zip (parsed_receipts.json/.csv) + DSGVO Art.20 completeness, fix FileStream resource safety/one-time-token ordering (CR-01), and one coherent failure-recovery path (WR-02 job catch → Expired; WR-04 ExportTokenStore expiry fix). 06-07 (LEG-01..04): extend hygiene-check CI job to fail on [bracket] placeholder tokens in (legal) pages (CR-04); real operator contact data remains a tracked operator action. Out of scope this run: CR-02/CR-03 Sentry consent, lawyer review, AVV signing, Marken search.
+Resume file: .planning/phases/06-legal-consent-data-export/06-06-PLAN.md
+Next: /gsd-execute-phase 6
