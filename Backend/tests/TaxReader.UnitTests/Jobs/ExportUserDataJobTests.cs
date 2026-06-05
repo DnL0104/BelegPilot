@@ -250,6 +250,22 @@ public class ExportUserDataJobTests : IDisposable
             "audit_log must NOT contain rows belonging to other users (T-06-46)");
     }
 
+    [Fact]
+    public async Task HandleAsync_JobFails_MarksTokenExpired()
+    {
+        // Arrange — mark generating, then force the first query to throw by disposing the dbContext
+        _tokenStore.MarkGenerating(_exportToken, OwnerUserId, DateTime.UtcNow.AddHours(24));
+        _dbContext.Dispose();
+
+        // Act — HandleAsync should re-throw after flipping the token (WR-02)
+        var act = async () => await _job.HandleAsync(OwnerUserId, _exportToken, CancellationToken.None);
+        await act.Should().ThrowAsync<Exception>("the job must re-throw so Hangfire records the failure");
+
+        // Assert — the catch path flipped the token to terminal Expired
+        _tokenStore.TryGet(_exportToken, out var record).Should().BeTrue();
+        record!.Status.Should().Be(ExportStatus.Expired);
+    }
+
     public void Dispose()
     {
         _dbContext.Dispose();
