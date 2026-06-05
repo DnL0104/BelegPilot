@@ -173,15 +173,15 @@ Which phases cover which requirements. Populated during roadmap creation.
 | PAY-04 | Phase 5 | Pending |
 | PAY-05 | Phase 5 | Pending |
 | PAY-06 | Phase 5 | Pending |
-| LEG-01 | Phase 6 | Pending |
-| LEG-02 | Phase 6 | Pending |
-| LEG-03 | Phase 6 | Pending |
-| LEG-04 | Phase 6 | Pending |
-| LEG-05 | Phase 6 | Pending |
-| LEG-06 | Phase 6 | Pending |
-| LEG-07 | Phase 6 | Pending |
-| LEG-08 | Phase 6 | Pending |
-| LEG-09 | Phase 6 | Pending |
+| LEG-01 | Phase 6 | Complete (06-01; operator data fill-in CI-guarded + lawyer review pending — 06-HUMAN-UAT.md) |
+| LEG-02 | Phase 6 | Complete (06-01; lawyer review deferred to Phase 7 QA-07) |
+| LEG-03 | Phase 6 | Complete (06-01; lawyer review deferred to Phase 7 QA-07) |
+| LEG-04 | Phase 6 | Complete (06-01; operator data fill-in pending) |
+| LEG-05 | Phase 6 | Complete (06-02; UI UAT pending) |
+| LEG-06 | Phase 6 | Pending (operator AVV/DPA signing — 06-AVV-TRACKING.md) |
+| LEG-07 | Phase 6 | Complete (06-04, 06-06) |
+| LEG-08 | Phase 6 | Complete (06-03) |
+| LEG-09 | Phase 6 | Pending (operator Marken search — 06-MARKEN-SEARCH.md) |
 | QA-01 | Phase 7 | Pending |
 | QA-02 | Phase 7 | Pending |
 | QA-03 | Phase 7 | Pending |
