@@ -145,7 +145,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-05 -- Phase 06 gap-closure executed + verified + closed
-Stopped at: Phase 06 COMPLETE. 06-06 (LEG-07) shipped: parsed_receipts.json/.csv in the DSGVO Art.20 bundle with real data, FileStream/one-time-token resource safety (audit→open→invalidate), job-failure + Generating-past-TTL → terminal Expired. 06-07 (CR-04) shipped: hygiene-check CI job fails on [bracket] placeholders in (legal) pages (red today by design until operator fills real data). Re-verification scored 9/9 code-verifiable (was 7/9); status human_needed → UAT approved. 284 tests pass / 5 skipped. Code review: 0 critical, 2 warning (CSV formula-injection WR-01, bare-\r quoting), 4 info — non-blocking, candidates for /gsd-code-review-fix 6.
-Resume file: .planning/phases/06-legal-consent-data-export/06-HUMAN-UAT.md (7 tracked human/operator items)
-Next: /gsd-discuss-phase 7 (or /gsd-plan-phase 7)
+Last session: 2026-06-05 -- Phase 07 context gathered (discuss-phase)
+Stopped at: Phase 07 (Test Depth + Launch QA) context captured. 8 decisions locked: D-01 backend coverage = QA critical paths + risk-backfill (AuthService/AiOnlyClassificationService/TokenService), D-02 defer PdfPig/Tesseract/exports/ClaudeAiClassifier; D-03 slow Postgres-integration+Playwright in a separate gated heavy CI job (push-to-main + label), D-04 Vitest on every PR; D-05 hard launch blockers = automated suites green + lawyer sign-off + real legal data & AVVs signed, D-06 native-speaker review + P2/3/4 UAT non-blocking; D-07 DE localization = automated CI guard (extend 06-07 pattern) + one-time native pass; D-08 BetterStack /health + /api/v1/health + Sentry quiet-hours. Flagged: PITFALLS.md (QA-07) does not exist yet — author this phase; codebase/TESTING.md is stale.
+Resume file: .planning/phases/07-test-depth-launch-qa/07-CONTEXT.md
+Next: /gsd-plan-phase 7
