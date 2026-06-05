@@ -48,4 +48,10 @@ public sealed class ExportTokenStore : IExportTokenStore
     {
         _tokens.TryRemove(token, out _);
     }
+
+    public void MarkExpired(string token)
+    {
+        if (_tokens.TryGetValue(token, out var stored))
+            _tokens[token] = stored with { Status = ExportStatus.Expired };
+    }
 }

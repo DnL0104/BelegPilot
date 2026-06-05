@@ -82,6 +82,39 @@ public class ExportTokenStoreTests
     }
 
     [Fact]
+    public void TryGet_GeneratingTokenPastTtl_ReturnsExpired()
+    {
+        // Arrange — a token stuck in Generating past its TTL (job died/timed out)
+        var token = Guid.NewGuid().ToString("N");
+        var userId = Guid.NewGuid();
+        _store.MarkGenerating(token, userId, DateTime.UtcNow.AddSeconds(-1));
+
+        // Act
+        var found = _store.TryGet(token, out var record);
+
+        // Assert — WR-04: a Generating token past TTL must flip to Expired so the UI stops spinning
+        found.Should().BeTrue();
+        record!.Status.Should().Be(ExportStatus.Expired);
+    }
+
+    [Fact]
+    public void MarkExpired_GeneratingToken_TryGetReturnsExpired()
+    {
+        // Arrange — Generating with a FUTURE expiry, so only MarkExpired can flip it
+        var token = Guid.NewGuid().ToString("N");
+        var userId = Guid.NewGuid();
+        _store.MarkGenerating(token, userId, DateTime.UtcNow.AddHours(24));
+
+        // Act — WR-02: job failure path flips the token to terminal Expired
+        _store.MarkExpired(token);
+
+        // Assert
+        var found = _store.TryGet(token, out var record);
+        found.Should().BeTrue();
+        record!.Status.Should().Be(ExportStatus.Expired);
+    }
+
+    [Fact]
     public void TryGet_UnknownToken_ReturnsFalse()
     {
         // Act

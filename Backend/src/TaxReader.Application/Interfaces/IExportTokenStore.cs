@@ -35,4 +35,7 @@ public interface IExportTokenStore
 
     /// <summary>One-time invalidation — called after a successful download (T-06-42).</summary>
     void Invalidate(string token);
+
+    /// <summary>Flips a token to a terminal Expired state (job failure recovery — WR-02). Idempotent; no-op if unknown.</summary>
+    void MarkExpired(string token);
 }
