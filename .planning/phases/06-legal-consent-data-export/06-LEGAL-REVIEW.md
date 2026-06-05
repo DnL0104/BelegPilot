@@ -36,3 +36,9 @@ Before changing status to **Lawyer-reviewed**:
 - [ ] `<DraftWarning />` component removed from the page file
 - [ ] Build passes after draft marker removal
 - [ ] Phase 7 QA-07 sign-off complete before setting status to **Live**
+
+## Operator Action: Placeholder Replacement (CR-04)
+
+**Operator action (blocking, tracked):** Replace `[Name]`, `[Anschrift]`, `[PLZ Ort]`, and `[kontakt@taxreader.de]` (and any other `[bracketed]` token) in all four `(legal)` pages — `impressum/page.tsx`, `datenschutz/page.tsx`, `agb/page.tsx`, `widerruf/page.tsx` — with real legal-entity contact data (TMG §5 / DSGVO Art. 13).
+
+A CI guard in the `hygiene-check` job (`.github/workflows/ci.yml`, step "Verify legal pages contain no placeholder tokens") greps the `(legal)` directory for any `[bracketed]` token and fails the build (`exit 1`) if any remain. This blocks merge/deploy until the operator fills in real data. The guard intentionally treats ANY bracketed token in these pages as a placeholder — there are no legitimate bracketed strings in the legal pages. Real contact data is NOT invented here; supplying it remains this open operator action.

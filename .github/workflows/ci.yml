@@ -44,6 +44,20 @@ jobs:
             exit 1
           fi
           printf 'Hygiene check passed.\n'
+      - name: Verify legal pages contain no placeholder tokens (CR-04 / TMG §5)
+        shell: bash
+        run: |
+          set -e
+          legal_dir="Frontend/src/app/(legal)"
+          # Any [bracketed] token in a legal page is an unfilled operator placeholder.
+          # Matches [Name], [Anschrift], [PLZ Ort], [kontakt@taxreader.de], etc.
+          # grep is kept inside the `if` so a no-match (exit 1) does not abort under set -e.
+          if grep -rnE '\[[^]]+\]' "$legal_dir"; then
+            printf 'Legal placeholder check FAILED: bracketed placeholder tokens found above.\n'
+            printf 'Operator must replace all [Name]/[Anschrift]/[PLZ Ort]/[kontakt@...] tokens with real contact data before deploy.\n'
+            exit 1
+          fi
+          printf 'Legal placeholder check passed.\n'
 
   backend-build-test:
     name: Backend build + test
