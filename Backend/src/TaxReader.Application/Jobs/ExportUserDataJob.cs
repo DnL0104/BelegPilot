@@ -136,6 +136,12 @@ public class ExportUserDataJob(
                 receipts.Select(r => $"{r.id},{EscapeCsv(r.original_file_name)},{r.uploaded_at:o},{r.status},{r.file_size},{EscapeCsv(r.source_hint)}"),
                 cancellationToken);
 
+            await WriteJsonEntryAsync(archive, "parsed_receipts.json", parsedReceipts, jsonOptions, cancellationToken);
+            await WriteCsvEntryAsync(archive, "parsed_receipts.csv",
+                "id,receipt_file_id,vendor,purchase_date,total_amount,currency,parsed_at",
+                parsedReceipts.Select(r => $"{r.id},{r.receipt_file_id},{EscapeCsv(r.vendor)},{r.purchase_date},{r.total_amount},{r.currency},{r.parsed_at:o}"),
+                cancellationToken);
+
             await WriteJsonEntryAsync(archive, "items.json", items, jsonOptions, cancellationToken);
             await WriteCsvEntryAsync(archive, "items.csv",
                 "id,receipt_id,description,quantity,unit_price,total_price,line_number",
@@ -208,6 +214,7 @@ public class ExportUserDataJob(
 
             Inhalt:
             - receipts.json / receipts.csv: Ihre hochgeladenen Belege (Metadaten)
+            - parsed_receipts.json / parsed_receipts.csv: Geparste Belegdaten (Händler, Datum, Betrag)
             - items.json / items.csv: Einzelpositionen aus den Belegen
             - classifications.json / classifications.csv: Klassifizierungen je Position
             - token_transactions.json / token_transactions.csv: Token-Transaktionen
