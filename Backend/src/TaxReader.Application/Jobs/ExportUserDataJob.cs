@@ -33,6 +33,8 @@ public class ExportUserDataJob(
         logger.LogInformation("Starting data export for User {UserId}, token prefix {TokenPrefix}",
             userId, exportToken.Length >= 8 ? exportToken[..8] : exportToken);
 
+        try
+        {
         // 1. Query all user-scoped data (no PasswordHash, no internal noise)
         var receipts = await dbContext.ReceiptFiles
             .Where(f => f.UserId == userId)
@@ -176,6 +178,18 @@ public class ExportUserDataJob(
             userId,
             exportToken.Length >= 8 ? exportToken[..8] : exportToken,
             new FileInfo(zipPath).Length);
+        }
+        catch (Exception ex)
+        {
+            // WR-02: flip the token to a terminal Expired state so the UI's existing Expired
+            // branch surfaces recovery; re-throw so Hangfire records the failure and honours
+            // [AutomaticRetry]. MarkExpired is idempotent; a later successful retry re-flips to
+            // Ready via Register.
+            logger.LogError(ex, "Data export failed for User {UserId}, token prefix {TokenPrefix}",
+                userId, exportToken.Length >= 8 ? exportToken[..8] : exportToken);
+            tokenStore.MarkExpired(exportToken);
+            throw;
+        }
     }
 
     private static async Task WriteJsonEntryAsync<T>(

@@ -111,12 +111,8 @@ public static class ExportEndpoints
                     statusCode: StatusCodes.Status410Gone);
             }
 
-            // Stream the file, then invalidate the token (one-time — T-06-42)
-            var stream = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
-
-            // T-06-42: one-time invalidation after we've opened the stream
-            tokenStore.Invalidate(token);
-
+            // CR-01: audit BEFORE opening the stream — if audit throws, no handle is open and
+            // the one-time token is left untouched (no premature consumption on delivery failure).
             await auditLogger.RecordAsync(
                 AuditAction.DataExportDownloaded,
                 actorUserId: currentUser.UserId,
@@ -124,6 +120,13 @@ public static class ExportEndpoints
                 metadata: new Dictionary<string, object?> { ["token_prefix"] = token[..8] },
                 cancellationToken);
 
+            // Open the stream; Results.File takes ownership and disposes it after the response is
+            // written, so the handle is always released — that is the resource-safety fix.
+            var stream = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+
+            // T-06-42: one-time invalidation only after the stream is open and ownership transfers
+            // to Results.File.
+            tokenStore.Invalidate(token);
             return Results.File(stream, "application/zip", "taxreader-export.zip");
         })
         .WithName("DownloadDataExport")
