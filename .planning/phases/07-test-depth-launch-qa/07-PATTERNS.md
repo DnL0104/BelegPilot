@@ -206,7 +206,7 @@ No test analog; the executor must match the actual code under test. Excerpted sh
 
 **`upload-form.tsx` upload state machine (QA-02 named target):** `useState<File[]>` + `useUploadFiles()` mutation; `handleUpload` clears files optimistically, calls `mutateAsync`, on error restores files + toasts the server `error` field or `"Upload fehlgeschlagen. Bitte erneut versuchen."` (`upload-form.tsx:18-43`). Test the empty-selection guard (`"Bitte mindestens eine Datei auswählen"`) and the error-restore path.
 
-**`login/page.tsx` form (QA-02 RHF+Zod note):** NOTE — `login/page.tsx` uses plain `useState` + native `required`/`minLength`, **not** RHF+Zod. The RHF+Zod targets are forms using `zodResolver` (e.g. `save-rule-dialog.tsx`, settings/register forms — planner should grep `zodResolver` in `Frontend/src` to enumerate). Test authors must check each form's actual implementation before asserting RHF behavior.
+**`login/page.tsx` form (QA-02 RHF+Zod note):** NOTE — `login/page.tsx` uses plain `useState` + native `required`/`minLength`, **not** RHF+Zod. **There are NO RHF+Zod forms in `Frontend/src`** — `zodResolver`/`@hookform`/`useForm` have ZERO matches despite the deps being installed (verified). The earlier mention of `save-rule-dialog.tsx`/settings/register as `zodResolver` users was incorrect — none exist. QA-02 form coverage targets the actual implementations (login/register plain `useState` + native validation); the login/register flows are otherwise covered end-to-end by the 07-05 Playwright happy path. Test authors must check each form's actual implementation before asserting any RHF behavior.
 
 ---
 

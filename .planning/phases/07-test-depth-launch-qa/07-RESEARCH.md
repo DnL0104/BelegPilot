@@ -528,22 +528,25 @@ app.MapHealthChecks("/api/v1/health");          // DB + IAiClassifier.IsConfigur
 | A4 | Solo-dev paging channel = BetterStack/Sentry email + push (no PagerDuty) | D-08/QA-06 | Low — D-08 leaves channel to planning; email+push is the documented default |
 | A5 | Phone-camera photo-receipt upload (QA-05) stays a HUMAN-UAT item, not automated | Validation Architecture | Low — real-device camera cannot be automated in CI; viewport smoke is the automated part |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the heavy CI job run integration tests against a Testcontainers-managed Postgres, or against a GitHub Actions `services:` Postgres container?**
    - What we know: Testcontainers needs Docker, which `ubuntu-latest` provides; Testcontainers manages its own container lifecycle.
    - What's unclear: Whether to use Testcontainers' own container (recommended, matches local dev) or a CI `services:` block.
    - Recommendation: Use Testcontainers' container (one code path local + CI); do NOT add a `services: postgres` block — Testcontainers starts its own.
+   - RESOLVED: Use Testcontainers' own managed container; do NOT add a CI `services: postgres` block (reflected in 07-06).
 
 2. **Should `/health` and `/api/v1/health` be anonymous?**
    - What we know: All `/api/v1/*` routes are `RequireAuthorization()` by default; anonymous endpoints opt out.
    - What's unclear: BetterStack probes are unauthenticated, so both health endpoints must `.AllowAnonymous()`.
    - Recommendation: Both health endpoints anonymous; ensure they leak no secrets (Security Domain).
+   - RESOLVED: Both `/health` and `/api/v1/health` are `.AllowAnonymous()` (reflected in 07-03).
 
 3. **Does `AiOnlyClassificationService` still exist as the registered `IClassificationService`, or was it replaced by `HybridClassificationService` (CLASS-02)?**
    - What we know: D-01 explicitly names `AiOnlyClassificationService` as a backfill target; the file still exists and is exercised via the hybrid composition.
    - What's unclear: Whether Phase 4's `HybridClassificationService` wraps it or replaced its registration.
    - Recommendation: Test `AiOnlyClassificationService` directly as D-01 dictates (file present, verified); the planner confirms the DI registration when wiring.
+   - RESOLVED: Test `AiOnlyClassificationService` directly per D-01, regardless of any Phase-4 wrapper (reflected in 07-02).
 
 ## Environment Availability
 

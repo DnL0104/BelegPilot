@@ -209,10 +209,14 @@ Plans:
 - [ ] 07-02-PLAN.md — D-01 service unit backfill: AuthService + TokenService + AiOnlyClassificationService (in-memory, every PR) [QA-01]
 - [ ] 07-03-PLAN.md — OBS-03 health endpoints (/health + /api/v1/health, anonymous, no-secret JSON) + WAF tests [OBS-03]
 - [ ] 07-04-PLAN.md — Vitest 3 + RTL setup + unit/component tests (format, api-client refresh dedupe, upload-form, classify-dialog) [QA-02]
+
+**Wave 2** *(blocked on 07-04 — needs the vitest/playwright configs)*
 - [ ] 07-05-PLAN.md — Playwright 1.50 DE-locale happy-path E2E + sm/md responsive smoke (real stack, standalone server) [QA-03, QA-05]
 
-**Wave 2** *(blocked on Wave 1 — needs the integration project + vitest/playwright configs + health endpoints)*
+**Wave 3** *(blocked on Waves 1+2 — needs the integration project + vitest/playwright configs)*
 - [ ] 07-06-PLAN.md — CI: DE-localization guard (hygiene-check) + Vitest on every PR + gated heavy job (integration + E2E on push-main / run-heavy) [QA-04, QA-01, QA-02, QA-03]
+
+**Wave 4** *(blocked on Wave 3 + 07-03 — runs the CI heavy suite + health endpoints for the go/no-go)*
 - [ ] 07-07-PLAN.md — Launch close-out: PITFALLS.md + go/no-go gate + BetterStack/Sentry ops setup + manual UAT (lawyer, AVVs, native review, phone-camera) [QA-06, QA-07, OBS-03, QA-05]
 
 ## Progress
