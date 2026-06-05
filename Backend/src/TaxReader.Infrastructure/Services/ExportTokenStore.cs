@@ -33,8 +33,9 @@ public sealed class ExportTokenStore : IExportTokenStore
             return false;
         }
 
-        // Flip Ready → Expired if past expiry window
-        if (stored.Status != ExportStatus.Generating && DateTime.UtcNow > stored.ExpiresAtUtc)
+        // Flip any non-terminal token (Ready OR Generating) to Expired once past its TTL.
+        // WR-04: a Generating token whose job died must flip too, so the UI stops spinning.
+        if (stored.Status != ExportStatus.Expired && DateTime.UtcNow > stored.ExpiresAtUtc)
         {
             record = stored with { Status = ExportStatus.Expired };
             return true;
