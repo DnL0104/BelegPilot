@@ -200,14 +200,20 @@ Plans:
   7. Sentry alert rules tuned against real-traffic baseline (post Phase 1); "quiet hours" 23:00-07:00 only HIGH severity
   8. AGB + Datenschutzerklärung have lawyer's final pre-launch sign-off
   9. "Looks done but isn't" checklist (PITFALLS.md) verified end-to-end
-**Plans**: 5 plans
+**Plans**: 7 plans
 
 Plans:
-- [ ] 07-01: PostgreSQL integration test project (Testcontainers + Respawn) covering critical paths
-- [ ] 07-02: Vitest unit + component tests; Playwright E2E happy path; CI integration
-- [ ] 07-03: BetterStack go-live (monitors, status page, maintenance windows) + Sentry alert rules tuned
-- [ ] 07-04: German localization audit + mobile-responsive QA pass
-- [ ] 07-05: Final lawyer review + "Looks done but isn't" checklist verification + go/no-go launch decision
+
+**Wave 1** *(no dependencies — disjoint files, run in parallel)*
+- [ ] 07-01-PLAN.md — PostgreSQL integration test project (Testcontainers 4.x + Respawn 6.x): payment idempotency, duplicate detection, cascade delete, refresh-token rotation+replay, migration smoke [QA-01]
+- [ ] 07-02-PLAN.md — D-01 service unit backfill: AuthService + TokenService + AiOnlyClassificationService (in-memory, every PR) [QA-01]
+- [ ] 07-03-PLAN.md — OBS-03 health endpoints (/health + /api/v1/health, anonymous, no-secret JSON) + WAF tests [OBS-03]
+- [ ] 07-04-PLAN.md — Vitest 3 + RTL setup + unit/component tests (format, api-client refresh dedupe, upload-form, classify-dialog) [QA-02]
+- [ ] 07-05-PLAN.md — Playwright 1.50 DE-locale happy-path E2E + sm/md responsive smoke (real stack, standalone server) [QA-03, QA-05]
+
+**Wave 2** *(blocked on Wave 1 — needs the integration project + vitest/playwright configs + health endpoints)*
+- [ ] 07-06-PLAN.md — CI: DE-localization guard (hygiene-check) + Vitest on every PR + gated heavy job (integration + E2E on push-main / run-heavy) [QA-04, QA-01, QA-02, QA-03]
+- [ ] 07-07-PLAN.md — Launch close-out: PITFALLS.md + go/no-go gate + BetterStack/Sentry ops setup + manual UAT (lawyer, AVVs, native review, phone-camera) [QA-06, QA-07, OBS-03, QA-05]
 
 ## Progress
 
@@ -222,7 +228,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Classification Trustworthiness | 4/4 | Complete (UAT pending) | 2026-05-24 |
 | 5. Commercial Surface (Payments) | 4/4 | Complete | 2026-05-31 |
 | 6. Legal + Consent + Data Export | 7/7 | Complete (UAT pending) | 2026-06-05 |
-| 7. Test Depth + Launch QA | 0/5 | Not started | - |
+| 7. Test Depth + Launch QA | 0/7 | Planned | - |
 
 **Coverage:** 47 v1 requirements mapped to 7 phases (29 plans). Zero unmapped.
 
