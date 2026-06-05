@@ -161,6 +161,8 @@ public class ExportUserDataJobTests : IDisposable
         var entryNames = archive.Entries.Select(e => e.Name).ToList();
         entryNames.Should().Contain("receipts.json");
         entryNames.Should().Contain("receipts.csv");
+        entryNames.Should().Contain("parsed_receipts.json");
+        entryNames.Should().Contain("parsed_receipts.csv");
         entryNames.Should().Contain("items.json");
         entryNames.Should().Contain("items.csv");
         entryNames.Should().Contain("classifications.json");
@@ -170,6 +172,24 @@ public class ExportUserDataJobTests : IDisposable
         entryNames.Should().Contain("audit_log.json");
         entryNames.Should().Contain("audit_log.csv");
         entryNames.Should().Contain("README.txt");
+    }
+
+    [Fact]
+    public async Task HandleAsync_ValidUser_ParsedReceiptsCarryRealData()
+    {
+        // Act
+        await _job.HandleAsync(OwnerUserId, _exportToken, CancellationToken.None);
+
+        // Assert — parsed_receipts.json must carry the seeded vendor + total, not an empty entry
+        using var zipStream = new FileStream(_zipPath, FileMode.Open, FileAccess.Read);
+        using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
+
+        var parsedEntry = archive.Entries.Single(e => e.Name == "parsed_receipts.json");
+        using var reader = new StreamReader(parsedEntry.Open());
+        var content = await reader.ReadToEndAsync();
+
+        content.Should().Contain("Amazon", "parsed_receipts.json must carry the seeded vendor");
+        content.Should().Contain("29.99", "parsed_receipts.json must carry the seeded total amount");
     }
 
     [Fact]
