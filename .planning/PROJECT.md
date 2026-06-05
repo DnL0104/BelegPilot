@@ -45,10 +45,10 @@ Trustworthy classification — every line item correctly categorized into the ri
 - [ ] Refund / failure handling for payment errors
 
 **Compliance & legal**
-- [ ] GDPR posture — privacy policy, ToS, cookie/consent handling, AVV with Anthropic, GoBD where applicable
-- [ ] StBerG-safe positioning — clear "Helfer, not Berater" framing in copy and ToS
-- [ ] Self-serve data export (user can download all their data)
-- [ ] Documented data-deletion path (already implemented — confirm + document)
+- [x] GDPR posture — privacy policy, ToS, cookie/consent handling, AVV with Anthropic, GoBD where applicable — _Validated in Phase 6 (LEG-01..05): legal pages + TTDSG cookie consent shipped; AVV/DPA signing is a tracked operator action (LEG-06)_
+- [x] StBerG-safe positioning — clear "Helfer, not Berater" framing in copy and ToS — _Validated in Phase 6 (LEG-03 AGB; lawyer review deferred to Phase 7 QA-07)_
+- [x] Self-serve data export (user can download all their data) — _Validated in Phase 6 (LEG-07; 06-04 + 06-06 — bundle includes receipts, parsed_receipts, items, classifications, token_transactions, audit_log)_
+- [x] Documented data-deletion path (already implemented — confirm + document) — _Validated in Phase 6 (LEG-08 audit log records account deletions)_
 
 **Classification quality** (drives Core Value)
 - [ ] Broaden tax-relevant categories beyond the teacher set (Anyone DE)
@@ -147,4 +147,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — Phase 1 (Foundation Cleanup + CI) complete; requirements FND-01..05 + OBS-01..02 validated. 4 operator-side items tracked in `phases/01-foundation-cleanup-ci/01-HUMAN-UAT.md`.*
+*Last updated: 2026-06-05 — Phase 6 (Legal + Consent + Data Export) complete; LEG-01..05/07/08 validated code-side (9/9 code-verifiable). Operator/lawyer/UI UAT items tracked in `phases/06-legal-consent-data-export/06-HUMAN-UAT.md` (placeholder fill-in, AVV signing LEG-06, Marken search LEG-09, lawyer review, cookie/export UI testing). Phases 1–6 complete; Phase 7 (Test Depth + Launch QA) next.*
