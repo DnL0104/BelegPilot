@@ -367,6 +367,9 @@ try
     // Raw body must reach the handler before any JSON binding consumes the stream (Pitfall 1).
     app.MapStripeWebhookEndpoint();
 
+    // OBS-03: anonymous health probes for BetterStack; minimal status body, no secrets.
+    app.MapHealthEndpoints();
+
     // D-23: register recurring cleanup jobs (RESEARCH Pattern 9). Idempotent across
     // reboots — AddOrUpdate keys by recurringJobId, so duplicate registrations are safe.
     RecurringJobsBootstrap.Register(app.Services);

@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using TaxReader.Domain.Entities;
 
 namespace TaxReader.Application.Interfaces;
 
 public interface IAppDbContext
 {
+    DatabaseFacade Database { get; }
+
     DbSet<User> Users { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<ReceiptFile> ReceiptFiles { get; }
