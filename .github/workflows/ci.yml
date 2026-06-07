@@ -58,6 +58,18 @@ jobs:
             exit 1
           fi
           printf 'Legal placeholder check passed.\n'
+      - name: Verify German localization — money via de-DE, no bare toLocaleString (QA-04 / D-07)
+        shell: bash
+        run: |
+          set -e
+          src="Frontend/src"
+          # Money must be formatted via formatCurrency / Intl.NumberFormat("de-DE"…), never bare toLocaleString().
+          # grep is kept inside the `if` so a no-match (exit 1) does not abort under set -e.
+          if grep -rnE 'toLocaleString\(\s*\)' "$src" --include="*.tsx" --include="*.ts"; then
+            printf 'Localization guard FAILED: bare toLocaleString() without a locale — use formatCurrency / Intl.NumberFormat("de-DE").\n'
+            exit 1
+          fi
+          printf 'Localization guard passed.\n'
 
   backend-build-test:
     name: Backend build + test
@@ -101,3 +113,6 @@ jobs:
       - name: Build
         working-directory: Frontend
         run: npm run build
+      - name: Test (Vitest)
+        working-directory: Frontend
+        run: npx vitest run
