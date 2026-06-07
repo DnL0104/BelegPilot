@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Classification Trustworthiness** — DE category expansion, rule + AI hybrid, audit/override UX, sum validation _(4/4 plans complete; UAT pending)_ (completed 2026-05-24)
 - [x] **Phase 5: Commercial Surface (Payments)** — Stripe checkout + webhooks, Widerrufsrecht waiver, billing page, multi-env safety _(4/4 plans complete; UAT approved 2026-05-31)_ (completed 2026-05-31)
 - [x] **Phase 6: Legal + Consent + Data Export** — Impressum, Datenschutz, AGB, Widerrufsbelehrung, cookie banner, AVVs, DSGVO data export, audit log, Marken search _(7/7 plans complete incl. gap-closure 06-06/06-07; 9/9 code-verifiable; operator/lawyer/UI UAT pending in 06-HUMAN-UAT.md)_ (completed 2026-06-05)
-- [ ] **Phase 7: Test Depth + Launch QA** — PG integration tests, Vitest + Playwright, BetterStack live, DE localization audit, mobile QA, lawyer final review
+- [x] **Phase 7: Test Depth + Launch QA** — PG integration tests, Vitest + Playwright, BetterStack live, DE localization audit, mobile QA, lawyer final review _(7/7 plans complete; 9/9 code-verifiable; verification human_needed → operator/lawyer/AVV/BetterStack items tracked in 07-GO-NO-GO.md + 07-HUMAN-UAT.md, go/no-go PENDING)_ (completed 2026-06-07)
 
 ## Phase Details
 
@@ -232,7 +232,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Classification Trustworthiness | 4/4 | Complete (UAT pending) | 2026-05-24 |
 | 5. Commercial Surface (Payments) | 4/4 | Complete | 2026-05-31 |
 | 6. Legal + Consent + Data Export | 7/7 | Complete (UAT pending) | 2026-06-05 |
-| 7. Test Depth + Launch QA | 0/7 | Planned | - |
+| 7. Test Depth + Launch QA | 7/7 | Complete (launch gates pending) | 2026-06-07 |
 
 **Coverage:** 47 v1 requirements mapped to 7 phases (29 plans). Zero unmapped.
 

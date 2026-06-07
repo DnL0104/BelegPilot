@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase_planned
-stopped_at: Phase 07 planned (7 plans, 4 waves; checker 0 blockers; revision pass applied) — ready to execute
-last_updated: "2026-06-06T00:00:00.000Z"
-last_activity: 2026-06-06 -- Phase 07 planned: research + pattern-map + 7 PLAN.md (07-01..07-07) across 4 waves, plan-checker passed (0 blockers, 3 warnings fixed in revision), VALIDATION.md nyquist_compliant
+status: phase_complete
+stopped_at: Phase 07 COMPLETE (7/7 plans, 4 waves) — milestone v1.0 code-complete; launch gates (lawyer/AVVs/BetterStack/CI-heavy) tracked pending
+last_updated: "2026-06-07T00:00:00.000Z"
+last_activity: 2026-06-07 -- Phase 07 executed: Wave 1 (07-01/02/03 recovered from interrupted run + merged, 07-04 re-run), Waves 2-4 (07-05 Playwright, 07-06 CI heavy job, 07-07 launch docs + operator checkpoint approved-tracked). Verifier human_needed (9/9 code-verifiable), code-review 0 critical/4 warn. Phase marked complete.
 progress:
   total_phases: 7
-  completed_phases: 6
-  total_plans: 31
-  completed_plans: 25
-  percent: 81
+  completed_phases: 7
+  total_plans: 32
+  completed_plans: 32
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-03)
 
 **Core value:** Trustworthy classification — every line item correctly categorized into the right tax category, with reasoning the user can audit and override.
-**Current focus:** Phase 07 — Test Depth + Launch QA (next)
+**Current focus:** Milestone v1.0 code-complete — launch gates (lawyer sign-off, four AVVs, BetterStack monitors, CI heavy-suite green on main) tracked pending
 
 ## Current Position
 
-Phase: 06 (legal-consent-data-export) — COMPLETE (7/7 plans; 9/9 code-verifiable; verification human_needed → UAT approved 2026-06-05)
-Plan: 5 original + 2 gap-closure (06-06 export completeness/resource-safety, 06-07 CI placeholder guard) all built, verified, committed
-Status: Phase 06 closed. 7 human/operator UAT items tracked in 06-HUMAN-UAT.md (placeholder fill-in, AVV signing, Marken search, lawyer review, UI/integration UAT). Next: Phase 07 (discuss → plan → execute)
-Last activity: 2026-06-05 -- Phase 06 gap-closure executed + re-verified (9/9), UAT approved, marked complete
+Phase: 07 (test-depth-launch-qa) — COMPLETE (7/7 plans; 9/9 code-verifiable; verification human_needed → operator checkpoint approved-tracked 2026-06-07)
+Plan: 07-01 Postgres Testcontainers integration tests, 07-02 service unit-test backfill, 07-03 health endpoints (OBS-03), 07-04 Vitest, 07-05 Playwright DE E2E, 07-06 CI DE-guard + heavy job, 07-07 launch docs (PITFALLS/GO-NO-GO/OPS-SETUP/HUMAN-UAT) — all built, verified, committed
+Status: Phase 07 closed. This was the FINAL phase of milestone v1.0 — the codebase is launch-ready pending external gates. Open launch obligations tracked in 07-GO-NO-GO.md (go/no-go PENDING) + 07-HUMAN-UAT.md: CI heavy-suite green on main, lawyer sign-off, legal placeholders filled + four AVVs (Anthropic/Stripe/Sentry/BetterStack), BetterStack keyword monitors + Sentry quiet-hours, mobile phone-camera UAT, native-speaker DE review. Code-review WR-01/02/04 (test false-confidence) + WR-03 (ci.yml env var naming) deferred — run /gsd-code-review-fix 7. Next: close milestone (/gsd-complete-milestone) once launch gates are green.
+Last activity: 2026-06-07 -- Phase 07 executed end-to-end (recovered interrupted Wave 1), verified, marked complete
 
 Progress: ██████████ 100% of Phase 1 + Phase 2 + Phase 3
 
@@ -145,7 +145,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-06 -- Phase 07 planned (research → pattern-map → plan → verify → revision)
+Last session: 2026-06-06 -- Session resumed; Phase 07 confirmed planned & ready to execute
 Stopped at: Phase 07 (Test Depth + Launch QA) PLANNED and ready to execute. 7 plans in 4 waves: W1 {07-01 Postgres integration QA-01, 07-02 D-01 service backfill, 07-03 OBS-03 health endpoints, 07-04 Vitest QA-02}, W2 {07-05 Playwright DE E2E + mobile QA-03/QA-05}, W3 {07-06 CI DE-guard + heavy job QA-04}, W4 {07-07 PITFALLS + go/no-go + ops QA-06/QA-07 — operator checkpoint, autonomous:false}. Plan-checker: 0 blockers, 3 warnings (all fixed in revision). User decision logged: QA-02 RHF+Zod is N/A (codebase has none) — login/register covered by 07-05 E2E. Artifacts: 07-RESEARCH.md, 07-PATTERNS.md, 07-VALIDATION.md (nyquist_compliant), 07-01..07-07 PLAN.md. Research surfaced: health endpoints must be built fresh; TESTING.md was stale (60+ live test files, CI live).
 Resume file: none
 Next: /gsd-execute-phase 7
