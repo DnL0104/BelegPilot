@@ -1,9 +1,10 @@
 ---
-status: pending
+status: complete
 phase: 03-background-pipeline-tesseract-pool
 plan: 03-04
 requirements: [PIPE-05, PIPE-06]
 created: 2026-05-22T00:00:00Z
+updated: 2026-06-07T00:00:00Z
 ---
 
 # Plan 03-04 Manual UAT Checklist
@@ -28,7 +29,7 @@ Run against live `docker compose up --build` stack.
 - Network `/status` response body: `errorCode: "NoTextExtracted"`.
 - DB check: `SELECT error_message FROM processing_runs WHERE ...` returns German string, NOT any internal exception text.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -46,7 +47,7 @@ Run against live `docker compose up --build` stack.
 - Alert text contains "Ihr Token-Guthaben reicht für diesen Beleg nicht aus. Bitte laden Sie Credits auf…"
 - `errorCode: "InsufficientTokens"` in `/status` response.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -66,7 +67,7 @@ Run against live `docker compose up --build` stack.
 - Backend Serilog logs contain the full `HttpRequestException` (not just the code).
 - No internal IP/hostname in processing_runs.error_message column.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -85,7 +86,7 @@ Run against live `docker compose up --build` stack.
 - Cancel button disappears (terminal state).
 - Token ledger: no new debit entry for this file (`SELECT * FROM token_transactions WHERE …`).
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -102,7 +103,7 @@ Run against live `docker compose up --build` stack.
 - Toast: "Beleg ist bereits fertig verarbeitet — Abbruch nicht möglich."
 - No status change in DB.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -123,7 +124,7 @@ Run against live `docker compose up --build` stack.
 - After new upload: 2s-cadence `/status` requests visible.
 - After new file completes: polling stops again.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -140,7 +141,7 @@ Run against live `docker compose up --build` stack.
 - No Skeleton stuck in rendering; no blank panel.
 - DashboardStats tile area shows the empty-state card, not blank tiles.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -156,7 +157,7 @@ Run against live `docker compose up --build` stack.
 - "Für dieses Jahr liegen noch keine bestätigten Belege vor. Bestätigen Sie zunächst Klassifizierungen unter Belege." copy visible.
 - No blank panel; no Skeleton stuck.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -173,7 +174,7 @@ Run against live `docker compose up --build` stack.
 - "Erneut versuchen" button visible and functional (retries the query on click).
 - No blank-screen-of-thinking.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
 
 ---
 
@@ -191,4 +192,17 @@ Run against live `docker compose up --build` stack.
 - No blank screen.
 - Once status transitions to Completed, table appears automatically.
 
-- [ ] Pass / Fail: ___
+- [x] Pass / Fail: **pass** (2026-06-07)
+
+---
+
+## Summary
+
+total: 10
+passed: 10
+issues: 0
+pending: 0
+skipped: 0
+blocked: 0
+
+All 10 manual UAT scenarios passed against a live `docker compose up --build` stack on 2026-06-07. PIPE-05 (error UX) and PIPE-06 (status/polling/empty/error states) verified end-to-end.

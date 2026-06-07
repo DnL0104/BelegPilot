@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation Cleanup + CI** — Hygiene fixes, CI/CD, Sentry, structured logging _(4/4 plans complete; pending `/gsd-verify-phase` and operator-side branch protection on `main`)_ (completed 2026-05-11)
 - [x] **Phase 2: Auth + Rate-Limit Hardening** — Refresh-token table, rate limiter, account-deletion friction _(3/3 plans complete; pending `/gsd-verify-phase`)_ (completed 2026-05-15)
-- [x] **Phase 3: Background Pipeline + Tesseract Pool** — Hangfire jobs, async upload, OCR pool, error UX _(4/4 plans complete; UAT pending)_ (completed 2026-05-22)
+- [x] **Phase 3: Background Pipeline + Tesseract Pool** — Hangfire jobs, async upload, OCR pool, error UX _(4/4 plans complete; UAT passed 2026-06-07 — 10/10)_ (completed 2026-05-22)
 - [x] **Phase 4: Classification Trustworthiness** — DE category expansion, rule + AI hybrid, audit/override UX, sum validation _(4/4 plans complete; UAT pending)_ (completed 2026-05-24)
 - [x] **Phase 5: Commercial Surface (Payments)** — Stripe checkout + webhooks, Widerrufsrecht waiver, billing page, multi-env safety _(4/4 plans complete; UAT approved 2026-05-31)_ (completed 2026-05-31)
 - [x] **Phase 6: Legal + Consent + Data Export** — Impressum, Datenschutz, AGB, Widerrufsbelehrung, cookie banner, AVVs, DSGVO data export, audit log, Marken search _(7/7 plans complete incl. gap-closure 06-06/06-07; 9/9 code-verifiable; operator/lawyer/UI UAT pending in 06-HUMAN-UAT.md)_ (completed 2026-06-05)
@@ -228,7 +228,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation Cleanup + CI | 4/4 | Complete    | 2026-05-11 |
 | 2. Auth + Rate-Limit Hardening | 3/3 | Complete    | 2026-05-15 |
-| 3. Background Pipeline + Tesseract Pool | 4/4 | Complete (UAT pending) | 2026-05-22 |
+| 3. Background Pipeline + Tesseract Pool | 4/4 | Complete (UAT passed) | 2026-05-22 |
 | 4. Classification Trustworthiness | 4/4 | Complete (UAT pending) | 2026-05-24 |
 | 5. Commercial Surface (Payments) | 4/4 | Complete | 2026-05-31 |
 | 6. Legal + Consent + Data Export | 7/7 | Complete (UAT pending) | 2026-06-05 |
