@@ -65,18 +65,18 @@ Trustworthy classification — every line item correctly categorized into the ri
 
 **Operability** (solo-dev with paging)
 - [ ] CI/CD pipeline — build, test, lint as merge-blocking checks (concern #1)
-- [ ] Frontend test suite — Vitest + React Testing Library + Playwright happy paths (concern #2)
-- [ ] PostgreSQL integration tests via Testcontainers (concern #15)
+- [x] Frontend test suite — Vitest + React Testing Library + Playwright happy paths (concern #2) — _Validated in Phase 7 (QA-02/QA-03): Vitest (19 tests) + Playwright DE-locale happy-path (07-04/07-05); live E2E runs in CI heavy job (07-06)_
+- [x] PostgreSQL integration tests via Testcontainers (concern #15) — _Validated in Phase 7 (QA-01): TaxReader.IntegrationTests with Testcontainers + Respawn (07-01); runs in CI heavy job (07-06)_
 - [ ] Structured logging with correlation IDs threaded through long-running handlers (concern #20)
 - [ ] Error tracking with paging (Sentry or equivalent)
-- [ ] Uptime monitoring on the public surface
+- [x] Uptime monitoring on the public surface — _Validated in Phase 7 (OBS-03/QA-06): anonymous /health + /api/v1/health endpoints (07-03) + BetterStack keyword-monitor + Sentry quiet-hours wiring docs (07-07 OPS-SETUP); live monitor provisioning is a tracked operator action_
 - [ ] Top-level README with local-dev onboarding (concern #18)
 
 **Hygiene & security**
 - [ ] Remove leaked `storage/` directory + `build-diag.txt` from working tree, add to `.gitignore` (concerns #3, #4)
 - [ ] Reconcile Anthropic model default between code and `docker-compose.yml` (concern #6)
 - [ ] CORS production policy: deny all when `CORS_ALLOWED_ORIGINS` unset in non-Development (concern #14)
-- [ ] German localization audit — every user-facing string
+- [x] German localization audit — every user-facing string — _Validated in Phase 7 (QA-04): automated DE-localization CI guard on Frontend/src + Playwright de-DE/Europe-Berlin locale E2E (07-05/07-06); native-speaker polish review is a tracked non-blocking (D-06) item_
 
 ### Out of Scope
 
@@ -147,4 +147,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 — Phase 6 (Legal + Consent + Data Export) complete; LEG-01..05/07/08 validated code-side (9/9 code-verifiable). Operator/lawyer/UI UAT items tracked in `phases/06-legal-consent-data-export/06-HUMAN-UAT.md` (placeholder fill-in, AVV signing LEG-06, Marken search LEG-09, lawyer review, cookie/export UI testing). Phases 1–6 complete; Phase 7 (Test Depth + Launch QA) next.*
+*Last updated: 2026-06-07 — Phase 7 (Test Depth + Launch QA) complete; QA-01..04/OBS-03 validated code-side (9/9 code-verifiable). Milestone v1.0 is code-complete. Launch gates tracked pending in `phases/07-test-depth-launch-qa/07-GO-NO-GO.md` (go/no-go PENDING) + `07-HUMAN-UAT.md`: CI heavy-suite green on main, lawyer sign-off (QA-07), legal placeholders + four AVVs, BetterStack monitors + Sentry quiet-hours (QA-06), mobile phone-camera UAT (QA-05), native-speaker DE review. All 7 phases complete; close milestone via /gsd-complete-milestone once launch gates are green.*
