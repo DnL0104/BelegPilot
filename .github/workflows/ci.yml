@@ -116,3 +116,100 @@ jobs:
       - name: Test (Vitest)
         working-directory: Frontend
         run: npx vitest run
+
+  heavy-suite:
+    name: Heavy suite (Postgres integration + E2E)
+    runs-on: ubuntu-latest
+    # Runs on push to main OR when the 'run-heavy' label is applied to a PR.
+    # Keeps PR feedback fast (D-03); the heavy job is a D-05 hard launch blocker.
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-heavy')
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- .NET / Backend setup ---
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          cache: true
+          cache-dependency-path: Backend/Directory.Packages.props
+
+      # Testcontainers manages its own postgres:17-alpine container via Docker.
+      # ubuntu-latest provides Docker — NO 'services: postgres' block required.
+      - name: Run Postgres integration suite (QA-01)
+        working-directory: Backend
+        run: dotnet test tests/TaxReader.IntegrationTests/TaxReader.IntegrationTests.csproj --configuration Release --verbosity normal
+        env:
+          # Supply test secrets required by the API to boot (RefreshTokenOptionsValidator,
+          # StripeOptionsValidator, JwtOptions — see IntegrationTestWebAppFactory.cs).
+          # Testcontainers injects ConnectionStrings:DefaultConnection directly, overriding these.
+          JWT_SECRET: test-secret-test-secret-test-secret-1234
+          REFRESHTOKEN_HASHKEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          Stripe__SecretKey: sk_live_test_placeholder_for_integration_tests
+          Stripe__PublishableKey: pk_live_test_placeholder_for_integration_tests
+          Stripe__WebhookSecret: whsec_placeholder_for_integration_tests
+
+      # --- Node / Frontend setup ---
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('Frontend/package-lock.json') }}
+
+      - name: Install Playwright browsers
+        working-directory: Frontend
+        run: npx playwright install --with-deps
+
+      # Start db + api via docker compose so the E2E happy path hits the real backend.
+      # The API is exposed on host port 5190 via the override below; Next.js standalone
+      # proxies /api/v1/* to http://localhost:5190 (BACKEND_API_URL default).
+      - name: Start backend stack (db + api) for E2E
+        run: |
+          docker compose up -d db
+          # Wait for Postgres to be healthy before starting the API.
+          timeout 60 bash -c 'until docker compose exec -T db pg_isready -U postgres; do sleep 2; done'
+          # Run the API directly (already restored/built above) on port 5190 in the background.
+          # RUN_MIGRATIONS=true applies EF migrations on first boot.
+          nohup dotnet run --project Backend/src/TaxReader.Api --configuration Release --no-build \
+            -- --urls "http://+:5190" > /tmp/api.log 2>&1 &
+          # Wait for the API to be ready (health endpoint or 30s timeout).
+          timeout 60 bash -c 'until curl -sf http://localhost:5190/health > /dev/null 2>&1; do sleep 2; done' || true
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+          RUN_MIGRATIONS: "true"
+          ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=belegpilot;Username=postgres;Password=postgres
+          Jwt__Secret: test-e2e-secret-test-e2e-secret-1234
+          Jwt__Issuer: BelegPilot
+          Jwt__Audience: BelegPilot
+          RefreshToken__HashKey: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          Anthropic__ApiKey: placeholder-not-needed-for-e2e-happy-path
+          Anthropic__Model: claude-haiku-4-5
+          Stripe__SecretKey: sk_live_test_placeholder_for_e2e
+          Stripe__PublishableKey: pk_live_test_placeholder_for_e2e
+          Stripe__WebhookSecret: whsec_placeholder_for_e2e
+          Stripe__DemoMode: "true"
+          UploadStorage__Path: /tmp/taxreader-uploads
+
+      - name: Run Playwright E2E (QA-03)
+        working-directory: Frontend
+        run: npx playwright test
+        env:
+          CI: "true"
+          BACKEND_API_URL: http://localhost:5190
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Frontend/playwright-report/
