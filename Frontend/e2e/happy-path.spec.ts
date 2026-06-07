@@ -156,21 +156,18 @@ test('happy path: register → login → upload → classify → confirm → rep
   await expect(csvButton).toBeVisible()
 
   // Wait for a download event — the export handler creates a blob URL and clicks <a>.
-  // Playwright intercepts the download regardless of whether the server returns data or
-  // an empty response, as long as the request succeeds (2xx).
+  // Playwright intercepts the download when the server returns data (2xx with content).
+  // We confirmed a classification in step 6, so there should always be data to export.
   const [download] = await Promise.all([
-    page.waitForEvent('download', { timeout: 20_000 }).catch(() => null),
+    page.waitForEvent('download', { timeout: 20_000 }),
     csvButton.click(),
   ])
 
-  // If the server returned data, a download is triggered.
-  // If no data, the export toast "Export fehlgeschlagen" or "CSV-Export heruntergeladen" appears.
-  // Either way the button is clickable and the request reaches the backend — verify at least one:
-  const exportFeedback = await page
-    .getByText(/Export heruntergeladen|Export fehlgeschlagen/)
-    .first()
-    .isVisible({ timeout: 10_000 })
-    .catch(() => false)
+  // A silent failure (export endpoint error) would NOT trigger the download event and
+  // would instead show the "Export fehlgeschlagen" toast — that must not happen.
+  const failureToast = page.getByText('Export fehlgeschlagen')
+  await expect(failureToast).not.toBeVisible({ timeout: 5_000 })
 
-  expect(download !== null || exportFeedback).toBe(true)
+  // The download object must be truthy — a missing/null download means the export failed.
+  expect(download).not.toBeNull()
 })
