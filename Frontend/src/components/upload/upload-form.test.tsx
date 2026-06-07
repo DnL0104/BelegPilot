@@ -45,12 +45,12 @@ describe('UploadForm', () => {
   let mutateAsyncMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
+    vi.clearAllMocks()
     mutateAsyncMock = vi.fn()
     vi.mocked(useUploadFiles).mockReturnValue({
       mutateAsync: mutateAsyncMock,
       isPending: false,
     } as ReturnType<typeof useUploadFiles>)
-    vi.clearAllMocks()
   })
 
   describe('empty-selection guard', () => {
