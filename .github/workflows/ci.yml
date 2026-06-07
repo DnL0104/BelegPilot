@@ -142,8 +142,8 @@ jobs:
           # Supply test secrets required by the API to boot (RefreshTokenOptionsValidator,
           # StripeOptionsValidator, JwtOptions — see IntegrationTestWebAppFactory.cs).
           # Testcontainers injects ConnectionStrings:DefaultConnection directly, overriding these.
-          JWT_SECRET: test-secret-test-secret-test-secret-1234
-          REFRESHTOKEN_HASHKEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          Jwt__Secret: test-secret-test-secret-test-secret-1234
+          RefreshToken__HashKey: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           Stripe__SecretKey: sk_live_test_placeholder_for_integration_tests
           Stripe__PublishableKey: pk_live_test_placeholder_for_integration_tests
           Stripe__WebhookSecret: whsec_placeholder_for_integration_tests
