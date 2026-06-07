@@ -86,14 +86,9 @@ describe('ClassifyDialog', () => {
   let onOpenChangeMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
+    vi.clearAllMocks()
     mutateAsyncMock = vi.fn().mockResolvedValue({})
     onOpenChangeMock = vi.fn()
-    vi.mocked(useConfirmClassification).mockReturnValue({
-      mutateAsync: mutateAsyncMock,
-      isPending: false,
-    } as ReturnType<typeof useConfirmClassification>)
-    vi.clearAllMocks()
-    // Re-setup mock after clearAllMocks
     vi.mocked(useConfirmClassification).mockReturnValue({
       mutateAsync: mutateAsyncMock,
       isPending: false,
