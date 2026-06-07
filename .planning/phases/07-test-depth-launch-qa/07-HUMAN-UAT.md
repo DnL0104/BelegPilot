@@ -4,6 +4,10 @@
 **Purpose:** These items cannot be automated in CI. Each requires human judgment, a physical
 device, or an external counterparty. Work through all rows before setting the go/no-go decision.
 
+> **Status as of 2026-06-07:** Operator checkpoint resolved as "approved — tracked".
+> All items below remain OPEN. D-05-blocking items (rows 3, 4, 5) must be completed before GO.
+> Non-blocking items (rows 1, 2) and ops-gate items (rows 6, 7) are tracked pre-launch obligations.
+
 ---
 
 ## Manual-Only Verifications
@@ -24,13 +28,13 @@ device, or an external counterparty. Work through all rows before setting the go
 
 | # | Item | Blocking? | Status | Sign-Off |
 |---|------|-----------|--------|---------|
-| 1 | Native-speaker DE review | No (D-06) | PENDING | |
-| 2 | Phone-camera upload (QA-05) | No | PENDING | |
-| 3 | Lawyer sign-off — AGB + Datenschutz | YES (D-05) | PENDING | |
-| 4 | AVV/DPA signing — all four | YES (D-05) | PENDING | |
-| 5 | Legal placeholders filled + CI guard green | YES (D-05 prereq) | PENDING | |
-| 6 | BetterStack keyword monitors live | Yes (ops gate) | PENDING | |
-| 7 | Sentry quiet-hours rule | Yes (ops gate) | PENDING | |
+| 1 | Native-speaker DE review | No (D-06) | OPEN — tracked | |
+| 2 | Phone-camera upload (QA-05) | No (D-06) | OPEN — tracked | |
+| 3 | Lawyer sign-off — AGB + Datenschutz | **YES (D-05 hard blocker)** | **OPEN — not yet commissioned** | |
+| 4 | AVV/DPA signing — all four (Anthropic, Stripe, Sentry, BetterStack) | **YES (D-05 hard blocker)** | **OPEN — all four outstanding** | |
+| 5 | Legal placeholders filled + CI guard green | **YES (D-05 prereq)** | **OPEN — CI guard still red** | |
+| 6 | BetterStack keyword monitors live | Yes (ops gate / D-08) | OPEN — operator action required (see 07-OPS-SETUP.md) | |
+| 7 | Sentry quiet-hours rule | Yes (ops gate / D-08) | OPEN — operator action required (see 07-OPS-SETUP.md) | |
 
 ---
 
@@ -45,4 +49,4 @@ device, or an external counterparty. Work through all rows before setting the go
 
 _Authored: Phase 7 Plan 07 (07-07)_
 _Requirements: QA-04 / QA-05 / QA-06 / QA-07 / OBS-03_
-_Last updated: 2026-06-07_
+_Last updated: 2026-06-07 (checkpoint resolution: "approved — tracked"; all items remain OPEN)_
