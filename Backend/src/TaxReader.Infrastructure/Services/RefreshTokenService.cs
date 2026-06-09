@@ -30,6 +30,13 @@ public class RefreshTokenService(
 {
     private const string GenericFailure = "Ungültiges oder abgelaufenes Refresh-Token.";
 
+    // WR-04: EF-internal provider name used only to pick the ExecuteUpdateAsync vs
+    // load-and-mutate path (the InMemory provider doesn't implement ExecuteUpdateAsync).
+    // Kept as a test-only escape hatch per the 02-01 decision (no InMemory package
+    // dependency leaks into production). If EF Core renames the provider, RevokeAllForUserAsync
+    // unit tests fail loudly — which is the intended canary.
+    private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
+
     private readonly byte[] _pepper = Convert.FromBase64String(refreshTokenOptions.Value.HashKey);
     private readonly JwtOptions _jwt = jwtOptions.Value;
 
@@ -52,10 +59,12 @@ public class RefreshTokenService(
             IpAddress = ParseIpOrNull(ipAddress)
         };
 
+        // IN-03: the caller must have persisted the User row first — the refresh_tokens.user_id
+        // FK is load-bearing here (an orphan insert throws PostgresException → 500).
         dbContext.RefreshTokens.Add(row);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        logger.LogInformation("Refresh token issued for {UserId}", userId);
+        logger.LogInformation("Refresh token issued for {UserId} ({TokenId})", userId, row.Id);
         return plaintext;
     }
 
@@ -82,14 +91,14 @@ public class RefreshTokenService(
             // (inclusive on the rejection side — security predicate).
             if (existing.ExpiresAt <= DateTime.UtcNow)
             {
-                logger.LogInformation("Refresh token expired");
+                logger.LogInformation("Refresh token expired ({TokenId})", existing.Id);
                 return Result<(Guid, string)>.Failure(GenericFailure);
             }
 
             // REPLAY DETECTION (D-03): revoked row was presented — revoke ALL the user's tokens.
             if (existing.RevokedAt is not null)
             {
-                logger.LogWarning("Replay of revoked refresh token; revoking all tokens for user");
+                logger.LogWarning("Replay of revoked refresh token; revoking all tokens for user ({TokenId})", existing.Id);
                 SentrySdk.CaptureMessage(
                     "Refresh token replay detected",
                     scope => scope.SetExtra("user.id_hash", HashUserId(existing.UserId)),
@@ -127,7 +136,7 @@ public class RefreshTokenService(
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Refresh token rotated successfully");
+            logger.LogInformation("Refresh token rotated successfully ({TokenId} -> {NewTokenId})", existing.Id, newRow.Id);
             return Result<(Guid, string)>.Success((existing.UserId, newPlaintext));
         }
     }
@@ -164,7 +173,7 @@ public class RefreshTokenService(
     }
 
     private static bool IsInMemoryProvider(DbContext context)
-        => context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
+        => context.Database.ProviderName == InMemoryProviderName;
 
     private string ComputeHash(string plaintextToken)
     {
