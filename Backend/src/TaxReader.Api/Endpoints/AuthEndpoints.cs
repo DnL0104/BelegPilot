@@ -128,7 +128,9 @@ public static class AuthEndpoints
 
             // D-12: wrong password = 401 with German error inline so the dialog
             // can surface it without bouncing the user to /login.
-            if (result.Error == "Ungültiges Passwort.")
+            // WR-02: compare against the handler's const, not a duplicated literal, so a
+            // wording change can't silently downgrade this 401 to a 404.
+            if (result.Error == DeleteAccountHandler.InvalidPasswordError)
                 return Results.Json(new { error = result.Error }, statusCode: 401);
 
             return Results.NotFound(new { error = result.Error });

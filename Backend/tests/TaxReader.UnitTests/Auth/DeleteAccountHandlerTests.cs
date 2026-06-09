@@ -63,7 +63,8 @@ public class DeleteAccountHandlerTests : IDisposable
             Id = TestUserId,
             Email = "test@example.de",
             DisplayName = "Test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("mypassword123"),
+            // IN-06: work factor 4 keeps unit-test BCrypt cost negligible (default 11 ≈ 50ms/hash).
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("mypassword123", 4),
         };
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync();
@@ -107,7 +108,7 @@ public class DeleteAccountHandlerTests : IDisposable
             Id = TestUserId,
             Email = "order@test.de",
             DisplayName = "Order Test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("p"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("p", 4),
         };
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync();
@@ -129,7 +130,7 @@ public class DeleteAccountHandlerTests : IDisposable
             Id = TestUserId,
             Email = "test@example.de",
             DisplayName = "Test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("realpassword"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("realpassword", 4),
         };
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync();
@@ -137,7 +138,7 @@ public class DeleteAccountHandlerTests : IDisposable
         var result = await _handler.HandleAsync(new DeleteAccountRequest("wrongpassword"));
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be("Ungültiges Passwort.");
+        result.Error.Should().Be(DeleteAccountHandler.InvalidPasswordError);
         (await _dbContext.Users.CountAsync()).Should().Be(1, "wrong password must not delete the user");
         _refreshTokenServiceMock.Verify(
             s => s.RevokeAllForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
@@ -163,7 +164,7 @@ public class DeleteAccountHandlerTests : IDisposable
             Id = TestUserId,
             Email = "test@example.de",
             DisplayName = "Test",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("p"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("p", 4),
         };
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync();
@@ -187,7 +188,8 @@ public class DeleteAccountHandlerTests : IDisposable
         var result = await _handler.HandleAsync(new DeleteAccountRequest("anything"));
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be("User not found.");
+        result.Error.Should().Be(DeleteAccountHandler.UserNotFoundError,
+            "WR-01: user-facing failure must be the German message");
         _refreshTokenServiceMock.Verify(
             s => s.RevokeAllForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never,

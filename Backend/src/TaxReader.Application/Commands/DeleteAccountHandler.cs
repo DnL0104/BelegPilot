@@ -14,6 +14,11 @@ public class DeleteAccountHandler(
     IRefreshTokenService refreshTokenService,
     IAuditLogger auditLogger)
 {
+    // WR-02: exposed so the endpoint maps this failure to HTTP 401 without duplicating
+    // the literal — a future wording change here can't silently break the status mapping.
+    public const string InvalidPasswordError = "Ungültiges Passwort.";
+    public const string UserNotFoundError = "Benutzer nicht gefunden.";
+
     public async Task<Result<bool>> HandleAsync(
         DeleteAccountRequest request,
         CancellationToken cancellationToken = default)
@@ -24,12 +29,19 @@ public class DeleteAccountHandler(
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (user is null)
-            return Result<bool>.Failure("User not found.");
+            return Result<bool>.Failure(UserNotFoundError);
+
+        // WR-03: defensive guard. The endpoint's FluentValidation pre-check (CR-02) already
+        // rejects an empty password, but a null/empty value reaching BCrypt.Verify throws
+        // ArgumentNullException → 500. Guard so this handler degrades to a clean 401
+        // regardless of how it is called.
+        if (string.IsNullOrEmpty(request.Password))
+            return Result<bool>.Failure(InvalidPasswordError);
 
         // D-13 step 1: re-verify password (same factor that gates login).
         // Identical pattern to AuthService.cs:100 — BCrypt.Verify is constant-time.
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            return Result<bool>.Failure("Ungültiges Passwort.");
+            return Result<bool>.Failure(InvalidPasswordError);
 
         // D-13 step 2: revoke ALL of the user's refresh tokens BEFORE the cascade
         // delete fires. The FK CASCADE on refresh_tokens.user_id would drop the rows
@@ -47,11 +59,11 @@ public class DeleteAccountHandler(
             metadata: new Dictionary<string, object?> { ["email_hash"] = HashEmail(user.Email) },
             cancellationToken);
 
-        // D-13 step 3: cascade delete via FK. Drops refresh_tokens, receipt_files,
-        //   ReceiptFiles -> ProcessingRuns
-        //               -> Receipts -> ReceiptItems -> ItemClassifications
-        //   UserTokenBalance
-        //   TokenTransactions
+        // D-13 step 3: removing the user row triggers the FK cascade chain. The cascades
+        // are declared per-entity in Infrastructure/Data/Configurations/ (IN-02: not here,
+        // and not all on UserConfiguration):
+        //   off User:        refresh_tokens, receipt_files, UserTokenBalance, TokenTransactions
+        //   off ReceiptFile: ProcessingRuns; Receipts -> ReceiptItems -> ItemClassifications
         dbContext.Users.Remove(user);
         await dbContext.SaveChangesAsync(cancellationToken);
 
