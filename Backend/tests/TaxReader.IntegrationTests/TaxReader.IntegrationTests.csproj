@@ -18,6 +18,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Respawn" />
+    <!-- Security pin: overrides the vulnerable Azure.Identity 1.3.0 pulled transitively
+         via Respawn -> Microsoft.Data.SqlClient. Version lives in Directory.Packages.props. -->
+    <PackageReference Include="Azure.Identity" />
   </ItemGroup>
 
   <ItemGroup>
