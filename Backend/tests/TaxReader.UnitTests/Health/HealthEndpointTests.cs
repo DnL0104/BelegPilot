@@ -82,6 +82,10 @@ public class HealthEndpointTests
                 "T-07-09: Stripe webhook secret prefix must not appear");
             body.Should().NotContainEquivalentOf("secret",
                 "T-07-09: JWT/other secrets must not appear");
+            body.Should().NotContainEquivalentOf("sk-ant-",
+                "T-07-09: Anthropic API key prefix must not appear");
+            body.Should().NotContainEquivalentOf("eyJ",
+                "T-07-09: JWT fragments (Base64 header) must not appear");
         }
     }
 }
