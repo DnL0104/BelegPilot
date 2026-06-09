@@ -16,6 +16,7 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
         .Build();
 
     private Respawner _respawner = default!;
+    private NpgsqlConnection _respawnConnection = default!;
 
     public string ConnectionString => Container.GetConnectionString();
 
@@ -31,9 +32,11 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
         await using var dbContext = new AppDbContext(options);
         await dbContext.Database.MigrateAsync();
 
-        await using var conn = new NpgsqlConnection(ConnectionString);
-        await conn.OpenAsync();
-        _respawner = await Respawner.CreateAsync(conn, new RespawnerOptions
+        // Open a single connection for Respawn and reuse it across every ResetAsync call,
+        // avoiding a fresh cold connection per integration test class.
+        _respawnConnection = new NpgsqlConnection(ConnectionString);
+        await _respawnConnection.OpenAsync();
+        _respawner = await Respawner.CreateAsync(_respawnConnection, new RespawnerOptions
         {
             DbAdapter = DbAdapter.Postgres,
             SchemasToInclude = ["public"],
@@ -42,12 +45,11 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
         });
     }
 
-    public async Task ResetAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionString);
-        await conn.OpenAsync();
-        await _respawner.ResetAsync(conn);
-    }
+    public async Task ResetAsync() => await _respawner.ResetAsync(_respawnConnection);
 
-    public Task DisposeAsync() => Container.DisposeAsync().AsTask();
+    public async Task DisposeAsync()
+    {
+        await _respawnConnection.DisposeAsync();
+        await Container.DisposeAsync();
+    }
 }
