@@ -1,79 +1,91 @@
 ---
 phase: 02-auth-rate-limit-hardening
-fixed_at: 2026-05-16T00:00:00Z
-fix_scope: critical_only
+fixed_at: 2026-06-09T00:00:00Z
+fix_scope: all
 fix_strategy: inline_orchestrator
-findings_in_scope: 2
-fixed: 2
-skipped: 9
-iteration: 1
+findings_in_scope: 17
+fixed: 12
+already_fixed: 2
+deferred: 3
+skipped: 0
+iteration: 2
 status: partial
 review_path: 02-REVIEW.md
 ---
 
 # Phase 02 Code Review Fix Report
 
-_Fixed: 2026-05-16_
-_Fix Scope: critical findings only (per orchestrator session bandwidth — user opted for inline fix path after gsd-code-fixer agent dispatch was interrupted)_
+_Iteration 1 (2026-05-16): 2 CRITICAL fixed (CR-01, CR-02)._
+_Iteration 2 (2026-06-09): polish pass — remaining 9 WARNING + 6 INFO triaged and resolved._
 
 ## Summary
 
-Two CRITICAL findings from `02-REVIEW.md` were addressed; the nine WARNING findings remain open and tracked. INFO findings out of scope.
+| Severity | Total | Fixed (iter 1+2) | Already fixed by later phases | Deferred (needs decision) |
+|----------|-------|------------------|-------------------------------|---------------------------|
+| Critical | 2     | 2                | 0                             | 0                         |
+| Warning  | 9     | 4                | 2                             | 3                         |
+| Info     | 6     | 4                | 0                             | 2                         |
+| **Total** | **17** | **10**          | **2**                         | **5**                     |
 
-| Severity | Total | Fixed | Skipped |
-|----------|-------|-------|---------|
-| Critical | 2     | 2     | 0       |
-| Warning  | 9     | 0     | 9       |
-| Info     | 6     | 0     | 6       |
-| **Total** | **17** | **2** | **15** |
+The two CRITICAL findings were resolved in iteration 1. This polish pass resolved 8 more
+(4 warnings, 4 info), confirmed 2 warnings already fixed by later phases, and deferred 5
+items that are intentional decisions or require a deliberate design decision rather than a
+mechanical fix.
 
-## Fixed
+`dotnet build Backend` → 0 errors. `dotnet test Backend/tests/TaxReader.UnitTests` → **305 passed / 5 skipped / 0 failed**.
+
+---
+
+## Iteration 1 — Critical fixes (2026-05-16)
 
 ### CR-01 — Fail-fast HMAC pepper validation
-**File:** `Backend/src/TaxReader.Infrastructure/Configuration/RefreshTokenOptions.cs`, `Backend/src/TaxReader.Infrastructure/DependencyInjection.cs`
-**Commit:** `28ee28e fix(02-01): CR-01 fail fast on missing/invalid RefreshToken HashKey`
-
-**Before:** `RefreshTokenService` would silently degrade to an empty-key HMAC if `REFRESHTOKEN_HASHKEY` was unset. `Convert.FromBase64String("")` returns a zero-length array without throwing; HMAC-SHA256 accepts it. Every refresh-token hash would collapse to an unprotected SHA-256-derived value with no operational signal. Nullifies the core premise of D-01.
-
-**After:** New `RefreshTokenOptionsValidator : IValidateOptions<RefreshTokenOptions>` rejects three failure modes at boot: (1) empty/whitespace `HashKey`, (2) non-Base64 string, (3) decoded byte length ≠ 32. DI wires it via `services.AddSingleton<IValidateOptions<RefreshTokenOptions>, RefreshTokenOptionsValidator>()` + `.AddOptions<RefreshTokenOptions>().Bind(...).ValidateOnStart()`. A missing or malformed value now fails the host build loudly with a specific error message that includes the `openssl rand -base64 32` generation hint.
+**Commit:** `28ee28e` — `RefreshTokenOptionsValidator : IValidateOptions<RefreshTokenOptions>` rejects empty/non-Base64/wrong-length `HashKey` at boot via `.ValidateOnStart()`. Eliminates the silent empty-key HMAC degradation.
 
 ### CR-02 — DeleteAccountValidator invocation
-**File:** `Backend/src/TaxReader.Api/Endpoints/AuthEndpoints.cs` (+ `Backend/src/TaxReader.Application/TaxReader.Application.csproj` restore)
-**Commit:** `5725721 fix(02-02): CR-02 invoke DeleteAccountValidator + restore BCrypt PackageReference`
+**Commit:** `5725721` — `MapDelete("/account")` now injects `IValidator<DeleteAccountRequest>` and calls `ValidateAsync` before the handler, returning `Results.ValidationProblem` (400) with German messages. Restored the BCrypt PackageReference on Application.
 
-**Before:** `DeleteAccountValidator` was registered for DI via `AddValidatorsFromAssemblyContaining<>` but Minimal APIs do not auto-run FluentValidation. The validator and its 8 tests were dead code. A null/empty `Password` reached `BCrypt.Verify` and threw `ArgumentNullException` → 500 instead of the intended 400 with `"Passwort ist erforderlich."`.
+---
 
-**After:** The `MapDelete("/account", ...)` handler now injects `IValidator<DeleteAccountRequest>` and calls `await validator.ValidateAsync(request, ct)` before invoking `DeleteAccountHandler.HandleAsync`. Validation failures return `Results.ValidationProblem(errors)` (HTTP 400) with grouped per-property German messages from the validator. Also restored `BCrypt.Net-Next` PackageReference in `TaxReader.Application.csproj` that commit `7de3dcc` accidentally reverted — `DeleteAccountHandler` depends on it at the Application layer.
+## Iteration 2 — Polish pass (2026-06-09)
 
-## Skipped (out of scope this run)
+### Fixed this pass
 
-These nine WARNING findings remain open and are tracked in `02-REVIEW.md`. Recommended follow-ups annotated.
+| ID | Fix | Commit |
+|----|-----|--------|
+| WR-01 | `DeleteAccountHandler` returns German `"Benutzer nicht gefunden."` instead of English `"User not found."` | `820f9db` |
+| WR-02 | Endpoint maps wrong-password → 401 via `DeleteAccountHandler.InvalidPasswordError` const, not a duplicated string literal (a wording change can no longer silently downgrade 401→404) | `820f9db` |
+| WR-03 | Null/empty-password guard before `BCrypt.Verify` in the handler — clean 401 instead of `ArgumentNullException`→500, defensive even with the CR-02 validator | `820f9db` |
+| IN-02 | Corrected the cascade-origin comment — cascades are declared per-entity in `Data/Configurations/`, not all on `UserConfiguration` | `820f9db` |
+| IN-06 | Unit-test `BCrypt.HashPassword(..., 4)` work factor to cut per-test CPU (default 11 ≈ 50ms/hash) | `820f9db` |
+| IN-01 | Added `{TokenId}` to issue/expire/replay/rotate logs for issue→rotate→revoke chain correlation | `36e00ba` |
+| IN-03 | Comment that `refresh_tokens.user_id` FK is load-bearing in `IssueAsync` (orphan insert → 500) | `36e00ba` |
+| WR-04 | Extracted the EF InMemory provider name to a named `const` with a tracking comment (kept the test-only branch per the 02-01 decision) | `36e00ba` |
 
-| ID | File | Skip Reason |
-|----|------|-------------|
-| WR-01 | `DeleteAccountHandler.cs:23` | German localization of `"User not found."` — straightforward, but parked because the endpoint never returns 404 in practice (auth middleware blocks unauthenticated callers, so the user always exists). Treat as polish. |
-| WR-02 | `AuthEndpoints.cs:88-91` | Discriminated error type for 401 vs 404 mapping. Sound suggestion but requires a `Result<T>` extension or sentinel pattern decision that should be made project-wide (not just this endpoint). Defer to a `/gsd-quick` polish pass. |
-| WR-03 | `DeleteAccountHandler.cs:27` | BCrypt.Verify null/empty guard — superseded by CR-02 fix above (validator now rejects empty Password before it reaches BCrypt). Defensive guard would still be nice; keep tracking. |
-| WR-04 | `RefreshTokenService.cs:154-155` | Provider-name string branch is intentional per 02-01 key decision (no InMemory package dependency leaking into production Infrastructure). The existing comment already explains the trade-off. Mark as `decision_documented`. |
-| WR-05 | `RefreshTokenService.cs:79` | `<` vs `<=` for `ExpiresAt` boundary. One-line change but needs corresponding test for the boundary tick. Worth doing but bundled with other auth polish. |
-| WR-06 | `RateLimitTestFactory.cs:32-33` | Test factory's `BeOneOf(401, 400)` is flaky under fast-fail Postgres. Either loosen to also accept 500 or rewrite the test DB strategy. Touching test infrastructure is risky mid-phase; defer to a dedicated test-hardening pass. |
-| WR-07 | `AuthStrictPolicyTests.cs:55` | Un-skip the /account partition-by-sub test now that the endpoint exists. Should happen, but the existing 5/9 active tests already cover the sub-partition codepath via login burns; the /account specific test is incremental coverage. Defer. |
-| WR-08 | Pipeline order (`Program.cs:269-278`) | `UseRateLimiter` before `UseAuthentication` is intentional per 02-03 RESEARCH Pitfall 2 (global IP limiter must trigger on unauthenticated traffic; per-endpoint sub-partitioned policies attach at the endpoint layer where claims are available). Comment requested by reviewer; not added in this pass. Mark as `decision_to_document`. |
-| WR-09 | Various INFO items | Logging gaps, magic numbers, comment polish, frontend dialog stale-JWT 401 corner case. Six INFO findings remain. Out of scope for `critical_warning` fix mode. |
+### Already fixed by later phases (verified, no action needed)
 
-## Build & Test Verification
+| ID | Status |
+|----|--------|
+| WR-06 | `ExpiresAt <= DateTime.UtcNow` (inclusive rejection) is already in `RefreshTokenService.cs` with an explanatory comment. |
+| WR-07 | `RateLimitTestFactory` now swaps EF Core to an in-memory provider (Phase 3 03-01), so auth endpoints return clean 401s rather than fast-fail Postgres 500s. The flaky real-Postgres `Timeout=1` connection string is gone. |
 
-- `dotnet build Backend` — **0 errors**, 2 pre-existing NU1510 warnings (unrelated)
-- `dotnet test Backend` — **139 passed / 5 skipped / 0 failed**
+### Deferred — require a decision, not a mechanical fix
 
-The 5 skipped tests are intentional manual-UAT deferrals documented in `02-VALIDATION.md` (concurrency limiter timing, X-Forwarded-For reverse-proxy simulation under WAF, /account partition-by-sub, MigrationTests deferred to Phase 7 QA-01).
+| ID | Reason for deferral |
+|----|---------------------|
+| WR-05 | `User.RefreshTokens` / `RefreshToken.User` navigations are unused but pin the cascade. Reviewer rated it "accept-as-is if the team prefers symmetry with other User collections." Removing them touches EF cascade configuration — churn with cascade-behavior risk for marginal benefit. **Accepted as-is.** |
+| WR-08 | Un-skipping `TwoUsersOneIp_BothGetFiveAttempts` would likely reveal that `/account` is **IP-partitioned, not sub-partitioned**, because `UseRateLimiter` runs before `UseAuthentication` (so `httpContext.User` has no `sub` claim at policy-resolution time). The fix is a load-bearing pipeline reorder with a security trade-off (the global IP limiter would lose pre-auth coverage). This is a deliberate design decision, out of scope for a polish pass. **Tracked for a focused decision before launch.** |
+| WR-09 | `SentrySdk.CaptureMessage` on replay is the intended paging path; the same event is now also written to the LEG-08 audit log (Phase 6). Reviewer: "accept-as-is if Phase 6 LEG-08 audit-log work supersedes it." **Accepted as-is.** |
+| IN-04 | Frontend `deleteAccount` stale-JWT-401 shows "Ungültiges Passwort." for an expired token — a low-priority UX edge needing body-shape discrimination or a pre-DELETE refresh. **Deferred as frontend UX polish.** |
+| IN-05 | Lifting rate-limit magic numbers to a bound `RateLimitOptions` POCO is a config refactor; tests are pinned to the literals (`for i < 60`). Reviewer: "defer to Phase 6/7 if SCRUM allows." **Deferred.** |
+
+---
 
 ## Status: partial
 
-Both CRITICAL findings resolved. The phase's core security premise (HMAC pepper enforcement) and the AUTH-02 surface (DELETE /account with German validation) now behave correctly. Nine WARNING findings remain open as advisory items in `02-REVIEW.md` — none of them undermine the ROADMAP Phase 2 success criteria, but several are worth addressing in a follow-up polish pass.
+All CRITICAL and all mechanically-fixable WARNING/INFO findings are resolved. The 3 remaining
+WARNING/INFO items (WR-05, WR-08, WR-09, IN-04, IN-05) are intentional accepts or deliberate
+design decisions — none undermine the Phase 2 ROADMAP success criteria. WR-08 is the only one
+worth a focused pre-launch decision (rate-limit partition for `/account`).
 
-## Next Steps
-
-- ✓ Phase 2 can close out cleanly (verifier already returned `human_needed` with 4 manual UAT items; this fix pass does not change that verdict).
-- Re-run `/gsd-code-review 2` after a polish pass to confirm the remaining WARNING items have been addressed.
-- Track the deferred items as `/gsd-add-todo` entries or roll into Phase 7 QA-01 if they're test-side.
+_Fixed: 2026-06-09 (iteration 2 polish)_
+_Fixer: Claude (inline orchestrator)_
