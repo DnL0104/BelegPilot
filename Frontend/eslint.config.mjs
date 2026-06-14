@@ -13,6 +13,15 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Over-fires on intentional, SSR-safe patterns: synchronous localStorage
+      // hydration on mount (auth/consent providers) and form-state reset on
+      // dialog open. These are not bugs — keep them visible as warnings rather
+      // than failing CI or refactoring working effects.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

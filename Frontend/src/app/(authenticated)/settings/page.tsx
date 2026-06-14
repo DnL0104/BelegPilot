@@ -174,13 +174,13 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium">Beispiel</p>
                     <div className="space-y-1.5 text-sm text-muted-foreground">
                       <div className="flex items-center justify-between">
-                        <span>„Druckerpatrone" — KI: 96 %</span>
+                        <span>„Druckerpatrone“ — KI: 96 %</span>
                         <span className="font-medium text-emerald-600 dark:text-emerald-400">
                           ✓ Auto-bestätigt
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>„USB-Adapter 3-in-1" — KI: {Math.round(threshold * 100 - 10)} %</span>
+                        <span>„USB-Adapter 3-in-1“ — KI: {Math.round(threshold * 100 - 10)} %</span>
                         <span className="font-medium text-amber-600 dark:text-amber-400">
                           → Manuell prüfen
                         </span>
