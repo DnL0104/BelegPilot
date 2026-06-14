@@ -1,0 +1,9 @@
+# CI-only override. Publishes the Postgres port to the runner host so the E2E
+# backend — which runs via `dotnet run` ON THE HOST (not in compose) — can reach
+# the database at localhost:5432. Production keeps the DB internal-only
+# (docker-compose.yml declares no `ports:` for db). Used only by the CI heavy
+# suite: `docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d db`.
+services:
+  db:
+    ports:
+      - "5432:5432"

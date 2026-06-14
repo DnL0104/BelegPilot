@@ -170,20 +170,23 @@ jobs:
         working-directory: Frontend
         run: npx playwright install --with-deps
 
-      # Start db + api via docker compose so the E2E happy path hits the real backend.
-      # The API is exposed on host port 5190 via the override below; Next.js standalone
-      # proxies /api/v1/* to http://localhost:5190 (BACKEND_API_URL default).
+      # Start db via docker compose, then run the API directly on the host so the
+      # E2E happy path hits the real backend. The db port is published to the host
+      # via docker-compose.ci.yml (prod keeps it internal-only) so the host-run API
+      # can reach Postgres at localhost:5432. Next.js proxies /api/v1/* to
+      # http://localhost:5190 (BACKEND_API_URL).
       - name: Start backend stack (db + api) for E2E
         run: |
-          docker compose up -d db
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d db
           # Wait for Postgres to be healthy before starting the API.
           timeout 60 bash -c 'until docker compose exec -T db pg_isready -U postgres; do sleep 2; done'
           # Run the API directly (already restored/built above) on port 5190 in the background.
           # RUN_MIGRATIONS=true applies EF migrations on first boot.
           nohup dotnet run --project Backend/src/TaxReader.Api --configuration Release --no-build \
             -- --urls "http://+:5190" > /tmp/api.log 2>&1 &
-          # Wait for the API to be ready (health endpoint or 30s timeout).
-          timeout 60 bash -c 'until curl -sf http://localhost:5190/health > /dev/null 2>&1; do sleep 2; done' || true
+          # Fail loudly if the API never becomes healthy — do NOT mask a dead backend,
+          # otherwise the E2E fails downstream with an opaque navigation timeout.
+          timeout 90 bash -c 'until curl -sf http://localhost:5190/health > /dev/null 2>&1; do sleep 2; done'
         env:
           ASPNETCORE_ENVIRONMENT: Production
           RUN_MIGRATIONS: "true"
@@ -206,6 +209,12 @@ jobs:
         env:
           CI: "true"
           BACKEND_API_URL: http://localhost:5190
+
+      # Surface the backend log whenever the heavy suite fails so API boot/runtime
+      # errors are diagnosable without re-running with extra instrumentation.
+      - name: Dump API log on failure
+        if: failure()
+        run: cat /tmp/api.log || true
 
       - name: Upload Playwright report on failure
         if: failure()
