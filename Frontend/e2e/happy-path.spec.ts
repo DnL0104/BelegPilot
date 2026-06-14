@@ -15,7 +15,7 @@
  * Phone-camera photo-upload (QA-05) is a HUMAN-UAT item (07-07).
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import path from 'path'
 
 const FIXTURE_PDF = path.join(__dirname, 'fixtures', 'sample-receipt.pdf')
@@ -27,26 +27,24 @@ function uniqueEmail() {
 
 const TEST_PASSWORD = 'Playwright2026!'
 
-// The TTDSG cookie banner is a fixed, z-50 bar pinned to the bottom of every page
-// until the user decides. Left undismissed it overlays/intercepts later clicks
-// (e.g. the upload submit button). A real user accepts it first; so does the test.
-async function dismissCookieBanner(page: Page) {
-  const accept = page.getByRole('button', { name: 'Alle akzeptieren' })
-  await accept.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-  if (await accept.isVisible().catch(() => false)) {
-    await accept.click()
-    await expect(accept).toBeHidden({ timeout: 5000 })
-  }
-}
-
 test('happy path: register → login → upload → classify → confirm → report → export', async ({
   page,
 }) => {
   const email = uniqueEmail()
 
+  // Pre-seed TTDSG consent so the cookie banner (fixed, z-50, bottom bar) never
+  // renders and intercepts later clicks (e.g. the upload submit button).
+  // addInitScript runs before the app's scripts on every navigation, so the
+  // consent provider hydrates as already-decided.
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'taxreader-consent',
+      JSON.stringify({ notwendig: true, fehleranalyse: false, decided: true }),
+    )
+  })
+
   // ── 1. Register ────────────────────────────────────────────────────────────
   await page.goto('/register')
-  await dismissCookieBanner(page)
   await expect(page.getByRole('heading', { name: 'Konto erstellen' })).toBeVisible()
 
   await page.getByLabel('Name').fill('Playwright Test')
