@@ -29,6 +29,8 @@ cp .env.example .env
 #   - JWT_SECRET (any long random string for local dev)
 #   - ANTHROPIC_API_KEY (your Anthropic key)
 #   - POSTGRES_PASSWORD (any string)
+#   - REFRESHTOKEN_HASHKEY (32-byte Base64 pepper — the API refuses to boot without it)
+#       generate with: openssl rand -base64 32
 
 # 3. Bring up the full stack
 docker compose up --build
