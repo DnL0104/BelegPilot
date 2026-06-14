@@ -195,7 +195,10 @@ jobs:
           Jwt__Issuer: BelegPilot
           Jwt__Audience: BelegPilot
           RefreshToken__HashKey: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-          Anthropic__ApiKey: placeholder-not-needed-for-e2e-happy-path
+          # Real key (repo secret) — the happy-path classify→confirm step exercises
+          # live AI classification. Haiku cost per run is negligible; the test accepts
+          # any returned category, so AI non-determinism is fine.
+          Anthropic__ApiKey: ${{ secrets.ANTHROPIC_API_KEY }}
           Anthropic__Model: claude-haiku-4-5
           Stripe__SecretKey: sk_live_test_placeholder_for_e2e
           Stripe__PublishableKey: pk_live_test_placeholder_for_e2e
