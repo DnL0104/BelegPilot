@@ -19,3 +19,7 @@ Backend/src/TaxReader.Api/storage/
 # MSBuild diagnostic logs / binlogs
 build-diag*.txt
 *.binlog
+
+# Local secrets — loose API key files used for local E2E runs (never commit)
+keyfile.txt
+*.key

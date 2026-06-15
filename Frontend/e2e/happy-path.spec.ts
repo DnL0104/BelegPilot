@@ -87,7 +87,8 @@ test('happy path: register → login → upload → classify → confirm → rep
 
   // ── 4. Navigate to receipts list ─────────────────────────────────────────
   await page.goto('/receipts')
-  await expect(page.getByRole('heading', { name: 'Belege' })).toBeVisible()
+  // exact: true — otherwise "Belege" substring-matches the "Alle Belege" card heading too.
+  await expect(page.getByRole('heading', { name: 'Belege', exact: true })).toBeVisible()
 
   // Wait for the uploaded receipt to appear in the list (processing may take a moment).
   // The receipts table renders rows once the backend completes processing.
