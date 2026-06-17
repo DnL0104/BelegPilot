@@ -2,6 +2,11 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  // Per-test cap. The happy path drives the real pipeline (upload → Hangfire →
+  // OCR/parse → AI classify → poll), with several sequential 60s waits after
+  // upload. Playwright's 30s default kills the test before processing finishes,
+  // so the post-upload toBeVisible({ timeout: 60_000 }) waits can never elapse.
+  timeout: 180_000,
   // HTML report (uploaded as the playwright-report artifact on failure) plus a
   // trace, screenshot, and video retained on failure so CI failures are
   // diagnosable from the page state, not guesswork.
