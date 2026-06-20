@@ -45,7 +45,7 @@ try
     builder.WebHost.UseSentry(options =>
     {
         options.SendDefaultPii = false;
-        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.None;
+        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Small; // OPS-02: cap body size; BeforeSend scrubs the rest
         options.SetBeforeSend((sentryEvent, hint) => SentryScrubbing.Scrub(sentryEvent));
     });
 

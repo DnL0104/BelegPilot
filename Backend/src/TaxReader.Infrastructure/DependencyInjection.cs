@@ -1,6 +1,7 @@
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Hangfire.PostgreSql;
+using Sentry.Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,7 +88,8 @@ public static class DependencyInjection
         {
             cfg.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                .UseSimpleAssemblyNameTypeSerializer()
-               .UseRecommendedSerializerSettings();
+               .UseRecommendedSerializerSettings()
+               .UseSentry(); // OPS-03: surface failed Hangfire job exceptions to Sentry
             if (useInMemory)
             {
                 cfg.UseMemoryStorage();
