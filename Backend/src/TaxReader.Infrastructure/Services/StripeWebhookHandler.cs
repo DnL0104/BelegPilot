@@ -20,6 +20,7 @@ public class StripeWebhookHandler(
     IOptions<StripeOptions> stripeOptions,
     IAppDbContext dbContext,
     IBackgroundJobClient jobClient,
+    IStripePaymentProvider stripeProvider,
     ILogger<StripeWebhookHandler> logger)
 {
     public async Task<IResult> HandleAsync(
@@ -33,7 +34,8 @@ public class StripeWebhookHandler(
             stripeEvent = EventUtility.ConstructEvent(
                 json,
                 signatureHeader,
-                stripeOptions.Value.WebhookSecret);
+                stripeOptions.Value.WebhookSecret,
+                throwOnApiVersionMismatch: false);
         }
         catch (StripeException ex)
         {
@@ -47,15 +49,6 @@ public class StripeWebhookHandler(
             if (session is null) return Results.Ok();
 
             var stripeEventId = stripeEvent.Id;
-            // T-02: idempotency — UNIQUE constraint on stripe_event_id
-            var alreadyProcessed = await dbContext.Payments
-                .AnyAsync(p => p.StripeEventId == stripeEventId, cancellationToken);
-            if (alreadyProcessed)
-            {
-                // Pitfall 2: always 200 on duplicate — never 4xx (Stripe would retry)
-                logger.LogInformation("Duplicate Stripe event {StripeEventId} — ignoring", stripeEventId);
-                return Results.Ok();
-            }
 
             if (!session.Metadata.TryGetValue("userId", out var userIdStr) ||
                 !Guid.TryParse(userIdStr, out var userId))
@@ -64,12 +57,42 @@ public class StripeWebhookHandler(
                 return Results.Ok();
             }
 
-            if (!session.Metadata.TryGetValue("credits", out var creditsStr) ||
-                !int.TryParse(creditsStr, out var credits))
+            // PAY-02: derive credits server-side from the verified Stripe line-item price id.
+            // Never trust session.Metadata["credits"] — it is client-visible and can be forged (T-01-10).
+            var priceId = await stripeProvider.ExpandSessionAsync(session.Id, cancellationToken);
+            var pricePack = stripeOptions.Value.PricePacks
+                .FirstOrDefault(p => p.StripePriceId == priceId);
+
+            if (pricePack is null)
             {
-                logger.LogWarning("Stripe event {StripeEventId} missing credits metadata", stripeEventId);
+                logger.LogWarning(
+                    "Stripe event {StripeEventId}: no PricePack matches priceId {PriceId} — ignoring",
+                    stripeEventId, priceId);
+                return Results.Ok(); // Always 200 — Stripe must not retry
+            }
+
+            var credits = pricePack.Credits;
+
+            // PAY-03: atomic idempotent insert via IAppDbContext.InsertPaymentAtomicAsync.
+            // ON CONFLICT (stripe_event_id) DO NOTHING returns 0 on duplicate; 1 on first insert.
+            // Eliminates the race window in the AnyAsync → Add → SaveChanges two-step.
+            var rows = await dbContext.InsertPaymentAtomicAsync(
+                userId,
+                stripeEventId,
+                session.Id,
+                session.PaymentIntentId,
+                credits,
+                (int)(session.AmountTotal ?? 0),
+                session.Currency ?? "eur",
+                cancellationToken);
+
+            if (rows == 0)
+            {
+                logger.LogInformation("Duplicate Stripe event {StripeEventId} — ignoring", stripeEventId);
                 return Results.Ok();
             }
+
+            // rows == 1: new insert succeeded. Update StripeCustomerId and enqueue grant job.
 
             // Pitfall 5: persist stripe_customer_id on User so repeat buyers don't create duplicate Stripe customers
             if (session.CustomerId is not null)
@@ -79,24 +102,9 @@ public class StripeWebhookHandler(
                 if (user is not null && user.StripeCustomerId is null)
                 {
                     user.StripeCustomerId = session.CustomerId;
+                    await dbContext.SaveChangesAsync(cancellationToken);
                 }
             }
-
-            dbContext.Payments.Add(new Payment
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                StripeEventId = stripeEventId,
-                StripeSessionId = session.Id,
-                // StripePaymentIntentId populated for reliable charge.refunded correlation in Plan 05-04
-                StripePaymentIntentId = session.PaymentIntentId,
-                CreditsGranted = credits,
-                AmountCents = (int)(session.AmountTotal ?? 0),
-                Currency = session.Currency ?? "eur",
-                Status = PaymentStatus.Pending,
-                CreatedAt = DateTime.UtcNow
-            });
-            await dbContext.SaveChangesAsync(cancellationToken);
 
             await jobClient.EnqueueAsync<GrantTokensJob>(
                 j => j.HandleAsync(userId, credits, CancellationToken.None),

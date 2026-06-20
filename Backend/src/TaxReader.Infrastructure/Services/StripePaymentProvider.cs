@@ -106,4 +106,24 @@ public class StripePaymentProvider(
                 i.HostedInvoiceUrl))
             .ToList();
     }
+
+    /// <summary>
+    /// PAY-02: Expands the Stripe checkout session to retrieve the first line-item price id.
+    /// The price id is the authoritative server-side key for credit derivation — it comes
+    /// directly from Stripe's verified line-items data and cannot be forged by the client.
+    /// Returns null if the session has no line items or the price id cannot be resolved.
+    /// </summary>
+    public async Task<string?> ExpandSessionAsync(
+        string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var service = _client.V1.Checkout.Sessions;
+        var expanded = await service.GetAsync(
+            sessionId,
+            new SessionGetOptions { Expand = ["line_items"] },
+            requestOptions: null,
+            cancellationToken: cancellationToken);
+
+        return expanded.LineItems?.Data?.FirstOrDefault()?.Price?.Id;
+    }
 }
