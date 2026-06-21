@@ -23,15 +23,15 @@ interface TopUpDialogProps {
 }
 
 const PACKAGES = [
-  { credits: 50, price: "4,99 €", popular: false },
-  { credits: 200, price: "14,99 €", popular: true },
-  { credits: 500, price: "29,99 €", popular: false },
+  { credits: 100, price: "4,99 €", popular: false },
+  { credits: 500, price: "19,99 €", popular: true },
+  { credits: 1500, price: "49,99 €", popular: false },
 ];
 
 export function TopUpDialog({ open, onOpenChange }: TopUpDialogProps) {
   const { data: balance } = useTokenBalance();
   const checkout = useCreateCheckoutSession();
-  const [selected, setSelected] = useState<number>(200);
+  const [selected, setSelected] = useState<number>(500);
   const [agbChecked, setAgbChecked] = useState(false);
   const [widerrufsrechtChecked, setWiderrufsrechtChecked] = useState(false);
 

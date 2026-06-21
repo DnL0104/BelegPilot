@@ -25,7 +25,7 @@ public static class PaymentEndpoints
             if (!request.WaiverAccepted || !request.AgbAccepted)
                 return Results.BadRequest(new { error = "Bitte akzeptieren Sie die AGB und den Widerrufsverzicht." });
 
-            var validCredits = new[] { 50, 200, 500 };
+            var validCredits = new[] { 100, 500, 1500 };
             if (!validCredits.Contains(request.Credits))
                 return Results.BadRequest(new { error = "Ungültige Credits-Anzahl." });
 
