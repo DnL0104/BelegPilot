@@ -108,7 +108,8 @@ public static class TestDataFactory
         Category category = Category.WerbungskostenBueromaterial,
         ClassificationMethod method = ClassificationMethod.Rule,
         ClassificationStatus status = ClassificationStatus.Suggested,
-        string reason = "Matched rule: 'test'")
+        string reason = "Matched rule: 'test'",
+        double? confidence = null)
     {
         return new ItemClassification
         {
@@ -118,7 +119,8 @@ public static class TestDataFactory
             Method = method,
             Status = status,
             Reason = reason,
-            ClassifiedAt = DateTime.UtcNow
+            ClassifiedAt = DateTime.UtcNow,
+            Confidence = confidence
         };
     }
 
