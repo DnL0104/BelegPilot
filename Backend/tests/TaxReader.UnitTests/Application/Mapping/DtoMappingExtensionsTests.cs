@@ -7,6 +7,88 @@ namespace TaxReader.UnitTests.Application.Mapping;
 
 public class DtoMappingExtensionsTests
 {
+    // ── ConfidenceTier mapping (D-01 thresholds: HIGH ≥0.85, MEDIUM ≥0.60, LOW <0.60) ──
+
+    [Fact]
+    public void ToDto_ItemClassification_WithHighConfidence_ReturnsHighTier()
+    {
+        var classification = TestDataFactory.CreateClassification(
+            category: Category.WerbungskostenBueromaterial);
+        classification.Confidence = 0.92;
+
+        var dto = classification.ToDto();
+
+        dto.ConfidenceTier.Should().Be("HIGH");
+    }
+
+    [Fact]
+    public void ToDto_ItemClassification_WithMediumConfidence_ReturnsMediumTier()
+    {
+        var classification = TestDataFactory.CreateClassification(
+            category: Category.WerbungskostenBueromaterial);
+        classification.Confidence = 0.70;
+
+        var dto = classification.ToDto();
+
+        dto.ConfidenceTier.Should().Be("MEDIUM");
+    }
+
+    [Fact]
+    public void ToDto_ItemClassification_WithLowConfidence_ReturnsLowTier()
+    {
+        var classification = TestDataFactory.CreateClassification(
+            category: Category.WerbungskostenBueromaterial);
+        classification.Confidence = 0.40;
+
+        var dto = classification.ToDto();
+
+        dto.ConfidenceTier.Should().Be("LOW");
+    }
+
+    [Fact]
+    public void ToDto_ItemClassification_WithNullConfidence_ReturnsNullTier()
+    {
+        // Manual/rule-based classifications have no AI confidence score.
+        var classification = TestDataFactory.CreateClassification(
+            method: ClassificationMethod.Manual,
+            status: ClassificationStatus.Confirmed);
+        // Confidence defaults to null (not set in TestDataFactory)
+
+        var dto = classification.ToDto();
+
+        dto.ConfidenceTier.Should().BeNull();
+    }
+
+    [Fact]
+    public void ToDto_Receipt_WithFailedItems_FailedCountSeparateFromUnknown()
+    {
+        // Pitfall 2 regression: a Failed item must NOT inflate UnknownCount.
+        var receipt = TestDataFactory.CreateReceipt();
+
+        var unknownItem = TestDataFactory.CreateReceiptItem(receiptId: receipt.Id, lineNumber: 1);
+        var unknownClassification = TestDataFactory.CreateClassification(
+            receiptItemId: unknownItem.Id,
+            category: Category.Unbekannt,
+            status: ClassificationStatus.Suggested);
+        unknownItem.Classifications.Add(unknownClassification);
+
+        var failedItem = TestDataFactory.CreateReceiptItem(receiptId: receipt.Id, lineNumber: 2);
+        var failedClassification = TestDataFactory.CreateClassification(
+            receiptItemId: failedItem.Id,
+            category: Category.Unbekannt,
+            status: ClassificationStatus.Failed);
+        failedItem.Classifications.Add(failedClassification);
+
+        receipt.Items.Add(unknownItem);
+        receipt.Items.Add(failedItem);
+
+        var dto = receipt.ToDto();
+
+        dto.UnknownCount.Should().Be(1, "only the genuine Unbekannt item counts as unknown");
+        dto.FailedCount.Should().Be(1, "the Failed item is counted separately");
+    }
+
+
     [Fact]
     public void ToDto_ReceiptFile_MapsAllProperties()
     {
