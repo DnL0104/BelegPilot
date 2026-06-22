@@ -1,0 +1,13 @@
+BILDUNGSINSTITUT ANONYM
+Rechnungsnummer: ANON-2025-XXXX
+Datum: ANONYM
+Teilnehmer-ID: ANONYM
+
+Kursgebühr: Fortbildungsseminar Digitalisierung   ANONYM EUR
+
+Summe netto:                                       ANONYM EUR
+MwSt. 19%:                                         ANONYM EUR
+Gesamtbetrag:                                      ANONYM EUR
+
+---
+HINWEIS: Anonymisierter Beleg gemaess D-10. Alle PII entfernt.

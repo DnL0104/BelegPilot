@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- This project is intentionally excluded from Backend/TaxReader.sln (D-12 / Pitfall 6).
+         Run standalone: dotnet test Backend/tests/TaxReader.EvalTests
+         Requires Anthropic__ApiKey env var. Never discovered by "dotnet test Backend". -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference Infrastructure only — the harness calls ClaudeAiClassifier directly,
+         not via the API host. No DI container from the full app is needed. -->
+    <ProjectReference Include="..\..\src\TaxReader.Infrastructure\TaxReader.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

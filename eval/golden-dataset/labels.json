@@ -1,0 +1,44 @@
+[
+  {
+    "receiptFile": "receipts/receipt-001.txt",
+    "vendor": "ANONYM",
+    "items": [
+      {
+        "description": "USB-C Kabel 1m",
+        "expectedCategory": "WerbungskostenArbeitsmittel"
+      },
+      {
+        "description": "HDMI-Adapter",
+        "expectedCategory": "WerbungskostenArbeitsmittel"
+      },
+      {
+        "description": "Druckerpapier A4 500 Blatt",
+        "expectedCategory": "WerbungskostenBueromaterial"
+      }
+    ]
+  },
+  {
+    "receiptFile": "receipts/receipt-002.txt",
+    "vendor": "ANONYM",
+    "items": [
+      {
+        "description": "Fachbuch Steuerrecht 2025",
+        "expectedCategory": "WerbungskostenFachliteratur"
+      },
+      {
+        "description": "Fachliteratur Buchhaltung Grundlagen",
+        "expectedCategory": "WerbungskostenFachliteratur"
+      }
+    ]
+  },
+  {
+    "receiptFile": "receipts/receipt-003.txt",
+    "vendor": "ANONYM",
+    "items": [
+      {
+        "description": "Fortbildungsseminar Digitalisierung",
+        "expectedCategory": "WerbungskostenFortbildung"
+      }
+    ]
+  }
+]

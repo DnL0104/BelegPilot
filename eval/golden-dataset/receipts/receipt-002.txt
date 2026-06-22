@@ -1,0 +1,15 @@
+BUCHANDLUNG ANONYM
+Rechnungsnummer: ANON-2025-XXXX
+Datum: ANONYM
+
+Kaeufer: ANONYM-KUNDEN-ID
+
+1x Fachbuch Steuerrecht 2025               ANONYM EUR
+1x Fachliteratur Buchhaltung Grundlagen    ANONYM EUR
+
+Summe netto:                               ANONYM EUR
+MwSt. 7%:                                  ANONYM EUR
+Gesamtbetrag:                              ANONYM EUR
+
+---
+HINWEIS: Anonymisierter Beleg gemaess D-10. Alle PII entfernt.
