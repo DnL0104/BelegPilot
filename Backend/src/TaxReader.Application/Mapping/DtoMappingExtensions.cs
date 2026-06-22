@@ -21,6 +21,7 @@ public static class DtoMappingExtensions
     {
         var suggestedCount = 0;
         var unknownCount = 0;
+        var failedCount = 0;
 
         foreach (var item in entity.Items)
         {
@@ -28,7 +29,11 @@ public static class DtoMappingExtensions
                 .OrderByDescending(c => c.ClassifiedAt)
                 .FirstOrDefault();
 
-            if (latest is null || latest.Category == Category.Unbekannt)
+            // Failed items (technical failures) are counted separately — they do NOT
+            // inflate unknownCount (Pitfall 2 regression guard).
+            if (latest?.Status == ClassificationStatus.Failed)
+                failedCount++;
+            else if (latest is null || latest.Category == Category.Unbekannt)
                 unknownCount++;
             else if (latest.Status == ClassificationStatus.Suggested)
                 suggestedCount++;
@@ -47,6 +52,7 @@ public static class DtoMappingExtensions
             entity.Items.Count,
             suggestedCount,
             unknownCount,
+            failedCount,
             entity.HasSumMismatch,
             includeRawText ? entity.RawExtractedText : null);
     }
@@ -69,7 +75,17 @@ public static class DtoMappingExtensions
             entity.Method.ToString(),
             entity.Status.ToString(),
             entity.Reason,
-            entity.ClassifiedAt);
+            entity.ClassifiedAt,
+            ToConfidenceTier(entity.Confidence));
+
+    // D-01: HIGH ≥ 85%, MEDIUM 60–84%, LOW < 60%, null for manual/rule (no AI score).
+    private static string? ToConfidenceTier(double? confidence) => confidence switch
+    {
+        null => null,
+        >= 0.85 => "HIGH",
+        >= 0.60 => "MEDIUM",
+        _ => "LOW"
+    };
 
     public static ClassificationRuleDto ToDto(this ClassificationRule rule) => new(
         rule.Id,

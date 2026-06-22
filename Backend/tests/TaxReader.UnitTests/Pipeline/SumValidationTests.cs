@@ -245,6 +245,7 @@ public class ReceiptDtoSumMismatchMappingTests
             ItemCount: 0,
             SuggestedCount: 0,
             UnknownCount: 0,
+            FailedCount: 0,
             HasSumMismatch: true);
 
         dto.HasSumMismatch.Should().BeTrue();

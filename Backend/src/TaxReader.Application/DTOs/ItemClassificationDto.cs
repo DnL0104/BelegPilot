@@ -6,4 +6,5 @@ public record ItemClassificationDto(
     string Method,
     string Status,
     string Reason,
-    DateTime ClassifiedAt);
+    DateTime ClassifiedAt,
+    string? ConfidenceTier);   // "HIGH" | "MEDIUM" | "LOW" | null (null for manual/rule classifications)
