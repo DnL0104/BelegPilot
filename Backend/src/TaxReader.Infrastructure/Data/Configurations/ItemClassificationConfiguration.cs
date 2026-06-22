@@ -18,6 +18,7 @@ public class ItemClassificationConfiguration : IEntityTypeConfiguration<ItemClas
         builder.Property(e => e.Status).HasConversion<string>().IsRequired().HasMaxLength(50);
         builder.Property(e => e.Reason).IsRequired().HasMaxLength(500);
         builder.Property(e => e.ClassifiedBy).HasMaxLength(200);
+        builder.Property(e => e.Confidence);  // nullable double → double precision; no type override needed
 
         builder.HasIndex(e => new { e.ReceiptItemId, e.ClassifiedAt })
             .IsDescending(false, true);
