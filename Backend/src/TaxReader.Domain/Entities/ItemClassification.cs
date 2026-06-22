@@ -13,5 +13,8 @@ public class ItemClassification
     public DateTime ClassifiedAt { get; set; } = DateTime.UtcNow;
     public string? ClassifiedBy { get; set; }
 
+    // Nullable because manual confirmations and rule-based classifications have no AI-derived confidence score.
+    public double? Confidence { get; set; }
+
     public ReceiptItem ReceiptItem { get; set; } = null!;
 }
