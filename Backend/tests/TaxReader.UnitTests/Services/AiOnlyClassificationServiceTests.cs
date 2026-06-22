@@ -130,8 +130,9 @@ public class AiOnlyClassificationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ClassifyItemsAsync_AiThrows_RefundsAllAndReturnsUnknown()
+    public async Task ClassifyItemsAsync_AiThrows_RefundsAllAndReturnsFailedClassification()
     {
+        // After retry-once hardening (Task 2): AI throws on both attempts → Failed, not Suggested.
         _aiClassifierMock.Setup(a => a.IsConfigured).Returns(true);
         _aiClassifierMock
             .Setup(a => a.ClassifyBatchAsync(It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
@@ -144,6 +145,8 @@ public class AiOnlyClassificationServiceTests : IDisposable
         results.Should().HaveCount(1);
         results[0].Category.Should().Be(Category.Unbekannt);
         results[0].Reason.Should().StartWith("AI-Fehler:");
+        // CLS-01: technical failure must produce Failed, not Suggested + Unbekannt
+        results[0].Status.Should().Be(ClassificationStatus.Failed);
 
         _tokenServiceMock.Verify(
             t => t.RefundManyAsync(
