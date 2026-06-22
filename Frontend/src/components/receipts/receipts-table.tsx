@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Loader2, X, Check, Sparkles, HelpCircle, AlertTriangle } from "lucide-react";
+import { Trash2, Loader2, X, Check, Sparkles, HelpCircle, AlertTriangle, AlertCircle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -21,13 +21,26 @@ import { formatCurrency, formatDate } from "@/lib/format";
 function ReceiptStatusBadge({
   suggestedCount,
   unknownCount,
+  failedCount,
   itemCount,
 }: {
   suggestedCount: number;
   unknownCount: number;
+  failedCount: number;
   itemCount: number;
 }) {
   if (itemCount === 0) return null;
+
+  // Failed items are shown first and distinctly — they indicate a technical error,
+  // not a genuine "unknown" classification. Do NOT collapse them into unknownCount.
+  if (failedCount > 0) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[12px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-400">
+        <AlertCircle className="h-3 w-3" />
+        {failedCount} {failedCount === 1 ? "Fehler" : "Fehler"}
+      </span>
+    );
+  }
 
   if (unknownCount > 0) {
     return (
@@ -238,6 +251,7 @@ export function ReceiptsTable({ year, refetchInterval }: ReceiptsTableProps) {
                   <ReceiptStatusBadge
                     suggestedCount={receipt.suggestedCount}
                     unknownCount={receipt.unknownCount}
+                    failedCount={receipt.failedCount}
                     itemCount={receipt.itemCount}
                   />
                 </TableCell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, BookOpen, Hand, Check, HelpCircle } from "lucide-react";
+import { Sparkles, BookOpen, Hand, Check, HelpCircle, AlertCircle } from "lucide-react";
 import { categoryLabel } from "@/lib/format";
 import type { ItemClassification } from "@/types/api";
 
@@ -35,9 +35,23 @@ export function ClassificationBadge({
     );
   }
 
-  const style = categoryStyles[classification.category] ?? categoryStyles.Unbekannt;
   const isSuggested = classification.status === "Suggested";
   const isUnknown = classification.category === "Unbekannt";
+  const isFailed = classification.status === "Failed";   // CLS-01 / CLS-02
+
+  // Failed state — distinct from "Nicht erkannt" (Unbekannt). Technical AI failure.
+  if (isFailed) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[12px] font-medium bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+      >
+        <AlertCircle className="h-3 w-3" />
+        Fehler
+      </span>
+    );
+  }
+
+  const style = categoryStyles[classification.category] ?? categoryStyles.Unbekannt;
 
   const methodIcon =
     classification.method === "AI" ? (
@@ -74,6 +88,11 @@ export function ClassificationBadge({
       </span>
       {isSuggested && !isUnknown && (
         <span className="text-[10px] text-muted-foreground">Vorschlag</span>
+      )}
+      {classification.confidenceTier && (
+        <span className="text-[10px] text-muted-foreground">
+          {classification.confidenceTier}
+        </span>
       )}
     </div>
   );

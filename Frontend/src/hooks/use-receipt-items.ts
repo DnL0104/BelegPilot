@@ -7,6 +7,7 @@ import {
   confirmClassification,
   batchConfirmClassifications,
   reclassifyReceipt,
+  retryFailedClassifications,
   getPendingSuggestions,
   saveClassificationRule,
   type SaveRulePayload,
@@ -62,6 +63,18 @@ export function useReclassifyReceipt() {
 
   return useMutation({
     mutationFn: (receiptId: string) => reclassifyReceipt(receiptId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.receipts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classifications.pendingSuggestions });
+    },
+  });
+}
+
+export function useRetryFailedClassifications() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (receiptId: string) => retryFailedClassifications(receiptId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.receipts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.classifications.pendingSuggestions });

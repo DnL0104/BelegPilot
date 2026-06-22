@@ -219,6 +219,15 @@ export async function reclassifyReceipt(
   return data;
 }
 
+export async function retryFailedClassifications(
+  receiptId: string
+): Promise<ReceiptItem[]> {
+  const { data } = await api.post<ReceiptItem[]>(
+    `/receipts/${receiptId}/retry-failed`
+  );
+  return data;
+}
+
 export async function batchConfirmClassifications(
   itemIds: string[]
 ): Promise<{ confirmed: number }> {

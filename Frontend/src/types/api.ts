@@ -34,6 +34,7 @@ export interface Receipt {
   itemCount: number;
   suggestedCount: number;
   unknownCount: number;
+  failedCount: number;     // items with ClassificationStatus.Failed — separate from unknownCount (Pitfall 2)
   hasSumMismatch: boolean;
 }
 
@@ -67,6 +68,7 @@ export interface ItemClassification {
   category: string;
   method: string;
   status: string;
+  confidenceTier?: "HIGH" | "MEDIUM" | "LOW" | null;  // D-01: derived from Confidence; null for manual/rule items
   reason: string;
   classifiedAt: string;
 }

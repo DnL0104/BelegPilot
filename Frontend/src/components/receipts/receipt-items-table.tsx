@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Pencil, Check, Loader2, X } from "lucide-react";
+import { Pencil, Check, Loader2, X, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,17 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
   const batchConfirmMutation = useBatchConfirm();
   const [classifyItem, setClassifyItem] = useState<ReceiptItem | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // CLS-04: per-row expand state for reasoning; collapsed by default.
+  const [expandedReasons, setExpandedReasons] = useState<Set<string>>(new Set());
+
+  const toggleReason = (itemId: string) => {
+    setExpandedReasons((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
 
   const confirmableIds = useMemo(() => {
     if (!items) return new Set<string>();
@@ -152,6 +163,8 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
         {items.map((item) => {
           const isConfirmable = confirmableIds.has(item.id);
           const isSelected = selected.has(item.id);
+          const hasReason = !!item.latestClassification?.reason;
+          const isReasonExpanded = expandedReasons.has(item.id);
           return (
             <div
               key={item.id}
@@ -208,10 +221,27 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                 <ClassificationBadge
                   classification={item.latestClassification}
                 />
-                {item.latestClassification?.reason && (
+
+                {/* CLS-04: expand-on-demand reasoning control — collapsed by default.
+                    Rendered for all four states (Suggested/Unbekannt/Failed/Confirmed)
+                    whenever a reason is present. A title= tooltip does NOT satisfy CLS-04. */}
+                {hasReason && (
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    <span className="font-medium">Warum wurde das so eingeordnet?</span>{" "}
-                    {item.latestClassification.reason}
+                    <button
+                      type="button"
+                      onClick={() => toggleReason(item.id)}
+                      className="flex items-center gap-0.5 font-medium hover:text-foreground transition-colors"
+                    >
+                      {isReasonExpanded
+                        ? <ChevronDown className="h-3 w-3" />
+                        : <ChevronRight className="h-3 w-3" />}
+                      Warum wurde das so eingeordnet?
+                    </button>
+                    {isReasonExpanded && (
+                      <p className="mt-1 pl-3.5">
+                        {item.latestClassification!.reason}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -249,6 +279,8 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
             {items.map((item) => {
               const isConfirmable = confirmableIds.has(item.id);
               const isSelected = selected.has(item.id);
+              const hasReason = !!item.latestClassification?.reason;
+              const isReasonExpanded = expandedReasons.has(item.id);
               return (
                 <TableRow
                   key={item.id}
@@ -287,10 +319,26 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                     <ClassificationBadge
                       classification={item.latestClassification}
                     />
-                    {item.latestClassification?.reason && (
+                    {/* CLS-04: expand-on-demand reasoning — collapsed by default.
+                        Works for all four states (Vorschlag/Unbekannt/Fehler/Bestätigt).
+                        The title= on the badge is a hover hint only; this is the auditable control. */}
+                    {hasReason && (
                       <div className="text-xs text-muted-foreground mt-0.5 max-w-xs">
-                        <span className="font-medium">Warum wurde das so eingeordnet?</span>{" "}
-                        {item.latestClassification.reason}
+                        <button
+                          type="button"
+                          onClick={() => toggleReason(item.id)}
+                          className="flex items-center gap-0.5 font-medium hover:text-foreground transition-colors"
+                        >
+                          {isReasonExpanded
+                            ? <ChevronDown className="h-3 w-3" />
+                            : <ChevronRight className="h-3 w-3" />}
+                          Warum wurde das so eingeordnet?
+                        </button>
+                        {isReasonExpanded && (
+                          <p className="mt-1 pl-3.5">
+                            {item.latestClassification!.reason}
+                          </p>
+                        )}
                       </div>
                     )}
                   </TableCell>
