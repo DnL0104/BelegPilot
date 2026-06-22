@@ -40,6 +40,14 @@ public class BatchConfirmHandler(IAppDbContext dbContext, ICurrentUser currentUs
                 || latest.Category == Category.Unbekannt)
                 continue;
 
+            // D-03 (server-side authority): only confirm HIGH-confidence AI results.
+            // Items with null Confidence (manual/rule classifications) are always confirmable.
+            // The 0.85 threshold mirrors ToConfidenceTier in DtoMappingExtensions — both must
+            // stay in sync with D-01. A client-side filter alone is bypassable via a forged request;
+            // this server guard is the authoritative enforcement point (cf. PAY-02 credit derivation).
+            if (latest.Confidence is not null && latest.Confidence < 0.85)
+                continue;
+
             var confirmation = new ItemClassification
             {
                 Id = Guid.NewGuid(),

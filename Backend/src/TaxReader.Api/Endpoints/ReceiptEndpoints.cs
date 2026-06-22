@@ -68,6 +68,21 @@ public static class ReceiptEndpoints
         .WithName("ReclassifyReceipt")
         .WithSummary("Re-run AI classification on all items of a receipt");
 
+        receipts.MapPost("/{id:guid}/retry-failed", async (
+            Guid id,
+            [FromServices] RetryFailedItemsHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(
+                new RetryFailedItemsCommand(id), cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : Results.NotFound(new { error = result.Error });
+        })
+        .WithName("RetryFailedClassifications")
+        .WithSummary("Retry AI classification for items that failed with a technical error");
+
         receipts.MapPost("/{id:guid}/acknowledge-sum", async (
             Guid id,
             AcknowledgeSumMismatchHandler handler,

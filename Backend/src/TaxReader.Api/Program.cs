@@ -97,6 +97,7 @@ try
     builder.Services.AddScoped<ConfirmClassificationHandler>();
     builder.Services.AddScoped<BatchConfirmHandler>();
     builder.Services.AddScoped<ReclassifyReceiptHandler>();
+    builder.Services.AddScoped<RetryFailedItemsHandler>();
     builder.Services.AddScoped<GetReceiptFilesHandler>();
     builder.Services.AddScoped<GetReceiptsHandler>();
     builder.Services.AddScoped<GetReceiptByIdHandler>();
