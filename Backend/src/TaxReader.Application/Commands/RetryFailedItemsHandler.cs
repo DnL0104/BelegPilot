@@ -53,9 +53,13 @@ public class RetryFailedItemsHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // Reload items with fresh classifications so LatestClassification reflects the new ones.
+        // WR-02: AsNoTracking (read-only projection) + ownership re-filter (defense in depth —
+        // the IDOR gate above already proved ownership, but the reload should not trust ReceiptId alone).
         var updatedItems = await dbContext.ReceiptItems
+            .AsNoTracking()
             .Include(i => i.Classifications)
-            .Where(i => i.ReceiptId == command.ReceiptId)
+            .Where(i => i.ReceiptId == command.ReceiptId
+                     && i.Receipt.ReceiptFile.UserId == currentUser.UserId)
             .OrderBy(i => i.LineNumber)
             .ToListAsync(cancellationToken);
 
