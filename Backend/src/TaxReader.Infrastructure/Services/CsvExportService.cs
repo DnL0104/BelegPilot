@@ -48,14 +48,15 @@ public static class CsvExportService
     {
         var sb = new StringBuilder();
 
+        // BOM for Excel UTF-8 detection \u2014 MUST be the first bytes of the file, otherwise
+        // the umlauts in the disclaimer/data are decoded as mojibake (CR-01).
+        sb.Append('\uFEFF');
+
         // D-08: StBerG \u00A75-safe disclaimer \u2014 must appear before data rows so it is visible
         // when the file is opened in a text editor or spreadsheet application.
         sb.AppendLine("# Steuerliche Vorschl\u00E4ge \u2013 keine Steuerberatung gem\u00E4\u00DF \u00A7 5 StBerG");
         sb.AppendLine("# TaxReader ist ein Hilfsmittel. Alle Klassifizierungen sind Vorschl\u00E4ge ohne Gew\u00E4hr.");
         sb.AppendLine("# Die aufgef\u00FChrten Betr\u00E4ge ersetzen keine Beratung durch einen zugelassenen Steuerberater.");
-
-        // BOM for Excel UTF-8 detection
-        sb.Append('\uFEFF');
 
         // Header
         sb.AppendLine(string.Join(";", Headers));
@@ -90,6 +91,13 @@ public static class CsvExportService
 
     private static string Escape(string value)
     {
+        // CR-02: neutralize spreadsheet formula injection. Vendor/description/reason come
+        // from OCR'd user-uploaded receipts; a value starting with a formula trigger is
+        // executed by Excel/LibreOffice/Sheets when the export is opened. Prefix with a
+        // single quote (OWASP-recommended) before CSV quoting.
+        if (value.Length > 0 && value[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
+            value = "'" + value;
+
         if (value.Contains(';') || value.Contains('"') || value.Contains('\n'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
