@@ -11,6 +11,17 @@
 #   0 2 * * * /bin/sh /backup.sh >> /var/log/backup.log 2>&1
 set -e
 
+# WR-02: signal the dead-man's-switch /fail endpoint on any non-zero exit, so monitoring
+# distinguishes an explicit backup failure from a silently missed run. The success ping at
+# the end hits the base URL; this trap only fires the /fail variant on error.
+notify_fail() {
+  rc=$?
+  if [ "$rc" -ne 0 ] && [ -n "$HEALTHCHECKS_BACKUP_URL" ]; then
+    curl -fsS --retry 3 "$HEALTHCHECKS_BACKUP_URL/fail" || true
+  fi
+}
+trap notify_fail EXIT
+
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup"
 
 # Guard: init repo if it does not yet exist (idempotent on repeated runs)
