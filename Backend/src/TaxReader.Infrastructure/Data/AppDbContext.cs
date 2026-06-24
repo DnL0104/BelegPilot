@@ -53,7 +53,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             """,
             new object[]
             {
-                userId, stripeEventId, stripeSessionId, stripePaymentIntentId ?? string.Empty,
+                // CR-01: store NULL (not "") when no PaymentIntentId is present at webhook time,
+                // otherwise the charge.refunded handler's `StripePaymentIntentId == paymentIntentId`
+                // lookup can never match and token revocation silently skips the payment.
+                userId, stripeEventId, stripeSessionId, (object?)stripePaymentIntentId ?? DBNull.Value,
                 creditsGranted, amountCents, currency
             },
             cancellationToken);
