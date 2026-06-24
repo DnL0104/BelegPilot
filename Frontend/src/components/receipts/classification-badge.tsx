@@ -24,6 +24,13 @@ const categoryStyles: Record<string, string> = {
   Unbekannt: "bg-muted text-muted-foreground",
 };
 
+// Confidence tier shown in German, not the raw API enum (HIGH/MEDIUM/LOW).
+const confidenceTierLabels: Record<string, string> = {
+  HIGH: "Hohe Sicherheit",
+  MEDIUM: "Mittlere Sicherheit",
+  LOW: "Geringe Sicherheit",
+};
+
 export function ClassificationBadge({
   classification,
 }: ClassificationBadgeProps) {
@@ -91,7 +98,7 @@ export function ClassificationBadge({
       )}
       {classification.confidenceTier && (
         <span className="text-[10px] text-muted-foreground">
-          {classification.confidenceTier}
+          {confidenceTierLabels[classification.confidenceTier] ?? classification.confidenceTier}
         </span>
       )}
     </div>
