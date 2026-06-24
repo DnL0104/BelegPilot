@@ -25,6 +25,9 @@ public static class PaymentEndpoints
             if (!request.WaiverAccepted || !request.AgbAccepted)
                 return Results.BadRequest(new { error = "Bitte akzeptieren Sie die AGB und den Widerrufsverzicht." });
 
+            // WR-03: this allow-list is the authority. It is mirrored in the UI's PACKAGES
+            // list (Frontend/src/components/tokens/top-up-dialog.tsx). Keep both in sync when
+            // adding/removing a credit tier — the backend rejects anything not listed here.
             var validCredits = new[] { 100, 500, 1500 };
             if (!validCredits.Contains(request.Credits))
                 return Results.BadRequest(new { error = "Ungültige Credits-Anzahl." });

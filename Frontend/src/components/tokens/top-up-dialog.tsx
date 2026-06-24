@@ -22,6 +22,9 @@ interface TopUpDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// WR-03: credit tiers mirror the backend allow-list in PaymentEndpoints.cs (validCredits).
+// The backend is the authority and rejects any credits value not listed there — keep both
+// in sync when adding/removing a tier.
 const PACKAGES = [
   { credits: 100, price: "4,99 €", popular: false },
   { credits: 500, price: "19,99 €", popular: true },
