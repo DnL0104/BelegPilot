@@ -48,6 +48,12 @@ public static class CsvExportService
     {
         var sb = new StringBuilder();
 
+        // D-08: StBerG \u00A75-safe disclaimer \u2014 must appear before data rows so it is visible
+        // when the file is opened in a text editor or spreadsheet application.
+        sb.AppendLine("# Steuerliche Vorschl\u00E4ge \u2013 keine Steuerberatung gem\u00E4\u00DF \u00A7 5 StBerG");
+        sb.AppendLine("# TaxReader ist ein Hilfsmittel. Alle Klassifizierungen sind Vorschl\u00E4ge ohne Gew\u00E4hr.");
+        sb.AppendLine("# Die aufgef\u00FChrten Betr\u00E4ge ersetzen keine Beratung durch einen zugelassenen Steuerberater.");
+
         // BOM for Excel UTF-8 detection
         sb.Append('\uFEFF');
 

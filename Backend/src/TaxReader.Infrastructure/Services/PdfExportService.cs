@@ -152,13 +152,15 @@ public static class PdfExportService
                     }
                 });
 
+                // D-09: per-page footer with StBerG §5-safe disclaimer — QuestPDF renders Footer on every page automatically.
                 page.Footer().AlignCenter().Text(x =>
                 {
-                    x.Span("Seite ");
-                    x.CurrentPageNumber();
-                    x.Span(" von ");
-                    x.TotalPages();
-                    x.Span($"  •  TaxReader Export {year}").FontColor(Colors.Grey.Medium);
+                    x.Span("Vorschlag – keine Steuerberatung (§ 5 StBerG)  •  Seite ")
+                        .FontSize(7).FontColor(Colors.Grey.Medium);
+                    x.CurrentPageNumber().FontSize(7).FontColor(Colors.Grey.Medium);
+                    x.Span(" von ").FontSize(7).FontColor(Colors.Grey.Medium);
+                    x.TotalPages().FontSize(7).FontColor(Colors.Grey.Medium);
+                    x.Span($"  •  TaxReader Export {year}").FontSize(7).FontColor(Colors.Grey.Medium);
                 });
             });
         });
