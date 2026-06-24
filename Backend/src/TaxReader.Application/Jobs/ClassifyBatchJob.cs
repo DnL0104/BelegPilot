@@ -76,9 +76,9 @@ public class ClassifyBatchJob(
             try
             {
                 var classifications = await classificationService.ClassifyItemsAsync(allItems, userId, cancellationToken);
+                // CR-01: the service already assigns a fresh Id to every classification it produces.
                 foreach (var classification in classifications)
                 {
-                    classification.Id = Guid.NewGuid();
                     dbContext.ItemClassifications.Add(classification);
                 }
             }

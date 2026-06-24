@@ -44,9 +44,10 @@ public class RetryFailedItemsHandler(
         var classifications = await classificationService.ClassifyItemsAsync(
             failedItems, currentUser.UserId, cancellationToken);
 
+        // CR-01: the service already assigns a fresh Id to every classification it produces;
+        // re-assigning here silently distrusts that contract.
         foreach (var classification in classifications)
         {
-            classification.Id = Guid.NewGuid();
             dbContext.ItemClassifications.Add(classification);
         }
 
