@@ -88,13 +88,21 @@ public class ClassificationEvalTests
         flatItems.Should().NotBeEmpty("labels.json must contain at least one item");
 
         // Call the classifier for all items (the EvalTests project calls ClaudeAiClassifier
-        // directly — not via the full DI stack or HTTP). We send all items as a single batch;
-        // for very large datasets this should be chunked, but for the seed dataset it is fine.
+        // directly — not via the full DI stack or HTTP). WR-03: chunk at the same size the
+        // production service uses (AiOnlyClassificationService.ChunkSize = 50) so the eval
+        // exercises the real chunking path and does not risk a context-window/timeout failure
+        // as the golden dataset grows.
+        const int ChunkSize = 50;
         var descriptions = flatItems
             .Select(i => i.Description)
             .ToList();
 
-        var results = await _classifier.ClassifyBatchAsync(descriptions, CancellationToken.None);
+        var results = new List<AiClassificationResult>(descriptions.Count);
+        foreach (var chunk in descriptions.Chunk(ChunkSize))
+        {
+            var chunkResults = await _classifier.ClassifyBatchAsync(chunk, CancellationToken.None);
+            results.AddRange(chunkResults);
+        }
 
         results.Should().HaveCount(flatItems.Count,
             "ClassifyBatchAsync always-expectedCount invariant must hold");
