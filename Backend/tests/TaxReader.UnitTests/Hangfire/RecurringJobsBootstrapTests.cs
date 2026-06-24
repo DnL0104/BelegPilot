@@ -35,6 +35,18 @@ public class RecurringJobsBootstrapTests
     }
 
     [Fact]
+    public void RecurringJobsBootstrap_RegistersAuditLogRetentionJobWithExpectedIdAndCron()
+    {
+        var path = LocateApiFile(Path.Combine("Hangfire", "RecurringJobsBootstrap.cs"));
+        var source = File.ReadAllText(path);
+
+        source.Should().Contain("\"audit-log-retention\"",
+            "D-05/D-07: the audit-log retention recurring job MUST keep its stable id");
+        source.Should().Contain("\"0 1 * * *\"",
+            "D-07: audit-log retention runs daily at 01:00 UTC (before export-cleanup at 02:00)");
+    }
+
+    [Fact]
     public void RefreshTokenCleanupJob_CarriesHangfireAttributes()
     {
         var path = LocateApplicationFile(Path.Combine("Jobs", "RefreshTokenCleanupJob.cs"));
