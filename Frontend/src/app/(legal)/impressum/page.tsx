@@ -1,30 +1,24 @@
 import Link from "next/link";
+import { DraftWarning } from "@/components/legal/draft-warning";
+import { LEGAL_CONFIG, LEGAL_REVIEWED } from "@/lib/legal-config";
 
 export const metadata = {
   title: "Impressum – TaxReader",
 };
 
-function DraftWarning() {
-  return (
-    <div className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
-      ⚠ Entwurf – anwaltliche Prüfung ausstehend
-    </div>
-  );
-}
-
 export default function ImpressumPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-6 py-10 text-sm leading-relaxed">
-      <DraftWarning />
+      <DraftWarning reviewed={LEGAL_REVIEWED.impressum} />
 
       <h1 className="text-2xl font-semibold tracking-tight">Impressum</h1>
 
       <section>
         <h2 className="mb-2 text-base font-semibold">Angaben gemäß § 5 TMG</h2>
         <p className="whitespace-pre-line text-muted-foreground">
-          [Name]{"\n"}
-          [Anschrift]{"\n"}
-          [PLZ Ort]
+          {LEGAL_CONFIG.name}{"\n"}
+          {LEGAL_CONFIG.address}{"\n"}
+          {LEGAL_CONFIG.city}
         </p>
       </section>
 
@@ -33,10 +27,10 @@ export default function ImpressumPage() {
         <p className="text-muted-foreground">
           E-Mail:{" "}
           <a
-            href="mailto:[kontakt@taxreader.de]"
+            href={`mailto:${LEGAL_CONFIG.email}`}
             className="text-primary hover:underline"
           >
-            [kontakt@taxreader.de]
+            {LEGAL_CONFIG.email}
           </a>
         </p>
       </section>

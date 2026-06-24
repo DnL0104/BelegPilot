@@ -1,21 +1,15 @@
 import Link from "next/link";
+import { DraftWarning } from "@/components/legal/draft-warning";
+import { LEGAL_CONFIG, LEGAL_REVIEWED } from "@/lib/legal-config";
 
 export const metadata = {
   title: "Widerrufsbelehrung – TaxReader",
 };
 
-function DraftWarning() {
-  return (
-    <div className="rounded border border-amber-400 bg-amber-50 dark:bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
-      ⚠ Entwurf – anwaltliche Prüfung ausstehend
-    </div>
-  );
-}
-
 export default function WiderrufPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-6 py-10 text-sm leading-relaxed">
-      <DraftWarning />
+      <DraftWarning reviewed={LEGAL_REVIEWED.widerruf} />
 
       <h1 className="text-2xl font-semibold tracking-tight">
         Widerrufsbelehrung
@@ -29,12 +23,13 @@ export default function WiderrufPage() {
           Tage ab dem Tag des Vertragsabschlusses.
         </p>
         <p className="mt-3 text-muted-foreground">
-          Um Ihr Widerrufsrecht auszuüben, müssen Sie uns ([Name], [Anschrift],
-          [PLZ Ort], E-Mail: [kontakt@taxreader.de]) mittels einer eindeutigen
-          Erklärung (z. B. ein mit der Post versandter Brief oder eine
-          E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen,
-          informieren. Sie können dafür das nachstehende Muster-Widerrufsformular
-          verwenden, das jedoch nicht vorgeschrieben ist.
+          Um Ihr Widerrufsrecht auszuüben, müssen Sie uns ({LEGAL_CONFIG.name},{" "}
+          {LEGAL_CONFIG.address}, {LEGAL_CONFIG.city}, E-Mail:{" "}
+          {LEGAL_CONFIG.email}) mittels einer eindeutigen Erklärung (z. B. ein
+          mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss,
+          diesen Vertrag zu widerrufen, informieren. Sie können dafür das
+          nachstehende Muster-Widerrufsformular verwenden, das jedoch nicht
+          vorgeschrieben ist.
         </p>
         <p className="mt-3 text-muted-foreground">
           Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung
@@ -75,7 +70,10 @@ export default function WiderrufPage() {
           Formular aus und senden Sie es zurück.)
         </p>
         <div className="rounded border border-border bg-muted/30 p-4 text-muted-foreground">
-          <p>An: [Name, Anschrift, PLZ Ort, E-Mail]</p>
+          <p>
+            An: {LEGAL_CONFIG.name}, {LEGAL_CONFIG.address},{" "}
+            {LEGAL_CONFIG.city}, E-Mail: {LEGAL_CONFIG.email}
+          </p>
           <p className="mt-3">
             Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen
             Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der
