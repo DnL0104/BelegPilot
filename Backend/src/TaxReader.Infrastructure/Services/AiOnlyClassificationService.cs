@@ -87,7 +87,7 @@ public class AiOnlyClassificationService(
                 {
                     attempt++;
                     logger.LogWarning(ex, "AI call failed on attempt 1 — retrying chunk of {Count} items.", chunkList.Count);
-                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                    await Task.Delay(_anthropicOptions.RetryDelay, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {

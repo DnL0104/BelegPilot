@@ -56,7 +56,8 @@ public class AiOnlyClassificationServiceTests : IDisposable
 
     private AiOnlyClassificationService BuildService(AnthropicOptions? options = null)
     {
-        var opts = options ?? new AnthropicOptions { ApiKey = "test-key", CostPerClassification = 1 };
+        // RetryDelay = Zero: retry-path tests must not pay the real 2s wait (IN-01).
+        var opts = options ?? new AnthropicOptions { ApiKey = "test-key", CostPerClassification = 1, RetryDelay = TimeSpan.Zero };
         return new AiOnlyClassificationService(
             _aiClassifierMock.Object,
             _tokenServiceMock.Object,

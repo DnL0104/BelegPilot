@@ -10,4 +10,11 @@ public class AnthropicOptions
     public string Model { get; set; } = "claude-haiku-4-5";
     /// <summary>Tokens (credits) consumed per AI classification call.</summary>
     public int CostPerClassification { get; set; } = 1;
+
+    /// <summary>
+    /// Delay between the first AI attempt and the single automatic retry (CLS-01).
+    /// Configurable so unit tests can set <see cref="System.TimeSpan.Zero"/> instead of
+    /// paying the real wait on every retry-path test.
+    /// </summary>
+    public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(2);
 }
