@@ -10,7 +10,7 @@ using TaxReader.Infrastructure.Data;
 namespace TaxReader.UnitTests.Hangfire;
 
 /// <summary>
-/// D-23: RecurringJobsBootstrap registers the two cleanup jobs. The cron strings
+/// D-23: RecurringJobsBootstrap registers the four recurring jobs. The cron strings
 /// and recurring-job IDs are source-grepped here so a future refactor of the
 /// schedule must update this guard before passing the suite. The 7-day grace
 /// (D-16) is verified by running RefreshTokenCleanupJob against three seeded
@@ -44,6 +44,18 @@ public class RecurringJobsBootstrapTests
             "D-05/D-07: the audit-log retention recurring job MUST keep its stable id");
         source.Should().Contain("\"0 1 * * *\"",
             "D-07: audit-log retention runs daily at 01:00 UTC (before export-cleanup at 02:00)");
+    }
+
+    [Fact]
+    public void RecurringJobsBootstrap_RegistersExportCleanupJobWithExpectedIdAndCron()
+    {
+        var path = LocateApiFile(Path.Combine("Hangfire", "RecurringJobsBootstrap.cs"));
+        var source = File.ReadAllText(path);
+
+        source.Should().Contain("\"export-cleanup\"",
+            "LEG-07: the export-cleanup recurring job MUST keep its stable id");
+        source.Should().Contain("\"0 2 * * *\"",
+            "LEG-07: export-cleanup runs daily at 02:00 UTC (after audit-log retention at 01:00)");
     }
 
     [Fact]

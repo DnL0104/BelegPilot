@@ -4,7 +4,8 @@ using TaxReader.Application.Jobs;
 namespace TaxReader.Api.Hangfire;
 
 /// <summary>
-/// D-23: registers the two recurring cleanup jobs at startup via IRecurringJobManager.
+/// D-23: registers the four recurring jobs (refresh-token cleanup, Hangfire failed-job
+/// cleanup, audit-log retention, export cleanup) at startup via IRecurringJobManager.
 /// Idempotent — re-registration on every boot is safe (Hangfire keys jobs by the
 /// recurringJobId string, so AddOrUpdate replaces existing metadata in place).
 /// </summary>
