@@ -48,6 +48,7 @@ public static class PaymentEndpoints
                 // T-04 IDOR mitigation + Pitfall 5: read stripe_customer_id scoped to authenticated user.
                 // Prevents repeat buyers from creating duplicate Stripe customer records.
                 var user = await dbContext.Users
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.Id == currentUser.UserId, cancellationToken);
 
                 var session = await stripeProvider.CreateCheckoutSessionAsync(
@@ -70,6 +71,7 @@ public static class PaymentEndpoints
         {
             // T-04 IDOR mitigation: read stripe_customer_id scoped to authenticated user only
             var user = await dbContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == currentUser.UserId, cancellationToken);
 
             if (user?.StripeCustomerId is null)
@@ -88,6 +90,7 @@ public static class PaymentEndpoints
             CancellationToken cancellationToken) =>
         {
             var user = await dbContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == currentUser.UserId, cancellationToken);
 
             if (user?.StripeCustomerId is null)
