@@ -129,19 +129,14 @@ public class StripeWebhookHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task HandleAsync_ValidCheckoutSessionCompleted_InsertsPaymentAndEnqueuesJob()
+    public async Task IdempotencyCheck_DetectsAlreadyProcessedEvent_ByStripeEventId()
     {
-        // Arrange — build a valid Stripe event using the test secret
-        // For unit tests we test with a pre-signed event payload.
-        // We skip the HMAC check by using DemoMode-style test helper or by constructing
-        // a valid signed payload. Since EventUtility.ConstructEvent performs HMAC verification,
-        // we test the downstream logic path by seeding a payment directly and verifying
-        // the job is enqueued when a payment is inserted via the handler.
-        // NOTE: HMAC signing requires a live secret — this test uses a separate path.
-        // The signature verification itself (invalid → 400) is tested in HandleAsync_InvalidSignature_ReturnsBadRequest.
-
-        // Instead, test the core business logic: duplicate check and payment insertion.
-        // We pre-insert a payment to ensure duplicate detection works, then test the new insert path.
+        // CR-02: this test does NOT exercise StripeWebhookHandler.HandleAsync — driving the
+        // handler requires an HMAC-signed payload (EventUtility.ConstructEvent verifies it),
+        // which the HMAC-signed path test (PAY-02) covers. This is a focused sanity check that
+        // the idempotency discriminator (a row keyed by stripe_event_id) is detectable — the
+        // same predicate the handler's duplicate guard relies on. Renamed so it no longer
+        // falsely claims to cover the checkout-completed branch.
         var stripeEventId = "evt_valid_001";
         var existingPayment = new Payment
         {
