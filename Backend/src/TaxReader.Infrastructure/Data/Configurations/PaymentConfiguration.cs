@@ -17,6 +17,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(e => e.StripePaymentIntentId).HasMaxLength(255);
         builder.Property(e => e.Currency).IsRequired().HasMaxLength(3);
         builder.Property(e => e.Status).HasConversion<int>();
-        builder.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        // D-04: retain anonymized Payment rows on account deletion (§257 HGB / §147 AO Aufbewahrungspflicht).
+        // SET NULL fires automatically when the User row is deleted; no explicit Payment manipulation needed.
+        builder.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
     }
 }

@@ -3,7 +3,7 @@ namespace TaxReader.Domain.Entities;
 public class Payment
 {
     public Guid Id { get; set; }
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
     public string StripeEventId { get; set; } = string.Empty;
     public string StripeSessionId { get; set; } = string.Empty;
     /// <summary>
@@ -17,5 +17,5 @@ public class Payment
     public Domain.Enums.PaymentStatus Status { get; set; } = Domain.Enums.PaymentStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? RevokedAt { get; set; }
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }

@@ -142,8 +142,19 @@ public class StripeWebhookHandler(
                 return Results.Ok();
             }
 
+            // D-04: UserId is nullable after GDPR anonymization. If the user was deleted, the
+            // payment row is retained with user_id = NULL. Skip token revocation — there is no
+            // user balance to revoke against; the account and its tokens are already gone.
+            if (matchingPayment.UserId is null)
+            {
+                logger.LogInformation(
+                    "charge.refunded event {StripeEventId}: payment {PaymentId} has no user (GDPR-deleted) — skipping revocation",
+                    stripeEvent.Id, matchingPayment.Id);
+                return Results.Ok();
+            }
+
             await jobClient.EnqueueAsync<TaxReader.Application.Jobs.RevokeTokensJob>(
-                j => j.HandleAsync(matchingPayment.UserId, matchingPayment.CreditsGranted, CancellationToken.None),
+                j => j.HandleAsync(matchingPayment.UserId.Value, matchingPayment.CreditsGranted, CancellationToken.None),
                 cancellationToken);
 
             logger.LogInformation(
