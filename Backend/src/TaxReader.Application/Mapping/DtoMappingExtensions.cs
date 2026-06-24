@@ -25,9 +25,9 @@ public static class DtoMappingExtensions
 
         foreach (var item in entity.Items)
         {
-            var latest = item.Classifications
-                .OrderByDescending(c => c.ClassifiedAt)
-                .FirstOrDefault();
+            // WR-01: reuse the LatestClassification computed property as the single source of
+            // truth for "latest" ordering, so this count never drifts from ToDto(ReceiptItem).
+            var latest = item.LatestClassification;
 
             // Failed items (technical failures) are counted separately — they do NOT
             // inflate unknownCount (Pitfall 2 regression guard).
