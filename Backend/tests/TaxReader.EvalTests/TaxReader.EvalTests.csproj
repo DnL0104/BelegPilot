@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <!-- IN-S03: TargetFramework / Nullable / ImplicitUsings are inherited from
+         Backend/Directory.Build.props (imported by file location even though this
+         project is excluded from the solution). -->
     <IsPackable>false</IsPackable>
     <!-- This project is intentionally excluded from Backend/TaxReader.sln (D-12 / Pitfall 6).
          Run standalone: dotnet test Backend/tests/TaxReader.EvalTests
