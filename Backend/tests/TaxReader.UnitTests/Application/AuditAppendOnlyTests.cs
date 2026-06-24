@@ -29,8 +29,11 @@ public class AuditAppendOnlyTests
 
     private static IEnumerable<string> AllSourceLines(string dir)
     {
+        // WR-S01: fail loud, not vacuously. Returning [] here meant a source-less CI run
+        // (artifacts only) would pass the append-only invariant having checked nothing.
         if (!Directory.Exists(dir))
-            return [];
+            throw new DirectoryNotFoundException(
+                $"Append-only audit scan requires source at '{dir}'. Run from a source checkout.");
 
         return Directory.EnumerateFiles(dir, "*.cs", SearchOption.AllDirectories)
             .Where(file => !ExemptFileNames.Contains(Path.GetFileName(file)))
