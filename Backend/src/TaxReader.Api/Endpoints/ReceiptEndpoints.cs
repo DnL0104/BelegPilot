@@ -76,9 +76,15 @@ public static class ReceiptEndpoints
             var result = await handler.HandleAsync(
                 new RetryFailedItemsCommand(id), cancellationToken);
 
-            return result.IsSuccess
-                ? Results.Ok(result.Value)
-                : Results.NotFound(new { error = result.Error });
+            if (result.IsSuccess)
+                return Results.Ok(result.Value);
+
+            // CR-02: only the IDOR not-found case is a true 404. "Receipt exists but has no
+            // failed items" is a client error against an existing resource → 422, so the UI and
+            // retry logic don't misread it as "receipt gone".
+            return result.Error!.Contains("not found", StringComparison.Ordinal)
+                ? Results.NotFound(new { error = result.Error })
+                : Results.UnprocessableEntity(new { error = result.Error });
         })
         .WithName("RetryFailedClassifications")
         .WithSummary("Retry AI classification for items that failed with a technical error");
