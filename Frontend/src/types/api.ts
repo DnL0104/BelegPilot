@@ -170,13 +170,17 @@ export interface ReceiptFileStatus {
   errorMessage?: string;
 }
 
-export const TERMINAL_STATUSES: readonly ProcessingStatus[] = [
-  "Completed",
-  "Failed",
-  "Cancelled",
+// "Processed" is the FileStatus string returned by GET /receipt-files for a completed file.
+// It does not match any ProcessingStatus value, so we cast it here to keep the union open
+// and avoid a silent non-terminal state when ReceiptFile.status is used as ProcessingStatus.
+export const TERMINAL_STATUSES: readonly string[] = [
+  "Completed",  // ProcessingStatus terminal
+  "Processed",  // FileStatus terminal (ReceiptFile.Status on success)
+  "Failed",     // terminal in both enums
+  "Cancelled",  // ProcessingStatus terminal
 ];
 
-export function isTerminal(status: ProcessingStatus): boolean {
+export function isTerminal(status: ProcessingStatus | string): boolean {
   return TERMINAL_STATUSES.includes(status);
 }
 
