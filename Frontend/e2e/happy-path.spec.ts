@@ -114,31 +114,35 @@ test('happy path: register → login → upload → classify → confirm → rep
   await expect(itemRow).toBeVisible({ timeout: 60_000 })
 
   // ── 6. Open classify dialog and confirm a classification ─────────────────
-  // Click the first item row to open the classification dialog.
-  await itemRow.click()
+  // The classify dialog opens via the per-row "Klassifizieren" pencil button
+  // (receipt-items-table.tsx), not by clicking the row itself. exact: true so it
+  // does not also match the "Neu klassifizieren" (reclassify) button above the table.
+  await page.getByRole('button', { name: 'Klassifizieren', exact: true }).first().click()
 
   // The dialog heading should appear
   await expect(
     page.getByRole('dialog').getByRole('heading', { name: 'Artikel klassifizieren' })
   ).toBeVisible({ timeout: 10_000 })
 
-  // If there is a suggested category with a "Bestätigen" quick-confirm button, use it.
-  // Otherwise, select a category manually and click the confirm button.
-  const quickConfirmBtn = page.getByRole('dialog').getByRole('button', { name: 'Bestätigen' })
-  const manualConfirmBtn = page.getByRole('dialog').getByRole('button', { name: /Vorschlag bestätigen|Kategorie zuweisen/i })
+  // The dialog footer always has a confirm button (classify-dialog.tsx): when a
+  // category is pre-selected it reads "Vorschlag bestätigen", otherwise
+  // "Kategorie zuweisen". Both call handleConfirm → toast "Klassifizierung bestätigt".
+  // This is deterministic across all suggestion states (Suggested/Confirmed/Unknown),
+  // unlike the quick-confirm "Bestätigen" button which only renders for a Suggested
+  // non-Unknown category. The regex does not match the quick-confirm "Bestätigen".
+  const confirmBtn = page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Vorschlag bestätigen|Kategorie zuweisen/ })
 
-  if (await quickConfirmBtn.isVisible()) {
-    await quickConfirmBtn.click()
-    // Quick confirm toasts "Vorschlag bestätigt"
-    await expect(page.getByText('Vorschlag bestätigt')).toBeVisible({ timeout: 10_000 })
-  } else {
-    // Select a category and confirm manually
-    await page.getByRole('combobox').click()
+  // If no category is pre-selected (Unbekannt suggestion), the confirm button is
+  // disabled — pick a category from the Select first.
+  if (!(await confirmBtn.isEnabled())) {
+    await page.getByRole('dialog').getByRole('combobox').click()
     await page.getByRole('option').first().click()
-    await manualConfirmBtn.click()
-    // Manual confirm toasts "Klassifizierung bestätigt"
-    await expect(page.getByText('Klassifizierung bestätigt')).toBeVisible({ timeout: 10_000 })
   }
+
+  await confirmBtn.click()
+  await expect(page.getByText('Klassifizierung bestätigt')).toBeVisible({ timeout: 10_000 })
 
   // ── 7. Navigate to reports and verify EUR de-DE formatting ───────────────
   await page.goto('/reports')
