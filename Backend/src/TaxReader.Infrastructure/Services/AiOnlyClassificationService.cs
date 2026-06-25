@@ -89,11 +89,15 @@ public class AiOnlyClassificationService(
                     logger.LogWarning(ex, "AI call failed on attempt 1 — retrying chunk of {Count} items.", chunkList.Count);
                     await Task.Delay(_anthropicOptions.RetryDelay, cancellationToken);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    // Cancellation must propagate — never swallow it into a retry or Failed path.
-                    // The token pre-charge for this chunk will not be refunded here; the caller
-                    // (Hangfire job) is being cancelled and the whole operation is abandoned.
+                    // GENUINE job cancellation must propagate — never swallow it into a retry or
+                    // Failed path. The token pre-charge for this chunk will not be refunded here;
+                    // the caller (Hangfire job) is being cancelled and the operation is abandoned.
+                    // NOTE: an HttpClient *timeout* also throws OperationCanceledException but does
+                    // NOT cancel our token — that falls through to the Failed path below so a stalled
+                    // AI call degrades gracefully (items marked Failed, run still Completed) instead
+                    // of pinning the run in Classifying until the request finally gives up.
                     throw;
                 }
                 catch (Exception ex)

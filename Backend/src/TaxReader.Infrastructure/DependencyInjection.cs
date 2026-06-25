@@ -60,7 +60,11 @@ public static class DependencyInjection
         services.AddHttpClient<IAiClassifier, ClaudeAiClassifier>(client =>
         {
             client.BaseAddress = new Uri("https://api.anthropic.com/");
-            client.Timeout = TimeSpan.FromSeconds(60);
+            // Fail fast: a Haiku classification normally returns in ~1-10s. A stalled call
+            // must not pin a ProcessingRun in Classifying for a full minute — at 20s it
+            // throws, AiOnlyClassificationService's retry-then-degrade path marks the items
+            // Failed and the run still completes (worst case 20s + 2s retry + 20s = 42s).
+            client.Timeout = TimeSpan.FromSeconds(20);
         });
 
         // Image OCR (local Tesseract — no API costs).

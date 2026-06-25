@@ -33,11 +33,14 @@ public class ClassifyBatchJob(
         // D-05 + Phase 1 D-18: every log line emitted while classifying carries the JobId.
         using var _scope = LogContext.PushProperty("JobId", uploadBatchId);
 
-        // Race mitigation (RESEARCH Pitfall 2): if any run for this batch is already
-        // Classifying or beyond, another concurrent ClassifyBatchJob already started.
-        // Exit early — idempotent at entry.
+        // Race mitigation (RESEARCH Pitfall 2): if another concurrent ClassifyBatchJob is
+        // already handling this batch, exit early — idempotent at entry. Only Classifying
+        // and Completed mean "another worker has this": Failed/Cancelled are also numerically
+        // >= Classifying but must NOT block us — a failed/cancelled sibling shouldn't stop a
+        // still-Parsing run in the batch from being classified.
         var alreadyClassifying = await dbContext.ProcessingRuns
-            .Where(r => r.ReceiptFile.UploadBatchId == uploadBatchId && r.Status >= ProcessingStatus.Classifying)
+            .Where(r => r.ReceiptFile.UploadBatchId == uploadBatchId
+                     && (r.Status == ProcessingStatus.Classifying || r.Status == ProcessingStatus.Completed))
             .AnyAsync(cancellationToken);
         if (alreadyClassifying)
         {
