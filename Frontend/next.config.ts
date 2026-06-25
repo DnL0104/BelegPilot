@@ -31,7 +31,10 @@ function getAllowedDevOrigins() {
 }
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output is for the Docker image. The Playwright webServer sets
+  // E2E_BUILD=true so the test build is a normal build and `next start` serves it
+  // without the "next start does not work with output: standalone" warning.
+  output: process.env.E2E_BUILD === "true" ? undefined : "standalone",
   allowedDevOrigins: getAllowedDevOrigins(),
   async rewrites() {
     return [

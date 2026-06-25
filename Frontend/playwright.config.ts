@@ -34,5 +34,8 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Build a normal (non-standalone) bundle for the test so `next start` serves it
+    // cleanly; standalone is only for the Docker image (next.config.ts).
+    env: { E2E_BUILD: 'true' },
   },
 })
