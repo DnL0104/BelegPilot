@@ -46,8 +46,7 @@ export function UploadForm() {
     <div className="mx-auto w-full max-w-3xl space-y-5">
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-5">
-          <h2 className="text-lg font-semibold">Belege hochladen</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             PDF, JPG, PNG – maximal 10 MB pro Datei
           </p>
         </div>

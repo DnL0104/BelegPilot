@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getAccessToken } from "@/lib/api-client";
+import { exportReport } from "@/lib/api-client";
 
 interface ExportButtonsProps {
   year: number;
@@ -19,21 +19,7 @@ export function ExportButtons({ year }: ExportButtonsProps) {
     setLoading(true);
 
     try {
-      const token = getAccessToken();
-      const response = await fetch(
-        `/api/v1/reports/export/${format}?year=${year}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Export fehlgeschlagen (${response.status})`);
-      }
-
-      const blob = await response.blob();
+      const blob = await exportReport(format, year);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

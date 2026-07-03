@@ -63,7 +63,7 @@ test('happy path: register → login → upload → classify → confirm → rep
 
   // ── 2. Login (if registration redirected to /login) ─────────────────────
   if (page.url().includes('/login')) {
-    await expect(page.getByRole('heading', { name: 'Anmelden' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible()
     await page.getByLabel('E-Mail').fill(email)
     await page.getByLabel('Passwort').fill(TEST_PASSWORD)
     await page.getByRole('button', { name: 'Anmelden' }).click()
@@ -78,17 +78,17 @@ test('happy path: register → login → upload → classify → confirm → rep
   const fileInput = page.locator('input[type="file"]')
   await fileInput.setInputFiles(FIXTURE_PDF)
 
-  // The button label should now show the file count
-  await expect(page.getByRole('button', { name: /Datei.*hochladen/i })).toBeVisible()
-  await page.getByRole('button', { name: /Datei.*hochladen/i }).click()
+  // The submit button label is "Hochladen" (idle); loading state shows "Wird
+  // hochgeladen…", so use exact: true to match only the idle label.
+  await expect(page.getByRole('button', { name: 'Hochladen', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Hochladen', exact: true }).click()
 
   // Expect the success toast: "1 Beleg wird verarbeitet" or "werden verarbeitet"
   await expect(page.getByText(/Beleg.*verarbeitet/i)).toBeVisible({ timeout: 20_000 })
 
   // ── 4. Navigate to receipts list ─────────────────────────────────────────
   await page.goto('/receipts')
-  // exact: true — otherwise "Belege" substring-matches the "Alle Belege" card heading too.
-  await expect(page.getByRole('heading', { name: 'Belege', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Meine Belege' })).toBeVisible()
 
   // Wait for the uploaded receipt to appear in the list (processing may take a moment).
   // The receipts table renders rows once the backend completes processing.
@@ -114,10 +114,11 @@ test('happy path: register → login → upload → classify → confirm → rep
   await expect(itemRow).toBeVisible({ timeout: 60_000 })
 
   // ── 6. Open classify dialog and confirm a classification ─────────────────
-  // The classify dialog opens via the per-row "Klassifizieren" pencil button
-  // (receipt-items-table.tsx), not by clicking the row itself. exact: true so it
-  // does not also match the "Neu klassifizieren" (reclassify) button above the table.
-  await page.getByRole('button', { name: 'Klassifizieren', exact: true }).first().click()
+  // The classify dialog opens via the per-row edit (pencil) button
+  // (receipt-items-table.tsx), accessible name "Klassifizierung bearbeiten" via
+  // aria-label. Not by clicking the row itself. exact: true so it does not also
+  // match the "Neu klassifizieren" (reclassify) button above the table.
+  await page.getByRole('button', { name: 'Klassifizierung bearbeiten', exact: true }).first().click()
 
   // The dialog heading should appear
   await expect(
@@ -146,7 +147,7 @@ test('happy path: register → login → upload → classify → confirm → rep
 
   // ── 7. Navigate to reports and verify EUR de-DE formatting ───────────────
   await page.goto('/reports')
-  await expect(page.getByRole('heading', { name: 'Jahresbericht' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Jahresübersicht/ })).toBeVisible()
 
   // Wait for the category data to load. If there is data, a total in EUR de-DE format
   // should appear.  de-DE format: e.g. "12,99 €" or "12.099,99 €".
@@ -162,8 +163,8 @@ test('happy path: register → login → upload → classify → confirm → rep
     await expect(page.getByText(/\d+[.,]\d{2}\s*€/).first()).toBeVisible()
   } else {
     // The report may show the empty-state message if classification is still in-flight;
-    // assert the page itself is healthy (Jahresbericht heading visible).
-    await expect(page.getByRole('heading', { name: 'Jahresbericht' })).toBeVisible()
+    // assert the page itself is healthy (Jahresübersicht heading visible).
+    await expect(page.getByRole('heading', { name: /Jahresübersicht/ })).toBeVisible()
   }
 
   // ── 8. Trigger a CSV export and assert download starts ───────────────────

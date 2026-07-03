@@ -274,6 +274,24 @@ export async function getAnnualSummary(
   return data;
 }
 
+/**
+ * Downloads the annual report as a Blob (CSV or PDF), carrying the JWT
+ * Authorization header via the shared `api` instance. Using `api` (not a bare
+ * fetch()) ensures a token that expired since the last full page load is
+ * transparently refreshed-and-retried by the response interceptor, instead of
+ * failing with a stale/missing Authorization header.
+ */
+export async function exportReport(
+  format: "csv" | "pdf",
+  year: number
+): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/reports/export/${format}`, {
+    params: { year },
+    responseType: "blob",
+  });
+  return data;
+}
+
 // --- Settings ---
 
 export interface UserSettings {
