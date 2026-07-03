@@ -17,6 +17,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useReceipts } from "@/hooks/use-receipts";
 import { useBulkDeleteFiles } from "@/hooks/use-receipt-files";
 import { formatCurrency, formatDate } from "@/lib/format";
+import type { Receipt } from "@/types/api";
+
+export type ReceiptStatusFilter = "all" | "suggested" | "confirmed" | "failed";
+
+function matchesStatusFilter(receipt: Receipt, filter: ReceiptStatusFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "failed") return receipt.failedCount > 0;
+  if (filter === "confirmed") {
+    return (
+      receipt.itemCount > 0 &&
+      receipt.failedCount === 0 &&
+      receipt.suggestedCount === 0 &&
+      receipt.unknownCount === 0
+    );
+  }
+  // "suggested" — anything not yet fully confirmed and not failed
+  return receipt.failedCount === 0 && (receipt.suggestedCount > 0 || receipt.unknownCount > 0);
+}
 
 export function ReceiptStatusBadge({
   suggestedCount,
@@ -76,16 +94,19 @@ const vendorColors: Record<string, string> = {
 
 interface ReceiptsTableProps {
   year?: number;
+  statusFilter?: ReceiptStatusFilter;
   refetchInterval?: number | false;
 }
 
-export function ReceiptsTable({ year, refetchInterval }: ReceiptsTableProps) {
+export function ReceiptsTable({ year, statusFilter = "all", refetchInterval }: ReceiptsTableProps) {
   const router = useRouter();
   const { data: receipts, isLoading } = useReceipts(year, { refetchInterval });
   const bulkDeleteMutation = useBulkDeleteFiles();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const allIds = receipts?.map((r) => r.receiptFileId) ?? [];
+  const filteredReceipts = (receipts ?? []).filter((r) => matchesStatusFilter(r, statusFilter));
+
+  const allIds = filteredReceipts.map((r) => r.receiptFileId);
   const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id));
   const someSelected = selected.size > 0;
 
@@ -136,7 +157,17 @@ export function ReceiptsTable({ year, refetchInterval }: ReceiptsTableProps) {
     return (
       <div className="p-6">
         <p className="text-sm text-muted-foreground">
-          Keine Belege gefunden. Lade PDFs hoch, um loszulegen.
+          Keine Belege gefunden. Laden Sie Belege hoch, um zu beginnen.
+        </p>
+      </div>
+    );
+  }
+
+  if (filteredReceipts.length === 0) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-muted-foreground">
+          Keine Belege für den gewählten Filter gefunden.
         </p>
       </div>
     );
@@ -196,7 +227,7 @@ export function ReceiptsTable({ year, refetchInterval }: ReceiptsTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {receipts.map((receipt) => {
+          {filteredReceipts.map((receipt) => {
             const isSelected = selected.has(receipt.receiptFileId);
             return (
               <TableRow
