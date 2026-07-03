@@ -3,7 +3,7 @@ import { DraftWarning } from "@/components/legal/draft-warning";
 import { LEGAL_CONFIG, LEGAL_REVIEWED } from "@/lib/legal-config";
 
 export const metadata = {
-  title: "Allgemeine Geschäftsbedingungen – TaxReader",
+  title: "Allgemeine Geschäftsbedingungen | BelegPilot",
 };
 
 export default function AgbPage() {

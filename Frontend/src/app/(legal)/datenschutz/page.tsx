@@ -3,7 +3,7 @@ import { DraftWarning } from "@/components/legal/draft-warning";
 import { LEGAL_CONFIG, LEGAL_REVIEWED } from "@/lib/legal-config";
 
 export const metadata = {
-  title: "Datenschutzerklärung – TaxReader",
+  title: "Datenschutzerklärung | BelegPilot",
 };
 
 export default function DatenschutzPage() {
