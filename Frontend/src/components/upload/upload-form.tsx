@@ -48,7 +48,7 @@ export function UploadForm() {
         <div className="mb-5">
           <h2 className="text-lg font-semibold">Belege hochladen</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Wir erkennen Anbieter, Datum und Beträge automatisch – kein Ausfüllen nötig.
+            PDF, JPG, PNG – maximal 10 MB pro Datei
           </p>
         </div>
         <div className="space-y-5">
@@ -64,9 +64,7 @@ export function UploadForm() {
             ) : (
               <Upload className="mr-2 h-4 w-4" />
             )}
-            {files.length > 0
-              ? `${files.length} Datei${files.length > 1 ? "en" : ""} hochladen`
-              : "Hochladen"}
+            {uploadMutation.isPending ? "Wird hochgeladen…" : "Hochladen"}
           </Button>
         </div>
       </div>
