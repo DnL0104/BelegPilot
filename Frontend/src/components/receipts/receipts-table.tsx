@@ -18,7 +18,7 @@ import { useReceipts } from "@/hooks/use-receipts";
 import { useBulkDeleteFiles } from "@/hooks/use-receipt-files";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-function ReceiptStatusBadge({
+export function ReceiptStatusBadge({
   suggestedCount,
   unknownCount,
   failedCount,

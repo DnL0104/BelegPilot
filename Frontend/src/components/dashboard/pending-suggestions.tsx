@@ -185,7 +185,7 @@ export function PendingSuggestions() {
                   key={s.itemId}
                   className={`transition-colors ${
                     isSelected
-                      ? "bg-emerald-50/50 hover:bg-emerald-50 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20"
+                      ? "bg-primary/5 hover:bg-primary/10"
                       : "hover:bg-muted/30"
                   }`}
                 >
@@ -210,7 +210,7 @@ export function PendingSuggestions() {
                   <TableCell className="text-muted-foreground">
                     {formatDate(s.purchaseDate)}
                   </TableCell>
-                  <TableCell className="text-right font-semibold">
+                  <TableCell className="text-right font-semibold tabular-nums">
                     {formatCurrency(s.totalPrice)}
                   </TableCell>
                   <TableCell>
