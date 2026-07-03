@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type DragEvent } from "react";
+import { useCallback, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { Upload, X, FileText, ImageIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/format";
 
@@ -38,6 +38,7 @@ interface FileDropzoneProps {
 
 export function FileDropzone({ files, onFilesChange }: FileDropzoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -78,35 +79,53 @@ export function FileDropzone({ files, onFilesChange }: FileDropzoneProps) {
     [files, onFilesChange]
   );
 
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      inputRef.current?.click();
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 transition-colors ${
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label="Datei-Upload-Bereich. Klicken oder Dateien hierher ziehen."
+        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
           isDragOver
-            ? "border-primary bg-emerald-50/50 dark:bg-emerald-500/5"
+            ? "border-primary bg-primary/5"
             : "border-muted-foreground/25 hover:border-primary/50"
         }`}
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 mb-4">
-          <Upload className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+          <Upload className="h-6 w-6 text-primary" />
         </div>
-        <p className="mb-1 text-lg font-semibold">Dateien hier ablegen</p>
-        <p className="mb-4 text-sm text-muted-foreground">
-          PDF, JPG, PNG oder WEBP – bis zu 10 MB pro Datei
+        <p className="mb-1 text-lg font-semibold">
+          {isDragOver
+            ? "Dateien hier loslassen"
+            : "Dateien hier ablegen oder klicken zum Auswählen"}
         </p>
-        <label className="inline-flex cursor-pointer items-center rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80">
+        <p className="mb-4 text-sm text-muted-foreground">
+          PDF, JPG, PNG – maximal 10 MB pro Datei
+        </p>
+        <span className="inline-flex items-center rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground">
           Dateien durchsuchen
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            multiple
-            className="hidden"
-            onChange={handleFileInput}
-          />
-        </label>
+        </span>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp"
+          multiple
+          className="hidden"
+          onClick={(e) => e.stopPropagation()}
+          onChange={handleFileInput}
+        />
       </div>
 
       {files.length > 0 && (
@@ -131,6 +150,7 @@ export function FileDropzone({ files, onFilesChange }: FileDropzoneProps) {
               <button
                 type="button"
                 onClick={() => removeFile(index)}
+                aria-label={`Datei ${file.name} entfernen`}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
               >
                 <X className="h-4 w-4" />
