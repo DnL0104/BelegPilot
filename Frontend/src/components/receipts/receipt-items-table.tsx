@@ -114,9 +114,9 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
 
   return (
     <>
-      {/* Batch action bar */}
+      {/* Batch action bar — desktop: sticky at top of the list */}
       {selectedConfirmable.length > 0 && (
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-emerald-50 px-4 py-3 dark:bg-emerald-950/20 sm:px-6">
+        <div className="sticky top-0 z-10 hidden items-center justify-between border-b border-border bg-primary/5 px-4 py-3 sm:px-6 md:flex">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">
               {selectedConfirmable.length} ausgewählt
@@ -139,13 +139,43 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
             ) : (
               <Check className="mr-1.5 h-3.5 w-3.5" />
             )}
-            {selectedConfirmable.length} bestätigen
+            {selectedConfirmable.length} {selectedConfirmable.length === 1 ? "Vorschlag" : "Vorschläge"} bestätigen
+          </Button>
+        </div>
+      )}
+
+      {/* Batch action bar — mobile: sticky at the bottom of the viewport (z-4 per UI-SPEC scale) */}
+      {selectedConfirmable.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-md md:hidden">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">
+              {selectedConfirmable.length} ausgewählt
+            </span>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-left text-xs text-muted-foreground hover:text-foreground"
+            >
+              Aufheben
+            </button>
+          </div>
+          <Button
+            size="sm"
+            className="h-11"
+            onClick={handleBatchConfirm}
+            disabled={batchConfirmMutation.isPending}
+          >
+            {batchConfirmMutation.isPending ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {selectedConfirmable.length} {selectedConfirmable.length === 1 ? "Vorschlag" : "Vorschläge"} bestätigen
           </Button>
         </div>
       )}
 
       {/* ── Mobile: card layout ───────────────────────────────────────── */}
-      <div className="divide-y divide-border md:hidden">
+      <div className={`divide-y divide-border md:hidden ${selectedConfirmable.length > 0 ? "pb-20" : ""}`}>
         {confirmableIds.size > 0 && (
           <div className="flex items-center gap-3 bg-muted/40 px-4 py-2.5">
             <input
@@ -169,9 +199,7 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
             <div
               key={item.id}
               className={`flex gap-3 px-4 py-4 transition-colors ${
-                isSelected
-                  ? "bg-emerald-50/60 dark:bg-emerald-950/10"
-                  : "bg-background"
+                isSelected ? "bg-primary/5" : "bg-background"
               }`}
             >
               {/* Checkbox column */}
@@ -201,7 +229,7 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                     type="button"
                     onClick={() => setClassifyItem(item)}
                     className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    title="Klassifizieren"
+                    aria-label="Klassifizierung bearbeiten"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
@@ -224,25 +252,32 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
 
                 {/* CLS-04: expand-on-demand reasoning control — collapsed by default.
                     Rendered for all four states (Suggested/Unbekannt/Failed/Confirmed)
-                    whenever a reason is present. A title= tooltip does NOT satisfy CLS-04. */}
-                {hasReason && (
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleReason(item.id)}
-                      className="flex items-center gap-0.5 font-medium hover:text-foreground transition-colors"
-                    >
-                      {isReasonExpanded
-                        ? <ChevronDown className="h-3 w-3" />
-                        : <ChevronRight className="h-3 w-3" />}
-                      Warum wurde das so eingeordnet?
-                    </button>
-                    {isReasonExpanded && (
-                      <p className="mt-1 pl-3.5">
-                        {item.latestClassification!.reason}
-                      </p>
-                    )}
-                  </div>
+                    whenever a classification exists. A title= tooltip does NOT satisfy CLS-04. */}
+                {item.latestClassification && (
+                  hasReason ? (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleReason(item.id)}
+                        aria-label={`Begründung für ${item.description} ${isReasonExpanded ? "ausblenden" : "einblenden"}`}
+                        className="flex items-center gap-0.5 font-medium hover:text-foreground transition-colors"
+                      >
+                        {isReasonExpanded
+                          ? <ChevronDown className="h-3 w-3" />
+                          : <ChevronRight className="h-3 w-3" />}
+                        {isReasonExpanded ? "Begründung ausblenden" : "Begründung einblenden"}
+                      </button>
+                      {isReasonExpanded && (
+                        <p className="mt-1 pl-3.5">
+                          {item.latestClassification!.reason}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Keine Begründung verfügbar.
+                    </p>
+                  )
                 )}
               </div>
             </div>
@@ -286,7 +321,7 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                   key={item.id}
                   className={`transition-colors ${
                     isSelected
-                      ? "bg-emerald-50/50 hover:bg-emerald-50 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20"
+                      ? "bg-primary/5 hover:bg-primary/10"
                       : "hover:bg-muted/30"
                   }`}
                 >
@@ -322,24 +357,31 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                     {/* CLS-04: expand-on-demand reasoning — collapsed by default.
                         Works for all four states (Vorschlag/Unbekannt/Fehler/Bestätigt).
                         The title= on the badge is a hover hint only; this is the auditable control. */}
-                    {hasReason && (
-                      <div className="text-xs text-muted-foreground mt-0.5 max-w-xs">
-                        <button
-                          type="button"
-                          onClick={() => toggleReason(item.id)}
-                          className="flex items-center gap-0.5 font-medium hover:text-foreground transition-colors"
-                        >
-                          {isReasonExpanded
-                            ? <ChevronDown className="h-3 w-3" />
-                            : <ChevronRight className="h-3 w-3" />}
-                          Warum wurde das so eingeordnet?
-                        </button>
-                        {isReasonExpanded && (
-                          <p className="mt-1 pl-3.5">
-                            {item.latestClassification!.reason}
-                          </p>
-                        )}
-                      </div>
+                    {item.latestClassification && (
+                      hasReason ? (
+                        <div className="text-xs text-muted-foreground mt-0.5 max-w-xs">
+                          <button
+                            type="button"
+                            onClick={() => toggleReason(item.id)}
+                            aria-label={`Begründung für ${item.description} ${isReasonExpanded ? "ausblenden" : "einblenden"}`}
+                            className="flex items-center gap-0.5 font-medium hover:text-foreground transition-colors"
+                          >
+                            {isReasonExpanded
+                              ? <ChevronDown className="h-3 w-3" />
+                              : <ChevronRight className="h-3 w-3" />}
+                            {isReasonExpanded ? "Begründung ausblenden" : "Begründung einblenden"}
+                          </button>
+                          {isReasonExpanded && (
+                            <p className="mt-1 pl-3.5">
+                              {item.latestClassification!.reason}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Keine Begründung verfügbar.
+                        </p>
+                      )
                     )}
                   </TableCell>
                   <TableCell>
@@ -347,7 +389,7 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                       type="button"
                       onClick={() => setClassifyItem(item)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      title="Klassifizieren"
+                      aria-label="Klassifizierung bearbeiten"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -367,6 +409,10 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
           Alle Vorschläge sind &quot;Unbekannt&quot; — verwende den Stift-Button, um eine Kategorie manuell zuzuweisen.
         </div>
       )}
+
+      <p className="px-4 py-3 text-[11px] text-muted-foreground/60 border-t border-border sm:px-6">
+        Dies sind Vorschläge, keine Steuerberatung gemäß §5 StBerG.
+      </p>
 
       <ClassifyDialog
         item={classifyItem}
