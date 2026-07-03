@@ -77,7 +77,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Main navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -103,7 +103,7 @@ export function AppSidebar() {
 
         {/* Legal pages */}
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground">
             Rechtliches
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -151,7 +151,7 @@ export function AppSidebar() {
             </button>
           </div>
         )}
-        <p className="mt-3 text-[10px] leading-tight text-sidebar-foreground/35">
+        <p className="mt-3 text-[11px] leading-tight text-sidebar-foreground">
           Keine Steuerberatung. Klassifizierungen sind Vorschläge.
         </p>
       </SidebarFooter>

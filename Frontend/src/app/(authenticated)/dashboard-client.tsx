@@ -25,7 +25,7 @@ export function DashboardClient() {
     refetch: refetchSummary,
   } = useAnnualSummary(currentYear);
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: tokenBalance } = useTokenBalance();
+  const { data: tokenBalance, isLoading: balanceLoading } = useTokenBalance();
 
   const hasReceipts = (receipts?.length ?? 0) > 0;
   const showEmptyState = !receiptsLoading && !hasReceipts;
@@ -35,7 +35,7 @@ export function DashboardClient() {
     <>
       <Header title="Übersicht" />
       <div className="flex-1 space-y-5 p-6 overflow-auto">
-        {balance <= 0 ? (
+        {balanceLoading ? null : balance <= 0 ? (
           <Alert variant="destructive">
             <AlertTitle>Keine Credits mehr</AlertTitle>
             <AlertDescription>

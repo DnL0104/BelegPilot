@@ -102,7 +102,7 @@ export function LoginClient() {
           </form>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground/60">
+        <p className="text-center text-[11px] text-muted-foreground">
           <Link href="/impressum" className="hover:underline">
             Impressum
           </Link>

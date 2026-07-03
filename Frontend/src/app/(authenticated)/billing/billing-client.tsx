@@ -242,7 +242,7 @@ export function BillingClient() {
                     <CardTitle className="flex items-center gap-2">
                       {pack.credits.toLocaleString("de-DE")} Credits
                       {pack.popular && (
-                        <span className="text-xs font-normal rounded-full bg-primary/10 text-primary px-2 py-0.5">
+                        <span className="text-xs font-normal rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
                           Beliebt
                         </span>
                       )}

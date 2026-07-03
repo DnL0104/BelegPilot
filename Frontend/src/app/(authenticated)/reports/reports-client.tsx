@@ -112,7 +112,7 @@ export function ReportsClient() {
           </div>
         )}
 
-        <p className="border-t border-border pt-4 text-[11px] text-muted-foreground/60">
+        <p className="border-t border-border pt-4 text-[11px] text-muted-foreground">
           Vorschlag – keine Steuerberatung gemäß §5 StBerG.
         </p>
       </div>

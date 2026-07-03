@@ -161,7 +161,7 @@ export function RegisterClient() {
               </Link>
             </p>
 
-            <p className="mt-4 text-center text-[11px] text-muted-foreground/70">
+            <p className="mt-4 text-center text-[11px] text-muted-foreground">
               Mit der Registrierung stimmen Sie unserer{" "}
               <Link href="/datenschutz" className="hover:underline">
                 Datenschutzerklärung
@@ -171,7 +171,7 @@ export function RegisterClient() {
           </form>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground/60">
+        <p className="text-center text-[11px] text-muted-foreground">
           <Link href="/impressum" className="hover:underline">
             Impressum
           </Link>

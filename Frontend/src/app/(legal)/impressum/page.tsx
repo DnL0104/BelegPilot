@@ -28,7 +28,7 @@ export default function ImpressumPage() {
           E-Mail:{" "}
           <a
             href={`mailto:${LEGAL_CONFIG.email}`}
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             {LEGAL_CONFIG.email}
           </a>
@@ -54,7 +54,7 @@ export default function ImpressumPage() {
             href="https://ec.europa.eu/consumers/odr/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             https://ec.europa.eu/consumers/odr/
           </a>
