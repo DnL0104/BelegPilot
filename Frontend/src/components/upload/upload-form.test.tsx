@@ -83,7 +83,7 @@ describe('UploadForm', () => {
         fireEvent.change(fileInput, { target: { files: [testFile] } })
       })
 
-      const uploadBtn = screen.getByRole('button', { name: /1 datei/i })
+      const uploadBtn = screen.getByRole('button', { name: /^hochladen$/i })
 
       // Click the upload button and wait for the async rejection to settle
       await act(async () => {
@@ -114,7 +114,7 @@ describe('UploadForm', () => {
         fireEvent.change(fileInput, { target: { files: [testFile] } })
       })
 
-      const uploadBtn = screen.getByRole('button', { name: /1 datei/i })
+      const uploadBtn = screen.getByRole('button', { name: /^hochladen$/i })
       await act(async () => {
         fireEvent.click(uploadBtn)
         await vi.waitFor(() => expect(mutateAsyncMock).toHaveBeenCalled())
