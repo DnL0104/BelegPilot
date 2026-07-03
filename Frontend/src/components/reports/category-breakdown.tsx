@@ -61,31 +61,51 @@ export function CategoryBreakdown({
   const maxAmount = Math.max(...categories.map((c) => c.totalAmount), 1);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {categories.map((cat) => (
-        <div
-          key={cat.category}
-          className="rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
-        >
-          <h4 className="text-[15px] font-semibold mb-3">
-            {categoryLabel(cat.category)}
-          </h4>
-          <div className="text-2xl font-bold tracking-tight mb-1">
-            {formatCurrency(cat.totalAmount)}
+    <>
+      {/* Mobile: simple stacked card rows (md:hidden) */}
+      <div className="space-y-2 md:hidden">
+        {categories.map((cat) => (
+          <div
+            key={cat.category}
+            className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm"
+          >
+            <span className="text-sm font-medium">
+              {categoryLabel(cat.category)}
+            </span>
+            <span className="text-sm font-semibold tabular-nums">
+              {formatCurrency(cat.totalAmount)}
+            </span>
           </div>
-          <p className="text-[13px] text-muted-foreground mb-3">
-            {cat.itemCount} Artikel
-          </p>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${categoryColors[cat.category] ?? "bg-muted-foreground"}`}
-              style={{
-                width: `${(cat.totalAmount / maxAmount) * 100}%`,
-              }}
-            />
+        ))}
+      </div>
+
+      {/* Desktop: detailed card grid with progress bar (hidden md:block equivalent) */}
+      <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
+        {categories.map((cat) => (
+          <div
+            key={cat.category}
+            className="rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+          >
+            <h4 className="text-[15px] font-semibold mb-3">
+              {categoryLabel(cat.category)}
+            </h4>
+            <div className="text-2xl font-bold tracking-tight tabular-nums mb-1">
+              {formatCurrency(cat.totalAmount)}
+            </div>
+            <p className="text-[13px] text-muted-foreground mb-3">
+              {cat.itemCount} Artikel
+            </p>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${categoryColors[cat.category] ?? "bg-muted-foreground"}`}
+                style={{
+                  width: `${(cat.totalAmount / maxAmount) * 100}%`,
+                }}
+              />
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
