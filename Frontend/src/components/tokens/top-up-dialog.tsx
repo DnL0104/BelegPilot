@@ -124,6 +124,11 @@ export function TopUpDialog({ open, onOpenChange }: TopUpDialogProps) {
 
         {/* Legal gate — D-05: both checkboxes required, neither pre-ticked */}
         <div className="space-y-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            Mit dem Kauf bestätigen Sie, dass Sie auf Ihr Widerrufsrecht für
+            digitale Inhalte verzichten, da der Inhalt sofort bereitgestellt
+            wird (§356 Abs. 4 BGB).
+          </p>
           <div className="flex items-start gap-3">
             <Checkbox
               id="agb-checkbox"

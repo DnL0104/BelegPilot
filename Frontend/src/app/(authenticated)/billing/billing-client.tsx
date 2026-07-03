@@ -275,46 +275,66 @@ export function BillingClient() {
                     <Skeleton key={i} className="h-10 w-full" />
                   ))}
                 </div>
+              ) : !transactions || transactions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Noch keine Transaktionen vorhanden.
+                </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Datum</TableHead>
-                      <TableHead>Beschreibung</TableHead>
-                      <TableHead>Credits</TableHead>
-                      <TableHead>Typ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!transactions || transactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-sm text-muted-foreground text-center py-8"
-                        >
-                          Noch keine Transaktionen vorhanden.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      transactions.map((tx) => (
-                        <TableRow key={tx.id}>
-                          <TableCell>{formatDate(tx.createdAt)}</TableCell>
-                          <TableCell>{tx.description}</TableCell>
-                          <TableCell>
-                            {tx.amount >= 0 ? (
-                              <span className="text-primary">+{tx.amount}</span>
-                            ) : (
-                              <span className="text-destructive">
-                                -{Math.abs(tx.amount)}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>{transactionTypeBadge(tx.type)}</TableCell>
+                <>
+                  {/* Mobile: card list */}
+                  <div className="md:hidden divide-y divide-border">
+                    {transactions.map((tx) => (
+                      <div key={tx.id} className="py-3 first:pt-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-sm font-medium">{tx.description}</span>
+                          {transactionTypeBadge(tx.type)}
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <span>{formatDate(tx.createdAt)}</span>
+                          {tx.amount >= 0 ? (
+                            <span className="text-primary font-medium">+{tx.amount} Credits</span>
+                          ) : (
+                            <span className="text-destructive font-medium">
+                              -{Math.abs(tx.amount)} Credits
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop: table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Datum</TableHead>
+                          <TableHead>Beschreibung</TableHead>
+                          <TableHead>Credits</TableHead>
+                          <TableHead>Typ</TableHead>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((tx) => (
+                          <TableRow key={tx.id}>
+                            <TableCell>{formatDate(tx.createdAt)}</TableCell>
+                            <TableCell>{tx.description}</TableCell>
+                            <TableCell>
+                              {tx.amount >= 0 ? (
+                                <span className="text-primary">+{tx.amount}</span>
+                              ) : (
+                                <span className="text-destructive">
+                                  -{Math.abs(tx.amount)}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>{transactionTypeBadge(tx.type)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -331,57 +351,86 @@ export function BillingClient() {
                     <Skeleton key={i} className="h-10 w-full" />
                   ))}
                 </div>
+              ) : !invoices || invoices.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Noch keine Rechnungen vorhanden.
+                </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Rechnungsnummer</TableHead>
-                      <TableHead>Datum</TableHead>
-                      <TableHead>Betrag</TableHead>
-                      <TableHead>Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!invoices || invoices.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-sm text-muted-foreground text-center py-8"
-                        >
-                          Noch keine Rechnungen vorhanden.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      invoices.map((invoice) => (
-                        <TableRow key={invoice.id}>
-                          <TableCell>
+                <>
+                  {/* Mobile: card list */}
+                  <div className="md:hidden divide-y divide-border">
+                    {invoices.map((invoice) => (
+                      <div key={invoice.id} className="py-3 first:pt-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-sm font-medium">
                             {invoice.number ?? "—"}
-                          </TableCell>
-                          <TableCell>{formatDate(invoice.created)}</TableCell>
-                          <TableCell>
+                          </span>
+                          <span className="text-sm font-medium">
                             {formatCurrency(invoice.amountPaid)}
-                          </TableCell>
-                          <TableCell>
-                            {invoice.invoicePdfUrl ? (
-                              <a
-                                href={invoice.invoicePdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex h-7 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium text-foreground hover:bg-muted transition-colors"
-                              >
-                                PDF herunterladen
-                              </a>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                Ausstehend
-                              </span>
-                            )}
-                          </TableCell>
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <span>{formatDate(invoice.created)}</span>
+                          {invoice.invoicePdfUrl ? (
+                            <a
+                              href={invoice.invoicePdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex h-7 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium text-foreground hover:bg-muted transition-colors"
+                            >
+                              PDF herunterladen
+                            </a>
+                          ) : (
+                            <span>Ausstehend</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop: table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Rechnungsnummer</TableHead>
+                          <TableHead>Datum</TableHead>
+                          <TableHead>Betrag</TableHead>
+                          <TableHead>Aktionen</TableHead>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {invoices.map((invoice) => (
+                          <TableRow key={invoice.id}>
+                            <TableCell>
+                              {invoice.number ?? "—"}
+                            </TableCell>
+                            <TableCell>{formatDate(invoice.created)}</TableCell>
+                            <TableCell>
+                              {formatCurrency(invoice.amountPaid)}
+                            </TableCell>
+                            <TableCell>
+                              {invoice.invoicePdfUrl ? (
+                                <a
+                                  href={invoice.invoicePdfUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex h-7 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium text-foreground hover:bg-muted transition-colors"
+                                >
+                                  PDF herunterladen
+                                </a>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  Ausstehend
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
