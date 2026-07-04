@@ -32,8 +32,8 @@ export default function AuthenticatedLayout({
       <AppSidebar />
       <SidebarInset className="overflow-y-auto" id="main-content">
         {children}
+        <Footer />
       </SidebarInset>
-      <Footer />
       <CookieBanner />
     </SidebarProvider>
   );
