@@ -94,23 +94,21 @@ test.describe('Authenticated routes', () => {
   })
 
   for (const route of AUTHENTICATED_ROUTES) {
-    test(`${route.description} — keine WCAG 2.1 AA-Verletzungen`, async ({ page, request }) => {
-      // Refresh tokens are single-use/rotating (RefreshTokenService). Each test gets
-      // its own isolated browser context, so reusing `session.refreshToken` as-is would
-      // replay a token already rotated away by a prior test — the client's 401-refresh
-      // interceptor then gets a revoked-token failure and hard-redirects to /login
-      // (window.location.href in api-client.ts), which tears down axe mid-scan. Rotate
-      // here first so every test seeds a token that has never been used yet.
-      const refreshResponse = await request.post('/api/v1/auth/refresh', {
-        data: { refreshToken: session.refreshToken },
-      })
-      const refreshed = await refreshResponse.json()
-      session = { refreshToken: refreshed.refreshToken, user: refreshed.user }
-
+    test(`${route.description} — keine WCAG 2.1 AA-Verletzungen`, async ({ page }) => {
       await seedAuthenticatedSession(page, session)
       await page.goto(route.path)
       await expect(page).toHaveTitle(/BelegPilot/)
       await assertNoWcagViolations(page)
+
+      // Refresh tokens are single-use/rotating (RefreshTokenService). The seeded
+      // token gets rotated by api-client.ts's own 401-refresh interceptor on this
+      // page's first authenticated call — it's the only thing allowed to rotate it;
+      // a second, test-side rotation would race it and replay an already-used token,
+      // getting revoked and hard-redirecting to /login mid-scan. So instead of
+      // rotating ourselves, harvest whatever token the page's own refresh left in
+      // localStorage and hand it to the next (isolated-context) test.
+      const rotated = await page.evaluate(() => window.localStorage.getItem('refreshToken'))
+      if (rotated) session = { ...session, refreshToken: rotated }
     })
   }
 })
