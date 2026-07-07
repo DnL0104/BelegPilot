@@ -65,7 +65,7 @@ export function CategoryOverview({ year }: CategoryOverviewProps) {
                   }}
                 />
               </div>
-              <span className="w-20 shrink-0 text-right text-[13px] font-semibold">
+              <span className="w-20 shrink-0 text-right text-[13px] font-semibold tabular-nums">
                 {formatCurrency(cat.totalAmount)}
               </span>
             </div>

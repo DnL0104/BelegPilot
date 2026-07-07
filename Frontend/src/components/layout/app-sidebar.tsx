@@ -26,14 +26,15 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/providers/auth-provider";
+import { TokenBalanceBadge } from "@/components/tokens/token-balance-badge";
 
 const navItems = [
-  { title: "Dashboard", href: "/", icon: LayoutDashboard },
-  { title: "Upload", href: "/upload", icon: Upload },
-  { title: "Belege", href: "/receipts", icon: Receipt },
+  { title: "Übersicht", href: "/", icon: LayoutDashboard },
+  { title: "Belege hochladen", href: "/upload", icon: Upload },
+  { title: "Meine Belege", href: "/receipts", icon: Receipt },
   { title: "Berichte", href: "/reports", icon: BarChart3 },
-  { title: "Einstellungen", href: "/settings", icon: Settings },
   { title: "Credits & Abrechnung", href: "/billing", icon: CreditCard },
+  { title: "Einstellungen", href: "/settings", icon: Settings },
 ];
 
 const legalItems = [
@@ -50,7 +51,7 @@ function UserAvatar({ name }: { name: string }) {
     .toUpperCase();
 
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-[13px] font-semibold text-white">
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-[13px] font-semibold text-white">
       {initials}
     </div>
   );
@@ -64,7 +65,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-5 py-5">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-sm font-bold text-white">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white">
             B
           </div>
           <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
@@ -76,8 +77,8 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Main navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
-            Menu
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground">
+            Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -102,7 +103,7 @@ export function AppSidebar() {
 
         {/* Legal pages */}
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground">
             Rechtliches
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -123,6 +124,11 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* Persistent token balance above the footer */}
+      <div className="px-4 pb-3">
+        <TokenBalanceBadge />
+      </div>
+
       <SidebarFooter className="border-t border-sidebar-border p-4">
         {user && (
           <div className="flex items-center gap-2.5">
@@ -138,14 +144,14 @@ export function AppSidebar() {
             <button
               type="button"
               onClick={logout}
-              className="rounded-md p-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              title="Abmelden"
+              className="rounded-md p-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="Abmelden"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         )}
-        <p className="mt-3 text-[10px] leading-tight text-sidebar-foreground/35">
+        <p className="mt-3 text-[11px] leading-tight text-sidebar-foreground">
           Keine Steuerberatung. Klassifizierungen sind Vorschläge.
         </p>
       </SidebarFooter>

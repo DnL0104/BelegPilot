@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReceiptStatusBadge } from "@/components/receipts/receipts-table";
 import { useReceipts } from "@/hooks/use-receipts";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -45,7 +46,8 @@ export function RecentReceipts() {
       ) : recent.length === 0 ? (
         <div className="p-6">
           <p className="text-sm text-muted-foreground">
-            Noch keine Belege vorhanden. Lade PDFs hoch, um loszulegen.
+            Noch keine Belege vorhanden. Laden Sie Ihre ersten Belege hoch, um
+            loszulegen.
           </p>
         </div>
       ) : (
@@ -59,10 +61,10 @@ export function RecentReceipts() {
                 Datum
               </TableHead>
               <TableHead className="text-right text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Artikel
-              </TableHead>
-              <TableHead className="text-right text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Betrag
+              </TableHead>
+              <TableHead className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Status
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -86,11 +88,16 @@ export function RecentReceipts() {
                 <TableCell className="text-muted-foreground">
                   {formatDate(receipt.purchaseDate)}
                 </TableCell>
-                <TableCell className="text-right">
-                  {receipt.itemCount}
-                </TableCell>
-                <TableCell className="text-right font-semibold">
+                <TableCell className="text-right font-semibold tabular-nums">
                   {formatCurrency(receipt.totalAmount)}
+                </TableCell>
+                <TableCell>
+                  <ReceiptStatusBadge
+                    suggestedCount={receipt.suggestedCount}
+                    unknownCount={receipt.unknownCount}
+                    failedCount={receipt.failedCount}
+                    itemCount={receipt.itemCount}
+                  />
                 </TableCell>
               </TableRow>
             ))}

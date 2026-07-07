@@ -110,6 +110,8 @@ try
     builder.Services.AddScoped<UpdateUserSettingsHandler>();
     builder.Services.AddScoped<GetReceiptFileStatusHandler>();
     builder.Services.AddScoped<CancelReceiptFileHandler>();
+    builder.Services.AddScoped<RetryReceiptFileHandler>();
+    builder.Services.AddScoped<BulkRetryReceiptFilesHandler>();
     builder.Services.AddScoped<SaveClassificationRuleHandler>();
     builder.Services.AddScoped<AcknowledgeSumMismatchHandler>();
 

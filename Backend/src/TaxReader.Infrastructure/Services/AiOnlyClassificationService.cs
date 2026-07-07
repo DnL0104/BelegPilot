@@ -60,7 +60,7 @@ public class AiOnlyClassificationService(
                 .Select(i => new TokenLedgerEntry(cost, $"AI classification: {Truncate(i.Description, 80)}", i.Id))
                 .ToList();
 
-            var hasTokens = await tokenService.TryConsumeManyAsync(chunkLedger, cancellationToken);
+            var hasTokens = await tokenService.TryConsumeManyAsync(chunkLedger, userId, cancellationToken);
             if (!hasTokens)
             {
                 logger.LogInformation(
@@ -104,7 +104,7 @@ public class AiOnlyClassificationService(
                 {
                     // Second failure — retry budget exhausted. Mark chunk items Failed and refund.
                     logger.LogError(ex, "AI call failed on retry — marking {Count} items as Failed.", chunkList.Count);
-                    await tokenService.RefundManyAsync(chunkLedger, cancellationToken);
+                    await tokenService.RefundManyAsync(chunkLedger, userId, cancellationToken);
                     allClassifications.AddRange(chunkList.Select(i => Failed(i, $"AI-Fehler: {ex.Message}")));
                     results = null;
                     break;
@@ -156,7 +156,7 @@ public class AiOnlyClassificationService(
             }
 
             if (refunds.Count > 0)
-                await tokenService.RefundManyAsync(refunds, cancellationToken);
+                await tokenService.RefundManyAsync(refunds, userId, cancellationToken);
         }
 
         return allClassifications;

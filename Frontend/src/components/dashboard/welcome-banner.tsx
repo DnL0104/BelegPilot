@@ -20,13 +20,13 @@ export function WelcomeBanner({ unclassifiedCount }: WelcomeBannerProps) {
         </h2>
         <p className="mt-1 text-white/65 text-[14px]">
           {unclassifiedCount > 0
-            ? `Du hast ${unclassifiedCount} unklassifizierte Artikel. Lade Belege hoch um loszulegen.`
+            ? `Sie haben ${unclassifiedCount} unklassifizierte Artikel. Laden Sie Belege hoch, um loszulegen.`
             : "Alle Artikel sind klassifiziert. Gut gemacht!"}
         </p>
       </div>
       <Link
         href="/upload"
-        className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-emerald-700"
+        className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Plus className="h-4 w-4" />
         Belege hochladen

@@ -27,9 +27,16 @@ export function UploadForm() {
     try {
       const response = await uploadMutation.mutateAsync(filesToUpload);
       setUploadedFiles((prev) => [...response.files, ...prev]);
-      toast.success(
-        `${response.files.length} Beleg${response.files.length > 1 ? "e" : ""} werden verarbeitet`
-      );
+
+      if (response.files.length > 0) {
+        toast.success(
+          `${response.files.length} Beleg${response.files.length > 1 ? "e" : ""} werden verarbeitet`
+        );
+      }
+
+      response.duplicates.forEach((duplicate) => {
+        toast.error(`"${duplicate.fileName}" übersprungen: ${duplicate.reason}`);
+      });
     } catch (err: unknown) {
       const axiosErr = err as {
         response?: { data?: { error?: string } };
@@ -46,9 +53,8 @@ export function UploadForm() {
     <div className="mx-auto w-full max-w-3xl space-y-5">
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-5">
-          <h2 className="text-lg font-semibold">Belege hochladen</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Wir erkennen Anbieter, Datum und Beträge automatisch – kein Ausfüllen nötig.
+          <p className="text-sm text-muted-foreground">
+            PDF, JPG, PNG – maximal 10 MB pro Datei
           </p>
         </div>
         <div className="space-y-5">
@@ -64,9 +70,7 @@ export function UploadForm() {
             ) : (
               <Upload className="mr-2 h-4 w-4" />
             )}
-            {files.length > 0
-              ? `${files.length} Datei${files.length > 1 ? "en" : ""} hochladen`
-              : "Hochladen"}
+            {uploadMutation.isPending ? "Wird hochgeladen…" : "Hochladen"}
           </Button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Receipt, DollarSign, AlertCircle } from "lucide-react";
+import { Euro, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
 import type { AnnualSummary } from "@/types/api";
@@ -11,38 +11,35 @@ interface AnnualSummaryCardProps {
 }
 
 const iconStyles = {
-  green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-  purple: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
-  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  primary: "bg-primary/10 text-primary",
+  success:
+    "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
 };
 
 export function AnnualSummaryCard({
   summary,
   isLoading,
 }: AnnualSummaryCardProps) {
+  const confirmedCount =
+    summary?.categoryBreakdown.reduce((sum, c) => sum + c.itemCount, 0) ?? 0;
+
   const stats = [
     {
-      title: "Belege gesamt",
-      value: summary?.totalReceipts ?? 0,
-      icon: Receipt,
-      color: "green" as const,
-    },
-    {
-      title: "Gesamtbetrag",
+      title: "Gesamtausgaben",
       value: formatCurrency(summary?.totalAmount ?? 0),
-      icon: DollarSign,
-      color: "purple" as const,
+      icon: Euro,
+      color: "primary" as const,
     },
     {
-      title: "Offene Klassifizierungen",
-      value: summary?.unclassifiedItemCount ?? 0,
-      icon: AlertCircle,
-      color: "amber" as const,
+      title: "Bestätigte Positionen",
+      value: confirmedCount,
+      icon: CheckCircle2,
+      color: "success" as const,
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       {stats.map((stat) => (
         <div
           key={stat.title}
@@ -61,7 +58,7 @@ export function AnnualSummaryCard({
           {isLoading ? (
             <Skeleton className="h-8 w-24" />
           ) : (
-            <div className="text-[28px] font-bold tracking-tight">
+            <div className="text-[28px] font-bold tracking-tight tabular-nums">
               {stat.value}
             </div>
           )}

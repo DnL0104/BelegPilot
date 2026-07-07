@@ -1,15 +1,10 @@
-"use client";
+import type { Metadata } from "next";
+import { UploadClient } from "./upload-client";
 
-import { Header } from "@/components/layout/header";
-import { UploadForm } from "@/components/upload/upload-form";
+export const metadata: Metadata = {
+  title: "Belege hochladen | BelegPilot",
+};
 
 export default function UploadPage() {
-  return (
-    <>
-      <Header title="Upload" />
-      <div className="flex-1 p-6 overflow-auto">
-        <UploadForm />
-      </div>
-    </>
-  );
+  return <UploadClient />;
 }

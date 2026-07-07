@@ -46,11 +46,11 @@ public class AiOnlyClassificationServiceTests : IDisposable
 
         // Default: tokens available
         _tokenServiceMock
-            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<CancellationToken>()))
+            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _tokenServiceMock
-            .Setup(t => t.RefundManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<CancellationToken>()))
+            .Setup(t => t.RefundManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserTokenBalance { Id = Guid.NewGuid(), UserId = TestUserId, UserKey = TestUserId.ToString(), Balance = 10 });
     }
 
@@ -81,7 +81,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
 
         // No token consumption when AI is not configured
         _tokenServiceMock.Verify(
-            t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<CancellationToken>()),
+            t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -90,7 +90,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
     {
         _aiClassifierMock.Setup(a => a.IsConfigured).Returns(true);
         _tokenServiceMock
-            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<CancellationToken>()))
+            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var service = BuildService();
 
@@ -125,6 +125,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
         _tokenServiceMock.Verify(
             t => t.RefundManyAsync(
                 It.Is<IReadOnlyList<TokenLedgerEntry>>(entries => entries.Count == 1 && entries[0].RelatedItemId == item.Id),
+                It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
             Times.Once,
             "a refund must be issued for the item the AI returned Unbekannt for");
@@ -152,6 +153,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
         _tokenServiceMock.Verify(
             t => t.RefundManyAsync(
                 It.Is<IReadOnlyList<TokenLedgerEntry>>(entries => entries.Count == 1),
+                It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
             Times.Once,
             "all pre-charged tokens must be refunded when ClassifyBatchAsync throws");
@@ -226,6 +228,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
         _tokenServiceMock.Verify(
             t => t.RefundManyAsync(
                 It.Is<IReadOnlyList<TokenLedgerEntry>>(entries => entries.Count == 1),
+                It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
             Times.Once,
             "tokens pre-charged for the failed chunk must be fully refunded");
@@ -267,6 +270,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
         _tokenServiceMock.Verify(
             t => t.RefundManyAsync(
                 It.Is<IReadOnlyList<TokenLedgerEntry>>(entries => entries.Count == 1 && entries[0].RelatedItemId == item.Id),
+                It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
             Times.Never,
             "successful chunk should not trigger a full chunk-level refund");
@@ -312,7 +316,7 @@ public class AiOnlyClassificationServiceTests : IDisposable
 
         // 2 TryConsumeManyAsync calls (per-chunk pre-charge)
         _tokenServiceMock.Verify(
-            t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<CancellationToken>()),
+            t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2),
             "token consumption must be pre-charged once per chunk, not once per receipt");
     }

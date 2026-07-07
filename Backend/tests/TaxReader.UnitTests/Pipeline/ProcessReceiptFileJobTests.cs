@@ -112,6 +112,118 @@ public class ProcessReceiptFileJobTests : IDisposable
     }
 
     [Fact]
+    public async Task HandleAsync_ExtractedTextContainsNulByte_StripsItBeforePersisting()
+    {
+        // Regression test: PostgreSQL text columns reject embedded NUL bytes (SqlState 22021),
+        // which PdfPig/Tesseract can emit for glyphs their font/OCR mapping can't resolve. An
+        // unsanitized NUL reaching SaveChangesAsync crashed the job and left the ReceiptFile
+        // stuck (MarkFailedAsync's own save then failed identically on the still-tracked entity).
+        var batchId = Guid.NewGuid();
+        var (file, _) = SeedFile(batchId);
+        _pdfExtractorMock
+            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("Amazon.de\0 Invoice 2025 Tinte EUR 9.99");
+        _parserMock.Setup(p => p.CanParse(It.IsAny<string>(), It.IsAny<string?>())).Returns(true);
+        _parserMock.Setup(p => p.Parse(It.IsAny<string>(), It.IsAny<ReceiptFile>()))
+            .Returns((string text, ReceiptFile rf) =>
+            {
+                var r = Helpers.TestDataFactory.CreateReceipt(vendor: "Amazon", receiptFileId: rf.Id);
+                r.RawExtractedText = text;
+                return r;
+            });
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        var savedReceipt = await _dbContext.Receipts.FirstAsync();
+        savedReceipt.RawExtractedText.Should().NotContain("\0");
+    }
+
+    [Fact]
+    public async Task HandleAsync_ReceiptAlreadyExists_SkipsReparsingAndStillRunsBarrier()
+    {
+        // Regression test for the manual/automatic retry feature: if a Receipt already
+        // exists for this file (parsing already succeeded on a prior attempt — e.g. the
+        // barrier step below threw and Hangfire or the user retried), re-running must
+        // NOT re-extract/re-parse (would violate the unique index on
+        // receipts.receipt_file_id and mark an already-successful parse as Failed). It
+        // must still perform the barrier check so the batch can progress to classify.
+        //
+        // Seeded at Pending (not Parsing) deliberately — this is the real shape of the
+        // upload-enqueue race a prior fix addressed: a Receipt gets created but the run
+        // never advances past Pending. Live-testing the retry endpoint against exactly
+        // this scenario first surfaced that the barrier query only counts
+        // Status >= Parsing, so without bumping the status here a manually-retried file
+        // would silently never satisfy the batch barrier despite its Receipt existing.
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId, runStatus: ProcessingStatus.Pending);
+        _dbContext.Receipts.Add(Helpers.TestDataFactory.CreateReceipt(receiptFileId: file.Id));
+        _dbContext.SaveChanges();
+        SetupSuccessfulPipeline(); // would only matter if re-parsing were (incorrectly) attempted
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        _pdfExtractorMock.Verify(
+            e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
+            Times.Never, "an already-parsed file must not be re-extracted/re-parsed");
+
+        (await _dbContext.Receipts.CountAsync(r => r.ReceiptFileId == file.Id)).Should().Be(1,
+            "retrying an already-parsed file must never create a duplicate Receipt");
+
+        // Barrier still ran: this is the only (and thus last) parent in the batch.
+        _jobClientMock.Verify(
+            c => c.EnqueueAsync<ClassifyBatchJob>(
+                It.IsAny<Expression<Func<ClassifyBatchJob, Task>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "a Receipt already existing must count as done for the barrier even though the run started below Parsing");
+
+        var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
+        savedRun.Status.Should().Be(ProcessingStatus.Parsing,
+            "bumped up from Pending so the barrier's Status >= Parsing check counts this run");
+    }
+
+    [Fact]
+    public async Task HandleAsync_BarrierWithCompletedSiblings_StillCountsThemAndFiresClassify()
+    {
+        // Regression test: ProcessingRun.Status is persisted as a string
+        // (HasConversion<string>()), so the barrier's "r.Status >= ProcessingStatus.Parsing"
+        // compiles fine but translates to a SQL string comparison — under which
+        // "Completed" sorts BEFORE "Parsing" lexicographically (C < P), silently excluding
+        // already-completed siblings from the count. This never surfaced on the plain
+        // happy path (every sibling sits at exactly "Parsing" when the barrier runs there),
+        // but breaks the moment one file in a batch is retried after its siblings already
+        // finished — exactly the shape of a real user's stuck-upload batch (2 files stuck
+        // at Pending, 1 sibling already Completed).
+        var batchId = Guid.NewGuid();
+        SeedFile(batchId, fileName: "sibling-a.pdf", runStatus: ProcessingStatus.Completed);
+        SeedFile(batchId, fileName: "sibling-b.pdf", runStatus: ProcessingStatus.Completed);
+        var (file, _) = SeedFile(batchId, fileName: "retried.pdf", runStatus: ProcessingStatus.Pending);
+        SetupSuccessfulPipeline();
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 3, CancellationToken.None);
+
+        _jobClientMock.Verify(
+            c => c.EnqueueAsync<ClassifyBatchJob>(
+                It.IsAny<Expression<Func<ClassifyBatchJob, Task>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "2 already-Completed siblings + this newly-Parsing run must satisfy batchSize=3");
+    }
+
+    [Fact]
+    public async Task HandleAsync_ReceiptFileNotFound_ThrowsForHangfireRetry()
+    {
+        // Regression test: a fast Hangfire worker can dequeue and execute this job
+        // before the enqueueing request's SaveChangesAsync commits the row. Silently
+        // returning here let Hangfire mark the job Succeeded despite doing nothing,
+        // leaving the file stuck forever with zero error. Throwing lets
+        // [AutomaticRetry] give the commit time to land.
+        var act = () => _job.HandleAsync(Guid.NewGuid(), Guid.NewGuid(), 1, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
     public async Task HandleAsync_LastInBatch_EnqueuesClassifyBatchJob()
     {
         var batchId = Guid.NewGuid();

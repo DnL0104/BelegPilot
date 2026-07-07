@@ -74,14 +74,14 @@ describe('ReceiptItemsTable — CLS-04 expand-on-demand reasoning', () => {
 
     // Not tooltip-ONLY: a real expand control (button) exists for items with a reason.
     // (CLS-04 requires the reasoning be expandable on demand, not merely a hover hint.)
-    const toggles = screen.getAllByRole('button', { name: /Warum wurde das so eingeordnet/i })
+    const toggles = screen.getAllByRole('button', { name: /Begründung für .+ einblenden/i })
     expect(toggles.length).toBeGreaterThanOrEqual(4)
     void container
   })
 
   it('reveals a reason on click and hides it again on a second click (all four states)', () => {
     render(<ReceiptItemsTable receiptId="r1" />, { wrapper })
-    const toggles = screen.getAllByRole('button', { name: /Warum wurde das so eingeordnet/i })
+    const toggles = screen.getAllByRole('button', { name: /Begründung für .+ einblenden/i })
 
     // Layout order: mobile cards render first (items a–d → toggles 0–3), then the
     // desktop table (items a–d → toggles 4–7). Clicking item i's mobile toggle (index i)

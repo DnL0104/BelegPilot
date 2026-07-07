@@ -62,7 +62,7 @@ public class TokenServiceTests : IDisposable
             new(3, "item A", Guid.NewGuid())
         };
 
-        var result = await _service.TryConsumeManyAsync(entries);
+        var result = await _service.TryConsumeManyAsync(entries, TestUserId);
 
         result.Should().BeFalse("balance (1) is less than total cost (3)");
     }
@@ -79,7 +79,7 @@ public class TokenServiceTests : IDisposable
             new(2, "AI classification: Item A", itemId)
         };
 
-        var result = await _service.TryConsumeManyAsync(entries);
+        var result = await _service.TryConsumeManyAsync(entries, TestUserId);
 
         result.Should().BeTrue();
 
@@ -99,7 +99,7 @@ public class TokenServiceTests : IDisposable
         // Seed then consume so we have a non-trivial balance to refund
         await _service.GetOrCreateBalanceAsync();
         var consumeEntries = new List<TokenLedgerEntry> { new(3, "charge", Guid.NewGuid()) };
-        await _service.TryConsumeManyAsync(consumeEntries);
+        await _service.TryConsumeManyAsync(consumeEntries, TestUserId);
 
         var refundItemId = Guid.NewGuid();
         var refundEntries = new List<TokenLedgerEntry>
@@ -107,7 +107,7 @@ public class TokenServiceTests : IDisposable
             new(3, "Refund — AI could not classify: Item X", refundItemId)
         };
 
-        var balanceResult = await _service.RefundManyAsync(refundEntries);
+        var balanceResult = await _service.RefundManyAsync(refundEntries, TestUserId);
 
         balanceResult.Balance.Should().Be(10, "consumed 3 then refunded 3 → back to 10");
 
@@ -116,6 +116,29 @@ public class TokenServiceTests : IDisposable
         refundTx.Should().NotBeNull();
         refundTx!.Amount.Should().Be(3, "refund writes a positive Amount");
         refundTx.RelatedItemId.Should().Be(refundItemId);
+    }
+
+    [Fact]
+    public async Task TryConsumeManyAndRefundManyAsync_WithoutHttpContext_DoNotTouchICurrentUser()
+    {
+        // Regression test for the ClassifyBatchJob 401 bug: Hangfire workers have no
+        // HttpContext, so ICurrentUser.UserId throws UnauthorizedAccessException there.
+        // TryConsumeManyAsync/RefundManyAsync must resolve the user solely from the
+        // explicit userId parameter and never dereference ICurrentUser.
+        var throwingCurrentUserMock = new Mock<ICurrentUser>();
+        throwingCurrentUserMock.Setup(c => c.UserId)
+            .Throws(new UnauthorizedAccessException("No authenticated user."));
+        var service = new TokenService(_dbContext, throwingCurrentUserMock.Object);
+
+        var entries = new List<TokenLedgerEntry> { new(2, "AI classification: Item A", Guid.NewGuid()) };
+
+        var consumed = await service.TryConsumeManyAsync(entries, TestUserId);
+        consumed.Should().BeTrue();
+
+        var refunded = await service.RefundManyAsync(entries, TestUserId);
+        refunded.Balance.Should().Be(10);
+
+        throwingCurrentUserMock.VerifyGet(c => c.UserId, Times.Never);
     }
 
     [Fact]

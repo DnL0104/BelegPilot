@@ -22,7 +22,7 @@ export function YearFilter({ value, onChange }: YearFilterProps) {
       value={value?.toString() ?? "all"}
       onValueChange={(v) => onChange(!v || v === "all" ? undefined : parseInt(v, 10))}
     >
-      <SelectTrigger className="w-[140px]">
+      <SelectTrigger className="w-[140px]" aria-label="Jahr filtern">
         <SelectValue placeholder="Alle Jahre" />
       </SelectTrigger>
       <SelectContent>

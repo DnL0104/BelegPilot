@@ -76,7 +76,7 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
             if (trimmed.Length is >= 3 and <= 80 &&
                 !trimmed.StartsWith("Daniel", StringComparison.OrdinalIgnoreCase) &&
                 !trimmed.Contains("Rechnung", StringComparison.OrdinalIgnoreCase) &&
-                !DateLineRegex().IsMatch(trimmed) &&
+                !ReceiptParsingHelpers.GermanDateRegex().IsMatch(trimmed) &&
                 (trimmed.Contains("GmbH", StringComparison.OrdinalIgnoreCase) ||
                  trimmed.Contains("AG", StringComparison.OrdinalIgnoreCase) ||
                  trimmed.Contains("UG", StringComparison.OrdinalIgnoreCase) ||
@@ -111,7 +111,7 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
         }
 
         // Try any German date format: dd.MM.yyyy
-        var germanDateMatch = GermanDateRegex().Match(text);
+        var germanDateMatch = ReceiptParsingHelpers.GermanDateRegex().Match(text);
         if (germanDateMatch.Success &&
             DateOnly.TryParseExact(germanDateMatch.Value, ["dd.MM.yyyy", "d.MM.yyyy", "dd.M.yyyy"],
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out var germanDate))
@@ -128,7 +128,7 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
         }
 
         // Try ISO format: yyyy-MM-dd
-        var isoDateMatch = IsoDateRegex().Match(text);
+        var isoDateMatch = ReceiptParsingHelpers.IsoDateRegex().Match(text);
         if (isoDateMatch.Success &&
             DateOnly.TryParse(isoDateMatch.Value, out var isoDate))
             return isoDate;
@@ -153,7 +153,7 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
                 continue;
 
             // Find the LAST price with € on the line (that's typically the line total)
-            var priceMatches = StrictPriceRegex().Matches(line);
+            var priceMatches = ReceiptParsingHelpers.PriceRegex().Matches(line);
             if (priceMatches.Count == 0) continue;
 
             var lastPriceMatch = priceMatches[^1];
@@ -201,7 +201,9 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
     }
 
     private static bool IsNonItemLine(string text) =>
-        NonItemKeywordRegex().IsMatch(text) || TaxPercentageLineRegex().IsMatch(text);
+        ReceiptParsingHelpers.IsCommonNonItemLine(text) ||
+        AmazonOnlyNonItemKeywordRegex().IsMatch(text) ||
+        TaxPercentageLineRegex().IsMatch(text);
 
     private static decimal ExtractTax(string text)
     {
@@ -212,7 +214,7 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
         {
             if (!TaxLineKeywordRegex().IsMatch(line)) continue;
 
-            var priceMatches = StrictPriceRegex().Matches(line);
+            var priceMatches = ReceiptParsingHelpers.PriceRegex().Matches(line);
             if (priceMatches.Count == 0) continue;
 
             // Take the LAST price — in Amazon's format the columns are: net subtotal | tax amount
@@ -236,12 +238,6 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
         return 0m;
     }
 
-    [GeneratedRegex(@"\d{1,2}\.\d{1,2}\.\d{4}")]
-    private static partial Regex GermanDateRegex();
-
-    [GeneratedRegex(@"\d{4}-\d{2}-\d{2}")]
-    private static partial Regex IsoDateRegex();
-
     [GeneratedRegex(@"\d{1,2}\.?\s+\w+\s+\d{4}")]
     private static partial Regex LongGermanDateRegex();
 
@@ -251,15 +247,6 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
     [GeneratedRegex(@"(?:Rechnungsdatum|Bestelldatum|Zahldatum|Lieferdatum)[/\s]+(?<date>\d{1,2}\s+\w+\s+\d{4})", RegexOptions.IgnoreCase)]
     private static partial Regex LabeledLongDateRegex();
 
-    [GeneratedRegex(@"\d{1,2}\.\d{1,2}\.\d{4}")]
-    private static partial Regex DateLineRegex();
-
-    // Matches price with € symbol.
-    // Decimal part is optional because OCR from screenshots often drops the comma
-    // (e.g. "3,99 €" is read as "399€").
-    [GeneratedRegex(@"(?<price>\d+(?:[.,]\d{1,2})?)\s*€")]
-    private static partial Regex StrictPriceRegex();
-
     // Leading quantity at start of description: "1" or "1,00"
     [GeneratedRegex(@"^(?<qty>\d+)(?:[.,]00)?\s+")]
     private static partial Regex LeadingQuantityRegex();
@@ -268,9 +255,13 @@ public partial class AmazonParser(ILogger<AmazonParser> logger) : IReceiptParser
     [GeneratedRegex(@"\s+(?<qty>\d{1,3})\s*$")]
     private static partial Regex TrailingQuantityRegex();
 
-    // Lines that should NOT be treated as items
+    // Amazon-specific lines that should NOT be treated as items, on top of the
+    // universal ReceiptParsingHelpers.CommonNonItemKeywordRegex list (ORed in IsNonItemLine).
+    // Kept as Amazon's original full list rather than pruning overlaps with the common
+    // list — redundancy here is harmless (OR of an already-true term is a no-op) and
+    // guarantees zero behavior change for this parser from the consolidation.
     [GeneratedRegex(@"(?:Gesamt|Total|Summe|Endbetrag|Zwischensumme|Netto|Brutto|MwSt|USt[\.\s]|Umsatzsteuer|Steuer|Versand|Shipping|Zahldatum|Rechnungsdatum|Bestelldatum|Referenz|Rechnung\s*(?:nummer|sdatum|\d)|Pos\s+Nummer|Anzahl|Preis|Stückpreis|Zahlbetrag|Zahlungsreferenz|Stammkapital|Menge|ASIN|Beschreibung|Verkauft\s+von|Rechnungsadresse|Lieferadresse|inkl\.\s*USt|ohne\s*USt|Versandkosten)", RegexOptions.IgnoreCase)]
-    private static partial Regex NonItemKeywordRegex();
+    private static partial Regex AmazonOnlyNonItemKeywordRegex();
 
     // Lines that start with a tax percentage like "19% 25,20 € 4,79 €"
     [GeneratedRegex(@"^\s*\d{1,2}%")]

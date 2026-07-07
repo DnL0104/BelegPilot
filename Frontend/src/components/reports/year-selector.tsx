@@ -22,7 +22,7 @@ export function YearSelector({ value, onChange }: YearSelectorProps) {
       value={value.toString()}
       onValueChange={(v) => v && onChange(parseInt(v, 10))}
     >
-      <SelectTrigger className="w-[140px]">
+      <SelectTrigger className="w-[140px]" aria-label="Jahr auswählen">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

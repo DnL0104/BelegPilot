@@ -9,4 +9,5 @@ public record ReceiptFileStatusDto(
     [property: JsonConverter(typeof(JsonStringEnumConverter))] ProcessingStatus Status,
     DateTime UpdatedAt,
     string? ErrorCode,
-    string? ErrorMessage);
+    string? ErrorMessage,
+    Guid? ReceiptId);

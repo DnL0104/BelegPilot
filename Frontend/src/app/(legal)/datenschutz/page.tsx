@@ -3,7 +3,7 @@ import { DraftWarning } from "@/components/legal/draft-warning";
 import { LEGAL_CONFIG, LEGAL_REVIEWED } from "@/lib/legal-config";
 
 export const metadata = {
-  title: "Datenschutzerklärung – TaxReader",
+  title: "Datenschutzerklärung | BelegPilot",
 };
 
 export default function DatenschutzPage() {
@@ -30,7 +30,7 @@ export default function DatenschutzPage() {
           E-Mail:{" "}
           <a
             href={`mailto:${LEGAL_CONFIG.email}`}
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             {LEGAL_CONFIG.email}
           </a>
@@ -138,7 +138,7 @@ export default function DatenschutzPage() {
                     href="https://www.anthropic.com/legal/dpa"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     DPA
                   </a>
@@ -153,7 +153,7 @@ export default function DatenschutzPage() {
                     href="https://stripe.com/de/legal/dpa"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     DPA
                   </a>
@@ -168,7 +168,7 @@ export default function DatenschutzPage() {
                     href="https://sentry.io/legal/dpa/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     DPA
                   </a>
@@ -183,7 +183,7 @@ export default function DatenschutzPage() {
                     href="https://betterstack.com/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     Datenschutz
                   </a>
@@ -211,7 +211,7 @@ export default function DatenschutzPage() {
             href="https://www.anthropic.com/legal/dpa"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             DPA von Anthropic
           </a>
@@ -260,7 +260,7 @@ export default function DatenschutzPage() {
           <li>
             <strong className="text-foreground">Datenportabilität</strong>{" "}
             (Art. 20 DSGVO) — Sie können Ihre Daten jederzeit über die{" "}
-            <Link href="/settings" className="text-primary hover:underline">
+            <Link href="/settings" className="text-primary underline">
               Einstellungen
             </Link>{" "}
             exportieren.
@@ -270,7 +270,7 @@ export default function DatenschutzPage() {
           Zur Ausübung Ihrer Rechte:{" "}
           <a
             href={`mailto:${LEGAL_CONFIG.email}`}
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             {LEGAL_CONFIG.email}
           </a>
@@ -289,7 +289,7 @@ export default function DatenschutzPage() {
             href="https://www.bfdi.bund.de/DE/Infothek/Anschriften_Links/anschriften_links-node.html"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             Bundesbeauftragten für den Datenschutz
           </a>

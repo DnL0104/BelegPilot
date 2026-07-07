@@ -43,7 +43,7 @@ public partial class GenericParser : IReceiptParser
         }
 
         receipt.SubTotal = receipt.Items.Sum(i => i.TotalPrice);
-        receipt.TaxAmount = ExtractTax(rawText);
+        receipt.TaxAmount = ReceiptParsingHelpers.ExtractTaxAmount(rawText);
         receipt.TotalAmount = ExtractTotal(rawText) > 0
             ? ExtractTotal(rawText)
             : receipt.SubTotal + receipt.TaxAmount;
@@ -94,14 +94,14 @@ public partial class GenericParser : IReceiptParser
             return labeledDate;
 
         // German format
-        var germanMatch = GermanDateRegex().Match(text);
+        var germanMatch = ReceiptParsingHelpers.GermanDateRegex().Match(text);
         if (germanMatch.Success &&
             DateOnly.TryParseExact(germanMatch.Value, ["dd.MM.yyyy", "d.MM.yyyy", "dd.M.yyyy"],
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out var germanDate))
             return germanDate;
 
         // ISO format
-        var isoMatch = IsoDateRegex().Match(text);
+        var isoMatch = ReceiptParsingHelpers.IsoDateRegex().Match(text);
         if (isoMatch.Success && DateOnly.TryParse(isoMatch.Value, out var isoDate))
             return isoDate;
 
@@ -117,7 +117,7 @@ public partial class GenericParser : IReceiptParser
         foreach (var line in lines)
         {
             // Only match prices with € symbol to avoid matching dates like 18.03.2026
-            var priceMatches = PriceRegex().Matches(line);
+            var priceMatches = ReceiptParsingHelpers.PriceRegex().Matches(line);
             if (priceMatches.Count == 0) continue;
 
             // Take the LAST price on the line — that's the line total (column layout
@@ -152,19 +152,7 @@ public partial class GenericParser : IReceiptParser
     }
 
     private static bool IsTotalLine(string text) =>
-        TotalKeywordRegex().IsMatch(text);
-
-    private static decimal ExtractTax(string text)
-    {
-        var match = TaxRegex().Match(text);
-        if (match.Success)
-        {
-            var priceStr = match.Groups["tax"].Value.Replace(",", ".");
-            if (decimal.TryParse(priceStr, CultureInfo.InvariantCulture, out var tax))
-                return tax;
-        }
-        return 0m;
-    }
+        ReceiptParsingHelpers.IsCommonNonItemLine(text);
 
     private static decimal ExtractTotal(string text)
     {
@@ -178,25 +166,8 @@ public partial class GenericParser : IReceiptParser
         return 0m;
     }
 
-    [GeneratedRegex(@"\d{1,2}\.\d{1,2}\.\d{4}")]
-    private static partial Regex GermanDateRegex();
-
-    [GeneratedRegex(@"\d{4}-\d{2}-\d{2}")]
-    private static partial Regex IsoDateRegex();
-
     [GeneratedRegex(@"(?:Rechnungsdatum|Bestelldatum|Zahldatum|Datum)\s+(?<date>\d{1,2}\.\d{1,2}\.\d{4})", RegexOptions.IgnoreCase)]
     private static partial Regex LabeledDateRegex();
-
-    // Require € symbol to avoid matching dates.
-    // Decimal part is optional to handle OCR output that drops the comma.
-    [GeneratedRegex(@"(?<price>\d+(?:[.,]\d{1,2})?)\s*€")]
-    private static partial Regex PriceRegex();
-
-    [GeneratedRegex(@"(?:Gesamt|Total|Summe|Endbetrag|Zwischensumme|Netto|Brutto|MwSt|USt|Umsatzsteuer|Steuer|Versand|Shipping|Zahldatum|Rechnungsdatum|Bestelldatum|Referenz|Rechnung\s+\d|Pos\s+Nummer|Anzahl|Preis)", RegexOptions.IgnoreCase)]
-    private static partial Regex TotalKeywordRegex();
-
-    [GeneratedRegex(@"(?:MwSt|USt|Umsatzsteuer|Steuer)[^\d]*(?<tax>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
-    private static partial Regex TaxRegex();
 
     [GeneratedRegex(@"(?:Gesamtsumme|Gesamt|Total|Summe|Endbetrag|Brutto)[^\d]*(?<total>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
     private static partial Regex TotalValueRegex();

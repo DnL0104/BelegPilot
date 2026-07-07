@@ -30,8 +30,10 @@ export default function AuthenticatedLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="overflow-hidden">{children}</SidebarInset>
-      <Footer />
+      <SidebarInset className="overflow-y-auto" id="main-content">
+        {children}
+        <Footer />
+      </SidebarInset>
       <CookieBanner />
     </SidebarProvider>
   );

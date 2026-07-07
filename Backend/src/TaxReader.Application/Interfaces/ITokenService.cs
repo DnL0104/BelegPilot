@@ -14,8 +14,14 @@ public interface ITokenService
     /// DB roundtrip. If the balance is insufficient, no entries are recorded and
     /// the method returns false.
     /// </summary>
+    /// <remarks>
+    /// Takes <paramref name="userId"/> explicitly (rather than resolving it from
+    /// ICurrentUser) because the only caller runs inside a Hangfire job with no
+    /// HTTP request/HttpContext available.
+    /// </remarks>
     Task<bool> TryConsumeManyAsync(
         IReadOnlyList<TokenLedgerEntry> entries,
+        Guid userId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -23,8 +29,12 @@ public interface ITokenService
     /// Sums all amounts into a single balance update, with one transaction record per entry
     /// for traceability. All persisted in a single DB roundtrip.
     /// </summary>
+    /// <remarks>
+    /// Takes <paramref name="userId"/> explicitly — see <see cref="TryConsumeManyAsync"/>.
+    /// </remarks>
     Task<UserTokenBalance> RefundManyAsync(
         IReadOnlyList<TokenLedgerEntry> entries,
+        Guid userId,
         CancellationToken cancellationToken = default);
 
     Task<UserTokenBalance> AddTokensAsync(

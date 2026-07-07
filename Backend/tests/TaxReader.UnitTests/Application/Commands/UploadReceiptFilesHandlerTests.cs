@@ -138,6 +138,96 @@ public class UploadReceiptFilesHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task HandleAsync_EnqueuesJobsOnlyAfterRowsAreCommitted()
+    {
+        // Regression test: jobs were previously enqueued inside the same loop that
+        // created the tracked (not-yet-saved) rows, with the actual commit deferred
+        // until after the whole loop — a fast Hangfire worker could dequeue and
+        // execute ProcessReceiptFileJob before that commit landed, hit "row not
+        // found", and (before the ProcessReceiptFileJob fix) silently no-op while
+        // Hangfire still marked the job Succeeded, leaving the file stuck forever
+        // with no error surfaced. Verify every row is already saved (not still
+        // Added/untracked-pending) by the time the first job is enqueued.
+        var sawUnsavedRowAtEnqueueTime = false;
+        _jobClientMock
+            .Setup(c => c.EnqueueAsync<ProcessReceiptFileJob>(
+                It.IsAny<Expression<Func<ProcessReceiptFileJob, Task>>>(),
+                It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                var anyUnsaved = _dbContext.ChangeTracker.Entries<ReceiptFile>().Any(e => e.State == EntityState.Added)
+                    || _dbContext.ChangeTracker.Entries<ProcessingRun>().Any(e => e.State == EntityState.Added);
+                if (anyUnsaved) sawUnsavedRowAtEnqueueTime = true;
+            })
+            .ReturnsAsync("job-xyz");
+
+        var command = MakeCommand("a.pdf", "b.pdf", "c.pdf");
+        await _handler.HandleAsync(command);
+
+        sawUnsavedRowAtEnqueueTime.Should().BeFalse(
+            "every ReceiptFile/ProcessingRun row must be committed before any job is enqueued");
+    }
+
+    [Fact]
+    public async Task HandleAsync_DuplicateOfExistingFile_SkipsItAndReportsExistingFileName()
+    {
+        // Regression test: uploading a file whose content already exists for this user
+        // previously threw a DB unique-constraint violation (caught generically as
+        // "Upload fehlgeschlagen — bitte erneut versuchen.") with no indication of which
+        // file, or that it was a duplicate at all.
+        await _handler.HandleAsync(MakeCommand("original.pdf"));
+
+        var duplicateContent = new FileUploadItem("copy.pdf", 3, new MemoryStream([1, 2, 0]));
+        var command = new UploadReceiptFilesCommand([duplicateContent], null, null, null);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue("a duplicate is a normal outcome, not a system failure");
+        result.Value!.Files.Should().BeEmpty();
+        result.Value!.Duplicates.Should().ContainSingle();
+        result.Value!.Duplicates[0].FileName.Should().Be("copy.pdf");
+        result.Value!.Duplicates[0].Reason.Should().Contain("original.pdf");
+    }
+
+    [Fact]
+    public async Task HandleAsync_DuplicateWithinSameBatch_AcceptsFirstAndSkipsSecond()
+    {
+        var sameContentTwice = new List<FileUploadItem>
+        {
+            new("first.pdf", 3, new MemoryStream([5, 5, 5])),
+            new("second.pdf", 3, new MemoryStream([5, 5, 5])),
+        };
+        var command = new UploadReceiptFilesCommand(sameContentTwice, null, null, null);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Files.Should().ContainSingle(f => f.FileName == "first.pdf");
+        result.Value!.Duplicates.Should().ContainSingle();
+        result.Value!.Duplicates[0].FileName.Should().Be("second.pdf");
+        result.Value!.Duplicates[0].Reason.Should().Contain("first.pdf");
+    }
+
+    [Fact]
+    public async Task HandleAsync_AllFilesAreDuplicates_ReturnsSuccessWithEmptyFilesList()
+    {
+        await _handler.HandleAsync(MakeCommand("original.pdf"));
+
+        var duplicateContent = new FileUploadItem("copy.pdf", 3, new MemoryStream([1, 2, 0]));
+        var command = new UploadReceiptFilesCommand([duplicateContent], null, null, null);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Files.Should().BeEmpty();
+        result.Value!.Duplicates.Should().HaveCount(1);
+
+        // No stray rows/jobs for the skipped duplicate
+        var files = await _dbContext.ReceiptFiles.CountAsync(f => f.OriginalFileName == "copy.pdf");
+        files.Should().Be(0);
+    }
+
+    [Fact]
     public async Task HandleAsync_DoesNotReferenceClassificationService()
     {
         // D-02 invariant: upload time MUST NOT touch ITokenService or IClassificationService.
@@ -156,8 +246,12 @@ public class UploadReceiptFilesHandlerTests : IDisposable
 
     private static UploadReceiptFilesCommand MakeCommand(params string[] fileNames)
     {
+        // Distinct byte content per file — these tests exercise "N different files",
+        // and duplicate-content detection (added for the "which file already exists"
+        // feedback fix) would otherwise treat same-content files as duplicates of
+        // each other even though the test intends them to be unrelated uploads.
         var files = fileNames
-            .Select(name => new FileUploadItem(name, 3, new MemoryStream([1, 2, 3])))
+            .Select((name, i) => new FileUploadItem(name, 3, new MemoryStream([1, 2, (byte)i])))
             .ToList();
         return new UploadReceiptFilesCommand(files, null, null, null);
     }

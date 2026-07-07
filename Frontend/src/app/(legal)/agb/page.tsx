@@ -3,7 +3,7 @@ import { DraftWarning } from "@/components/legal/draft-warning";
 import { LEGAL_CONFIG, LEGAL_REVIEWED } from "@/lib/legal-config";
 
 export const metadata = {
-  title: "Allgemeine Geschäftsbedingungen – TaxReader",
+  title: "Allgemeine Geschäftsbedingungen | BelegPilot",
 };
 
 export default function AgbPage() {
@@ -46,7 +46,7 @@ export default function AgbPage() {
         <p className="text-muted-foreground">
           Verbrauchern steht ein gesetzliches Widerrufsrecht zu. Einzelheiten
           entnehmen Sie bitte unserer{" "}
-          <Link href="/widerruf" className="text-primary hover:underline">
+          <Link href="/widerruf" className="text-primary underline">
             Widerrufsbelehrung
           </Link>
           . Bitte beachten Sie, dass das Widerrufsrecht bei digitalen Inhalten
@@ -76,7 +76,7 @@ export default function AgbPage() {
           ausschließlich per E-Mail an{" "}
           <a
             href={`mailto:${LEGAL_CONFIG.email}`}
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             {LEGAL_CONFIG.email}
           </a>
@@ -95,7 +95,7 @@ export default function AgbPage() {
             href="https://ec.europa.eu/consumers/odr/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline"
+            className="text-primary underline"
           >
             https://ec.europa.eu/consumers/odr/
           </a>

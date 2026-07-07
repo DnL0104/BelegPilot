@@ -47,9 +47,16 @@ export interface UploadAcceptedFile {
   fileName: string;
 }
 
+/** A file skipped during upload because its content already exists for this user. */
+export interface DuplicateFileInfo {
+  fileName: string;
+  reason: string;
+}
+
 /** POST /receipt-files → 202 Accepted response body. */
 export interface UploadAcceptedResponse {
   files: UploadAcceptedFile[];
+  duplicates: DuplicateFileInfo[];
 }
 
 export interface ReceiptItem {
@@ -168,6 +175,7 @@ export interface ReceiptFileStatus {
   updatedAt: string;
   errorCode?: ReceiptFileErrorCode;
   errorMessage?: string;
+  receiptId?: string;
 }
 
 // "Processed" is the FileStatus string returned by GET /receipt-files for a completed file.
