@@ -59,8 +59,14 @@ public class ProcessReceiptFileJob(
             .FirstOrDefaultAsync(f => f.Id == receiptFileId, cancellationToken);
         if (receiptFile is null)
         {
-            logger.LogWarning("ReceiptFile {ReceiptFileId} not found — job exiting", receiptFileId);
-            return;
+            // Thrown (not silently returned) so [AutomaticRetry] (D-04) gives the
+            // enqueueing transaction time to commit if this worker raced ahead of it —
+            // a silent return here counts as Hangfire Succeeded despite doing nothing,
+            // leaving the file stuck with zero error surfaced (the legitimate case,
+            // the file having been hard-deleted mid-queue, is rare enough that
+            // exhausting the retry budget before failing is an acceptable trade-off).
+            logger.LogWarning("ReceiptFile {ReceiptFileId} not found — retrying", receiptFileId);
+            throw new InvalidOperationException($"ReceiptFile {receiptFileId} not found.");
         }
 
         var run = await dbContext.ProcessingRuns
@@ -69,8 +75,8 @@ public class ProcessReceiptFileJob(
             .FirstOrDefaultAsync(cancellationToken);
         if (run is null)
         {
-            logger.LogWarning("No ProcessingRun for ReceiptFile {ReceiptFileId} — job exiting", receiptFileId);
-            return;
+            logger.LogWarning("No ProcessingRun for ReceiptFile {ReceiptFileId} — retrying", receiptFileId);
+            throw new InvalidOperationException($"No ProcessingRun for ReceiptFile {receiptFileId}.");
         }
 
         // Cancellation observed at boundary (D-11): CancelReceiptFileHandler commits
@@ -82,87 +88,124 @@ public class ProcessReceiptFileJob(
             return;
         }
 
-        try
+        // Idempotency: if a Receipt already exists, parsing already succeeded on a
+        // prior attempt (e.g. this run being manually retried, or an automatic retry
+        // firing after the barrier check below threw) — skip straight to the barrier
+        // instead of re-parsing, which would violate the unique index on
+        // receipts.receipt_file_id and mark an already-successful parse as Failed.
+        var alreadyParsed = await dbContext.Receipts.AnyAsync(r => r.ReceiptFileId == receiptFileId, cancellationToken);
+        if (alreadyParsed)
         {
-            // Step 1: Extract
-            run.Status = ProcessingStatus.Extracting;
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            await using var blobStream = await blobStore.OpenReadAsync(receiptFile.Id, cancellationToken);
-            if (blobStream is null)
+            // The barrier below only counts runs with Status >= Parsing — without this,
+            // a run left at an earlier status (e.g. still Pending, as after the exact
+            // race this idempotency guard protects against) would never register as
+            // "done" there, even though its Receipt already exists.
+            if (run.Status < ProcessingStatus.Parsing)
             {
-                await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoContent", "Datei-Inhalt konnte nicht gelesen werden.");
-                return;
+                run.Status = ProcessingStatus.Parsing;
+                await dbContext.SaveChangesAsync(cancellationToken);
             }
-
-            using var ms = new MemoryStream();
-            await blobStream.CopyToAsync(ms, cancellationToken);
-            ms.Position = 0;
-            var rawText = IsImageFile(receiptFile.OriginalFileName)
-                ? await imageExtractor.ExtractTextAsync(ms, GetMediaType(receiptFile.OriginalFileName), cancellationToken)
-                : await pdfExtractor.ExtractTextAsync(ms, cancellationToken);
-
-            if (string.IsNullOrWhiteSpace(rawText))
-            {
-                await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoTextExtracted", "Aus dieser Datei konnte kein Text gelesen werden.");
-                return;
-            }
-
-            // Step 2: Parse
-            run.Status = ProcessingStatus.Parsing;
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            var parser = parsers.FirstOrDefault(p => p.CanParse(rawText, receiptFile.SourceHint));
-            if (parser is null)
-            {
-                await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "ParserMissing", "Format der Datei wird derzeit nicht unterstützt.");
-                return;
-            }
-
-            var receipt = parser.Parse(rawText, receiptFile);
-            receipt.Id = Guid.NewGuid();
-            receipt.ReceiptFileId = receiptFile.Id;
-            receipt.RawExtractedText = rawText;
-            receipt.ParsedAt = DateTime.UtcNow;
-
-            foreach (var item in receipt.Items)
-            {
-                item.Id = Guid.NewGuid();
-                item.ReceiptId = receipt.Id;
-            }
-
-            dbContext.Receipts.Add(receipt);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation(
+                "ReceiptFile {ReceiptFileId} already has a Receipt — skipping re-parse, running barrier only",
+                receiptFileId);
         }
-        catch (Exception ex)
+        else
         {
-            var error = UploadErrorCatalog.Classify(ex, cancellationToken.IsCancellationRequested);
+            try
+            {
+                // Step 1: Extract
+                run.Status = ProcessingStatus.Extracting;
+                await dbContext.SaveChangesAsync(cancellationToken);
 
-            logger.LogError(ex,
-                "{ErrorCode} during ProcessReceiptFileJob for ReceiptFile {ReceiptFileId}",
-                error.Code, receiptFileId);
+                await using var blobStream = await blobStore.OpenReadAsync(receiptFile.Id, cancellationToken);
+                if (blobStream is null)
+                {
+                    await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoContent", "Datei-Inhalt konnte nicht gelesen werden.");
+                    return;
+                }
 
-            var terminalStatus = cancellationToken.IsCancellationRequested
-                ? ProcessingStatus.Cancelled
-                : ProcessingStatus.Failed;
+                using var ms = new MemoryStream();
+                await blobStream.CopyToAsync(ms, cancellationToken);
+                ms.Position = 0;
+                var rawText = IsImageFile(receiptFile.OriginalFileName)
+                    ? await imageExtractor.ExtractTextAsync(ms, GetMediaType(receiptFile.OriginalFileName), cancellationToken)
+                    : await pdfExtractor.ExtractTextAsync(ms, cancellationToken);
 
-            await MarkFailedAsync(run, receiptFile, terminalStatus, error.Code, error.GermanMessage);
+                // PdfPig/Tesseract can emit '\0' for glyphs their font/OCR mapping can't resolve
+                // to a Unicode codepoint. PostgreSQL text columns categorically reject NUL bytes
+                // (SqlState 22021), which would otherwise fail SaveChangesAsync below.
+                rawText = rawText.Replace("\0", string.Empty);
 
-            // For user-initiated cancellation: suppress re-throw so Hangfire marks the job
-            // Succeeded rather than triggering the retry backoff (D-04 tiered retries are for
-            // transient failures, not user actions).
-            if (cancellationToken.IsCancellationRequested) return;
-            throw;
+                if (string.IsNullOrWhiteSpace(rawText))
+                {
+                    await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoTextExtracted", "Aus dieser Datei konnte kein Text gelesen werden.");
+                    return;
+                }
+
+                // Step 2: Parse
+                run.Status = ProcessingStatus.Parsing;
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                var parser = parsers.FirstOrDefault(p => p.CanParse(rawText, receiptFile.SourceHint));
+                if (parser is null)
+                {
+                    await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "ParserMissing", "Format der Datei wird derzeit nicht unterstützt.");
+                    return;
+                }
+
+                var receipt = parser.Parse(rawText, receiptFile);
+                receipt.Id = Guid.NewGuid();
+                receipt.ReceiptFileId = receiptFile.Id;
+                receipt.RawExtractedText = rawText;
+                receipt.ParsedAt = DateTime.UtcNow;
+
+                foreach (var item in receipt.Items)
+                {
+                    item.Id = Guid.NewGuid();
+                    item.ReceiptId = receipt.Id;
+                }
+
+                dbContext.Receipts.Add(receipt);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var error = UploadErrorCatalog.Classify(ex, cancellationToken.IsCancellationRequested);
+
+                logger.LogError(ex,
+                    "{ErrorCode} during ProcessReceiptFileJob for ReceiptFile {ReceiptFileId}",
+                    error.Code, receiptFileId);
+
+                var terminalStatus = cancellationToken.IsCancellationRequested
+                    ? ProcessingStatus.Cancelled
+                    : ProcessingStatus.Failed;
+
+                await MarkFailedAsync(run, receiptFile, terminalStatus, error.Code, error.GermanMessage);
+
+                // For user-initiated cancellation: suppress re-throw so Hangfire marks the job
+                // Succeeded rather than triggering the retry backoff (D-04 tiered retries are for
+                // transient failures, not user actions).
+                if (cancellationToken.IsCancellationRequested) return;
+                throw;
+            }
         }
 
         // Barrier: count completed parents in this batch. Last one enqueues the classify job.
         // Includes Parsing (just-finished current run), Classifying, Completed; excludes
         // Failed/Cancelled (those don't go through classify).
+        // Explicit equality, NOT >=: ProcessingRun.Status is persisted as a string
+        // (HasConversion<string>()), so a ">=" comparison against the enum compiles fine
+        // in C# but translates to a lexicographic SQL string comparison — under which
+        // "Completed" sorts BEFORE "Parsing" (C < P), silently excluding already-completed
+        // siblings from the count. Never manifested in the plain happy path (every sibling
+        // is freshly at exactly "Parsing" when this barrier runs, so string equality still
+        // matched), but broke retrying one stuck file in a batch whose siblings had already
+        // reached Completed.
         var completedCount = await dbContext.ProcessingRuns
             .Where(r => r.ReceiptFile.UploadBatchId == uploadBatchId
-                     && r.Status >= ProcessingStatus.Parsing
-                     && r.Status != ProcessingStatus.Failed
-                     && r.Status != ProcessingStatus.Cancelled)
+                     && (r.Status == ProcessingStatus.Parsing
+                         || r.Status == ProcessingStatus.Classifying
+                         || r.Status == ProcessingStatus.Completed))
             .CountAsync(cancellationToken);
 
         if (completedCount >= batchSize)

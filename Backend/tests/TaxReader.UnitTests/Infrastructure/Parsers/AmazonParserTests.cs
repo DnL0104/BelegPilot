@@ -140,6 +140,26 @@ public class AmazonParserTests
     }
 
     [Fact]
+    public void Parse_FaelligerBetragLine_ExcludedAsNonItem()
+    {
+        // Regression test: "Fällig" previously lived only in GenericParser's keyword list.
+        // After consolidating into ReceiptParsingHelpers.CommonNonItemKeywordRegex, Amazon
+        // (which ORs the common list into its own IsNonItemLine check) must exclude it too.
+        var text = """
+            Amazon.de
+            Bestelldatum: 15.03.2025
+            1 Tinte schwarz 12,99 €
+            Fälliger Betrag 12,99 €
+            """;
+
+        var file = TestDataFactory.CreateReceiptFile(sourceHint: "Amazon");
+        var receipt = _parser.Parse(text, file);
+
+        receipt.Items.Should().ContainSingle();
+        receipt.Items.First().Description.Should().Contain("Tinte");
+    }
+
+    [Fact]
     public void Parse_ExtractsDate_GermanFormat()
     {
         var text = """

@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   useCancelReceiptFile,
   useReceiptFileStatus,
+  useRetryReceiptFile,
 } from "@/hooks/use-receipt-files";
 import { isTerminal } from "@/types/api";
 import { ReceiptFileStatusBadge } from "./receipt-file-status-badge";
@@ -21,6 +22,7 @@ export function ReceiptFileCard({
 }) {
   const { data, isLoading, isError } = useReceiptFileStatus(receiptFileId);
   const cancelMutation = useCancelReceiptFile();
+  const retryMutation = useRetryReceiptFile();
 
   return (
     <Card>
@@ -52,9 +54,9 @@ export function ReceiptFileCard({
             </Alert>
           )}
 
-        {data && data.status === "Completed" && (
+        {data && data.status === "Completed" && data.receiptId && (
           <Link
-            href={`/receipts/${receiptFileId}`}
+            href={`/receipts/${data.receiptId}`}
             className="text-sm text-primary underline-offset-4 hover:underline"
           >
             Beleg ansehen
@@ -62,14 +64,24 @@ export function ReceiptFileCard({
         )}
 
         {data && !isTerminal(data.status) && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={cancelMutation.isPending}
-            onClick={() => cancelMutation.mutate(receiptFileId)}
-          >
-            {cancelMutation.isPending ? "Abbruch läuft…" : "Abbrechen"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={cancelMutation.isPending}
+              onClick={() => cancelMutation.mutate(receiptFileId)}
+            >
+              {cancelMutation.isPending ? "Abbruch läuft…" : "Abbrechen"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={retryMutation.isPending}
+              onClick={() => retryMutation.mutate(receiptFileId)}
+            >
+              {retryMutation.isPending ? "Wird ausgelöst…" : "Erneut versuchen"}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

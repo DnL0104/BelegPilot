@@ -17,7 +17,7 @@ public class GetReceiptFileStatusHandler(
         var file = await dbContext.ReceiptFiles
             .AsNoTracking()
             .Where(f => f.Id == query.ReceiptFileId && f.UserId == currentUser.UserId)
-            .Select(f => new { f.Id, f.UploadedAt })
+            .Select(f => new { f.Id, f.UploadedAt, ReceiptId = f.Receipt != null ? f.Receipt.Id : (Guid?)null })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (file is null)
@@ -32,12 +32,13 @@ public class GetReceiptFileStatusHandler(
 
         if (run is null)
             return Result<ReceiptFileStatusDto>.Success(
-                new ReceiptFileStatusDto(ProcessingStatus.Pending, file.UploadedAt, null, null));
+                new ReceiptFileStatusDto(ProcessingStatus.Pending, file.UploadedAt, null, null, file.ReceiptId));
 
         return Result<ReceiptFileStatusDto>.Success(new ReceiptFileStatusDto(
             run.Status,
             run.CompletedAt ?? run.StartedAt,
             run.ErrorCode,
-            run.ErrorMessage));
+            run.ErrorMessage,
+            file.ReceiptId));
     }
 }

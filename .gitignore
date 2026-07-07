@@ -23,3 +23,9 @@ build-diag*.txt
 # Local secrets — loose API key files used for local E2E runs (never commit)
 keyfile.txt
 *.key
+
+# GSD planning docs (local-only)
+.planning/
+
+# Local docker-compose overrides (dev secrets, never shared/committed)
+docker-compose.override.yml

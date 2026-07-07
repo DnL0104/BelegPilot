@@ -61,4 +61,26 @@ public class GenericParserTests
 
         receipt.PurchaseDate.Should().Be(new DateOnly(2025, 6, 15));
     }
+
+    [Fact]
+    public void Parse_StripeStyleInvoice_DoesNotDuplicateItemAsFaelligerBetrag()
+    {
+        // Regression test: a Velrion/Stripe invoice with a "Fälliger Betrag" summary line
+        // (same amount as the real line item) was previously mis-parsed as a second,
+        // bogus ReceiptItem because "Fälliger" wasn't in the total-line keyword filter.
+        var text = """
+            Velrion Sandbox
+            Velrion 1500 Credits 1 49,99 € 49,99 €
+            Zwischensumme 49,99 €
+            Summe 49,99 €
+            Fälliger Betrag 49,99 €
+            """;
+
+        var file = TestDataFactory.CreateReceiptFile(sourceHint: "Velrion");
+        var receipt = _parser.Parse(text, file);
+
+        receipt.Items.Should().ContainSingle();
+        receipt.Items.First().Description.Should().Contain("Velrion 1500 Credits");
+        receipt.TotalAmount.Should().Be(49.99m);
+    }
 }

@@ -171,6 +171,12 @@ export async function cancelReceiptFile(id: string): Promise<void> {
   await api.post(`/receipt-files/${id}/cancel`);
 }
 
+export async function retryReceiptFile(id: string): Promise<void> {
+  // 204 No Content on success; 409 (not in a retryable state) / 404 propagate
+  // as AxiosError for the hook to switch on.
+  await api.post(`/receipt-files/${id}/retry`);
+}
+
 export async function getReceiptFiles(): Promise<ReceiptFile[]> {
   const { data } = await api.get<ReceiptFile[]>("/receipt-files");
   return data;
@@ -185,6 +191,16 @@ export async function bulkDeleteReceiptFiles(
 ): Promise<{ deleted: number }> {
   const { data } = await api.post<{ deleted: number }>(
     "/receipt-files/bulk-delete",
+    { ids }
+  );
+  return data;
+}
+
+export async function bulkRetryReceiptFiles(
+  ids: string[]
+): Promise<{ retried: number }> {
+  const { data } = await api.post<{ retried: number }>(
+    "/receipt-files/bulk-retry",
     { ids }
   );
   return data;

@@ -27,9 +27,16 @@ export function UploadForm() {
     try {
       const response = await uploadMutation.mutateAsync(filesToUpload);
       setUploadedFiles((prev) => [...response.files, ...prev]);
-      toast.success(
-        `${response.files.length} Beleg${response.files.length > 1 ? "e" : ""} werden verarbeitet`
-      );
+
+      if (response.files.length > 0) {
+        toast.success(
+          `${response.files.length} Beleg${response.files.length > 1 ? "e" : ""} werden verarbeitet`
+        );
+      }
+
+      response.duplicates.forEach((duplicate) => {
+        toast.error(`"${duplicate.fileName}" übersprungen: ${duplicate.reason}`);
+      });
     } catch (err: unknown) {
       const axiosErr = err as {
         response?: { data?: { error?: string } };

@@ -92,6 +92,20 @@ public static class ReceiptFileEndpoints
         .WithName("CancelReceiptFile")
         .WithSummary("Cancel processing of a receipt file; returns 204 on success, 409 for terminal state, 404 if not found");
 
+        receiptFiles.MapPost("/{id:guid}/retry", async (
+            Guid id,
+            RetryReceiptFileHandler handler,
+            CancellationToken ct) =>
+        {
+            var result = await handler.HandleAsync(new RetryReceiptFileCommand(id), ct);
+            if (result.IsSuccess) return Results.NoContent();
+            return result.Error == "NotFound"
+                ? Results.NotFound()
+                : Results.Conflict(new { error = result.Error, errorCode = "NotRetryable" });
+        })
+        .WithName("RetryReceiptFile")
+        .WithSummary("Manually re-trigger processing for a receipt file stuck in a non-terminal state; returns 204 on success");
+
         receiptFiles.MapDelete("/{id:guid}", async (
             Guid id,
             DeleteReceiptFileHandler handler,
@@ -121,8 +135,24 @@ public static class ReceiptFileEndpoints
         .WithName("BulkDeleteReceiptFiles")
         .WithSummary("Delete multiple receipt files and all associated data");
 
+        receiptFiles.MapPost("/bulk-retry", async (
+            BulkRetryRequest request,
+            BulkRetryReceiptFilesHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            var command = new BulkRetryReceiptFilesCommand(request.Ids);
+            var result = await handler.HandleAsync(command, cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Ok(new { retried = result.Value })
+                : Results.BadRequest(new { error = result.Error });
+        })
+        .WithName("BulkRetryReceiptFiles")
+        .WithSummary("Manually re-trigger processing for multiple stuck receipt files at once; skips files no longer in a retryable state");
+
         return group;
     }
 }
 
 public record BulkDeleteRequest(IReadOnlyList<Guid> Ids);
+public record BulkRetryRequest(IReadOnlyList<Guid> Ids);

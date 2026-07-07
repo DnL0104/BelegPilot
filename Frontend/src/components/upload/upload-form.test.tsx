@@ -123,4 +123,61 @@ describe('UploadForm', () => {
       expect(toast.error).toHaveBeenCalledWith('Datei zu groß')
     })
   })
+
+  describe('duplicate feedback', () => {
+    it('shows a per-file toast naming the duplicate and why it was skipped', async () => {
+      mutateAsyncMock.mockResolvedValue({
+        files: [],
+        duplicates: [
+          { fileName: 'copy.pdf', reason: 'Bereits hochgeladen am 01.01.2026 als "original.pdf".' },
+        ],
+      })
+
+      render(<UploadForm />, { wrapper })
+
+      const testFile = new File(['content'], 'copy.pdf', { type: 'application/pdf' })
+      const fileInput = screen.getByTestId('file-input')
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [testFile] } })
+      })
+
+      const uploadBtn = screen.getByRole('button', { name: /^hochladen$/i })
+      await act(async () => {
+        fireEvent.click(uploadBtn)
+        await vi.waitFor(() => expect(mutateAsyncMock).toHaveBeenCalled())
+      })
+
+      expect(toast.error).toHaveBeenCalledWith(
+        '"copy.pdf" übersprungen: Bereits hochgeladen am 01.01.2026 als "original.pdf".'
+      )
+      // All files were duplicates — no "N Belege werden verarbeitet" success toast.
+      expect(toast.success).not.toHaveBeenCalled()
+    })
+
+    it('shows both the success toast and duplicate toasts for a mixed batch', async () => {
+      mutateAsyncMock.mockResolvedValue({
+        files: [{ receiptFileId: 'r1', jobId: 'j1', fileName: 'new.pdf' }],
+        duplicates: [{ fileName: 'copy.pdf', reason: 'Identisch mit "new.pdf" in diesem Upload.' }],
+      })
+
+      render(<UploadForm />, { wrapper })
+
+      const testFile = new File(['content'], 'new.pdf', { type: 'application/pdf' })
+      const fileInput = screen.getByTestId('file-input')
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [testFile] } })
+      })
+
+      const uploadBtn = screen.getByRole('button', { name: /^hochladen$/i })
+      await act(async () => {
+        fireEvent.click(uploadBtn)
+        await vi.waitFor(() => expect(mutateAsyncMock).toHaveBeenCalled())
+      })
+
+      expect(toast.success).toHaveBeenCalledWith('1 Beleg werden verarbeitet')
+      expect(toast.error).toHaveBeenCalledWith(
+        '"copy.pdf" übersprungen: Identisch mit "new.pdf" in diesem Upload.'
+      )
+    })
+  })
 })

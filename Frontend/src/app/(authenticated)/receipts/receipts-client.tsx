@@ -15,20 +15,38 @@ import {
 import { ReceiptsTable, type ReceiptStatusFilter } from "@/components/receipts/receipts-table";
 import { YearFilter } from "@/components/receipts/year-filter";
 import { ReceiptFileStatusBadge } from "@/components/upload/receipt-file-status-badge";
-import { useReceiptFiles, useReceiptFileStatus } from "@/hooks/use-receipt-files";
+import {
+  useReceiptFiles,
+  useReceiptFileStatus,
+  useRetryReceiptFile,
+  useBulkRetryFiles,
+} from "@/hooks/use-receipt-files";
 import { isTerminal, type ProcessingStatus } from "@/types/api";
 
 /**
  * Per-file processing row shown while a file is still in-flight.
  * Polls at 2s cadence via useReceiptFileStatus; disappears once terminal.
+ * Offers a manual retry — files can otherwise get stuck indefinitely with no
+ * error surfaced if the background job never advances past its initial state.
  */
 function ProcessingFileRow({ fileId, fileName }: { fileId: string; fileName: string }) {
   const { data } = useReceiptFileStatus(fileId);
+  const retryMutation = useRetryReceiptFile();
   if (!data || isTerminal(data.status)) return null;
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-sm">
       <span className="truncate text-muted-foreground">{fileName}</span>
-      <ReceiptFileStatusBadge status={data.status} />
+      <div className="flex items-center gap-2">
+        <ReceiptFileStatusBadge status={data.status} />
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={retryMutation.isPending}
+          onClick={() => retryMutation.mutate(fileId)}
+        >
+          {retryMutation.isPending ? "Wird ausgelöst…" : "Erneut versuchen"}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -44,13 +62,15 @@ export function ReceiptsClient() {
   const [year, setYear] = useState<number | undefined>(new Date().getFullYear());
   const [statusFilter, setStatusFilter] = useState<ReceiptStatusFilter>("all");
   const { data: receiptFiles } = useReceiptFiles();
+  const bulkRetryMutation = useBulkRetryFiles();
 
   // Determine which files are still in-flight to show the processing section
   // and drive the list-level refetch cadence.
   // We use a derived flag from the files list; individual rows self-manage via useReceiptFileStatus.
-  const hasNonTerminal = (receiptFiles ?? []).some(
+  const nonTerminalFiles = (receiptFiles ?? []).filter(
     (f) => !isTerminal(f.status as ProcessingStatus)
   );
+  const hasNonTerminal = nonTerminalFiles.length > 0;
 
   // True account-wide emptiness (no files ever uploaded) — distinct from a
   // year/status filter that simply yields zero rows, which ReceiptsTable
@@ -63,18 +83,32 @@ export function ReceiptsClient() {
       <div className="flex-1 p-6 overflow-auto space-y-4">
         {hasNonTerminal && (
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
-            <p className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-              In Bearbeitung
-            </p>
-            {(receiptFiles ?? [])
-              .filter((f) => !isTerminal(f.status as ProcessingStatus))
-              .map((f) => (
-                <ProcessingFileRow
-                  key={f.id}
-                  fileId={f.id}
-                  fileName={f.originalFileName}
-                />
-              ))}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
+                In Bearbeitung
+              </p>
+              {nonTerminalFiles.length > 1 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={bulkRetryMutation.isPending}
+                  onClick={() =>
+                    bulkRetryMutation.mutate(nonTerminalFiles.map((f) => f.id))
+                  }
+                >
+                  {bulkRetryMutation.isPending
+                    ? "Wird ausgelöst…"
+                    : "Alle erneut versuchen"}
+                </Button>
+              )}
+            </div>
+            {nonTerminalFiles.map((f) => (
+              <ProcessingFileRow
+                key={f.id}
+                fileId={f.id}
+                fileName={f.originalFileName}
+              />
+            ))}
           </div>
         )}
 

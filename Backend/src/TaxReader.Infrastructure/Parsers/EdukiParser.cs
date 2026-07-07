@@ -33,7 +33,7 @@ public partial class EdukiParser : IReceiptParser
         }
 
         receipt.SubTotal = receipt.Items.Sum(i => i.TotalPrice);
-        receipt.TaxAmount = ExtractTax(rawText);
+        receipt.TaxAmount = ReceiptParsingHelpers.ExtractTaxAmount(rawText);
         receipt.TotalAmount = receipt.SubTotal + receipt.TaxAmount;
 
         return receipt;
@@ -41,13 +41,13 @@ public partial class EdukiParser : IReceiptParser
 
     private static DateOnly ExtractDate(string text)
     {
-        var dateMatch = GermanDateRegex().Match(text);
+        var dateMatch = ReceiptParsingHelpers.GermanDateRegex().Match(text);
         if (dateMatch.Success &&
             DateOnly.TryParseExact(dateMatch.Value, ["dd.MM.yyyy", "d.MM.yyyy", "dd.M.yyyy"],
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
             return date;
 
-        var isoMatch = IsoDateRegex().Match(text);
+        var isoMatch = ReceiptParsingHelpers.IsoDateRegex().Match(text);
         if (isoMatch.Success && DateOnly.TryParse(isoMatch.Value, out var isoDate))
             return isoDate;
 
@@ -93,7 +93,7 @@ public partial class EdukiParser : IReceiptParser
                     {
                         var desc = line[..priceMatch.Index].Trim();
                         if (!string.IsNullOrWhiteSpace(desc) && desc.Length > 2 &&
-                            !TotalKeywordRegex().IsMatch(desc))
+                            !ReceiptParsingHelpers.IsCommonNonItemLine(desc))
                         {
                             items.Add(new ReceiptItem
                             {
@@ -112,34 +112,12 @@ public partial class EdukiParser : IReceiptParser
         return items;
     }
 
-    private static decimal ExtractTax(string text)
-    {
-        var match = TaxRegex().Match(text);
-        if (match.Success)
-        {
-            var priceStr = match.Groups["tax"].Value.Replace(",", ".");
-            if (decimal.TryParse(priceStr, CultureInfo.InvariantCulture, out var tax))
-                return tax;
-        }
-        return 0m;
-    }
-
-    [GeneratedRegex(@"\d{1,2}\.\d{1,2}\.\d{4}")]
-    private static partial Regex GermanDateRegex();
-
-    [GeneratedRegex(@"\d{4}-\d{2}-\d{2}")]
-    private static partial Regex IsoDateRegex();
-
     [GeneratedRegex(@"(?<desc>[^\n]{3,?})\s+(?<price>\d+[.,]\d{2})\s*€", RegexOptions.IgnoreCase)]
     private static partial Regex EdukiItemRegex();
 
-    // Require € to avoid matching dates like 18.03.2026
+    // Require € to avoid matching dates like 18.03.2026. Mandatory 2 decimal digits —
+    // intentionally stricter than ReceiptParsingHelpers.PriceRegex's optional-decimal
+    // variant, so not shared with it.
     [GeneratedRegex(@"(?<price>\d+[.,]\d{2})\s*€")]
     private static partial Regex PricePatternRegex();
-
-    [GeneratedRegex(@"(?:Gesamt|Total|Summe|Endbetrag|Zwischensumme|Netto|Brutto|MwSt|USt|Umsatzsteuer|Steuer|Versand)", RegexOptions.IgnoreCase)]
-    private static partial Regex TotalKeywordRegex();
-
-    [GeneratedRegex(@"(?:MwSt|USt|Umsatzsteuer|Steuer)[^\d]*(?<tax>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
-    private static partial Regex TaxRegex();
 }

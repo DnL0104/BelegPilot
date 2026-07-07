@@ -1,481 +1,51 @@
-
-## Overview
-
-BelegPilot is an API-first system that ingests PDF receipts (e.g., Amazon, EDUKI), extracts structured data, classifies expenses into tax-relevant categories, and provides aggregated reporting for tax preparation (focused on teachers).
-
-The system is split into:
-
--   `backend/` → .NET API and processing pipeline
--   `frontend/` → Next.js UI
-
-----------
-
-
 ## General Guidelines
 
 ### Think Before Coding
+- State assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
 
-Don't assume. Don't hide confusion. Surface tradeoffs.
+### Simplicity First
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
 
-Before implementing:
+### Surgical Changes
+- Don't refactor things that aren't broken.
+- If you notice unrelated dead code, mention it — don't delete it.
+- Remove imports/variables/functions that YOUR changes made unused.
+- Every changed line should trace directly to the user's request.
 
-    State your assumptions explicitly. If uncertain, ask.
-    If multiple interpretations exist, present them - don't pick silently.
-    If a simpler approach exists, say so. Push back when warranted.
-    If something is unclear, stop. Name what's confusing. Ask.
-
-### 2. Simplicity First
-
-Minimum code that solves the problem. Nothing speculative.
-
-    No features beyond what was asked.
-    No abstractions for single-use code.
-    No "flexibility" or "configurability" that wasn't requested.
-    No error handling for impossible scenarios.
-    If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-3. Surgical Changes
-
-Touch only what you must. Clean up only your own mess.
-
-When editing existing code:
-
-    Try to improve it
-    comment only meaningful things.
-    Don't refactor things that aren't broken.
-    If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-
-    Remove imports/variables/functions that YOUR changes made unused.
-    Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-4. Goal-Driven Execution
-
-Define success criteria. Loop until verified.
-
+### Goal-Driven Execution
 Transform tasks into verifiable goals:
-
-    "Add validation" → "Write tests for invalid inputs, then make them pass"
-    "Fix the bug" → "Write a test that reproduces it, then make it pass"
-    "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
-
-## Tech Stack
-
-### Backend
-
--   .NET 10, ASP.NET Core Minimal APIs
--   Entity Framework Core 10 with PostgreSQL
--   FluentValidation for request validation
--   Serilog for structured logging
--   UglyToad.PdfPig for PDF text extraction
--   xUnit + FluentAssertions + Moq for testing
--   Docker + Docker Compose
-
-### Frontend
-
--   Next.js (App Router)
--   React 19
--   TypeScript
--   Tailwind CSS
--   shadcn/ui
--   TanStack Query
--   TanStack Table
--   React Hook Form + Zod
--   Axios
-
-----------
-
-## Project Structure
-
--   backend/
-    -   src/
-        -   BelegPilot.Api/
-        -   BelegPilot.Application/
-        -   BelegPilot.Domain/
-        -   BelegPilot.Infrastructure/
-    -   tests/
-        -   BelegPilot.UnitTests/
--   frontend/
-    -   app/
-    -   components/
-    -   lib/
-    -   types/
-
-----------
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
 
 ## Commands
 
 ### Backend
-
--   Build:
-    -   `dotnet build backend`
--   Run API:
-    -   `dotnet run --project backend/src/BelegPilot.Api`
--   Test:
-    -   `dotnet test backend`
--   Add Migration:
-    -   `dotnet ef migrations add <Name> -p backend/src/BelegPilot.Infrastructure -s backend/src/BelegPilot.Api`
--   Update Database:
-    -   `dotnet ef database update -p backend/src/BelegPilot.Infrastructure -s backend/src/BelegPilot.Api`
-
-----------
+- Build: `dotnet build Backend`
+- Run API: `dotnet run --project Backend/src/TaxReader.Api`
+- Test: `dotnet test Backend`
+- Add Migration: `dotnet ef migrations add <Name> -p Backend/src/TaxReader.Infrastructure -s Backend/src/TaxReader.Api`
+- Update Database: `dotnet ef database update -p Backend/src/TaxReader.Infrastructure -s Backend/src/TaxReader.Api`
 
 ### Frontend
-
--   Install dependencies:
-    -   `cd frontend && npm install`
--   Run dev server:
-    -   `cd frontend && npm run dev`
--   Build:
-    -   `cd frontend && npm run build`
-
-----------
-
-### Docker (Full Stack)
-
--   Run everything:
-    -   `docker compose up --build`
--   Reset:
-    -   `docker compose down -v`
-
-----------
-
-## Architecture Overview
-
-Pipeline:
-
-Upload → Storage → Extraction → Parsing → Classification → Reporting
-
-----------
-
-## Architecture Rules
-
--   Domain layer has ZERO dependencies
--   Application defines interfaces only
--   Infrastructure implements external concerns
--   API is thin (only endpoints + DI)
--   No Application → Infrastructure reference
--   EF Core is used directly (no repository pattern)
-
-----------
-
-## Domain Terms
-
-### ReceiptFile
-
--   Represents a raw uploaded document (PDF)
--   Contains metadata, storage path, and hash
--   Represents the technical origin of data
-
-----------
-
-### Receipt
-
--   Represents a parsed business document
--   Contains:
-    -   vendor
-    -   purchase date
-    -   totals
-    -   raw text
-
-----------
-
-### ReceiptItem
-
--   Represents a single expense entry
--   Contains:
-    -   description
-    -   amount
-    -   quantity
--   Smallest tax-relevant unit
-
-----------
-
-### Category
-
--   ConsumablesAndOfficeSupplies
--   SpecialistLiterature
--   Unknown
-
-----------
-
-### ItemClassification
-
--   Represents a classification decision
--   Contains:
-    -   category
-    -   method (Rule, Manual, AI)
-    -   status (Suggested, Confirmed)
-    -   reason
-
-----------
-
-### ClassificationRule
-
--   Represents a rule used for classification
-
-----------
-
-### ProcessingRun
-
--   Represents a single pipeline execution
-
-----------
-
-## Database Design
-
-### Tables
-
--   receipt_files
--   receipts
--   receipt_items
--   item_classifications
--   categories
--   classification_rules
--   processing_runs
-
-----------
-
-### Principles
-
--   UUID primary keys
--   decimal(18,2) for money
--   UTC timestamps
--   no stored aggregates
--   classification is historical
-
-----------
-
-## API Design
-
-### Receipt Files
-
--   POST /api/receipt-files
--   GET /api/receipt-files
--   POST /api/receipt-files/{id}/process
-
-----------
-
-### Receipts
-
--   GET /api/receipts
--   GET /api/receipts/{id}
-
-----------
-
-### Items
-
--   GET /api/receipts/{id}/items
-
-----------
-
-### Classification
-
--   POST /api/receipt-items/{id}/confirm
-
-----------
-
-### Reporting
-
--   GET /api/reports/category-totals?year=2025
--   GET /api/reports/annual-summary?year=2025
-
-----------
-
-## Code Conventions
-
-### Naming
-
--   Commands: ProcessReceiptCommand
--   Queries: GetCategoryTotalsQuery
--   DTOs: ReceiptDto
-
-----------
-
-### Patterns We Use
-
--   Primary constructors for DI
--   Records for DTOs and commands
--   Result<T> pattern for error handling
--   File-scoped namespaces
--   Always pass CancellationToken
-
-----------
-
-### Patterns We DON'T Use
-
--   Repository pattern
--   AutoMapper
--   Stored procedures
--   Exceptions for control flow
-
-----------
-
-## Classification Strategy
-
-### Phase 1
-
--   Rule-based
--   keyword matching
--   source-based defaults
-
-### Phase 2
-
--   DB-driven rules
--   AI support
-
-----------
-
-## Parsing Strategy
-
--   AmazonParser
--   EdukiParser
--   GenericParser
-
-----------
-
-## Frontend Architecture
-
-### Overview
-
-The frontend is a Next.js application consuming the backend API.
-
-Responsibilities:
-
--   Upload PDFs
--   Display receipts and items
--   Allow classification correction
--   Show aggregated tax data
-
-----------
-
-### Routing
-
--   `/` → Dashboard
--   `/upload` → Upload
--   `/receipts` → List
--   `/receipts/[id]` → Detail
--   `/reports` → Reports
-
-----------
-
-### State Management
-
--   TanStack Query for server state
--   Local state for UI
-
-----------
-
-### Components
-
-#### Upload
-
--   FileDropzone
--   UploadProgress
-
-#### Receipts
-
--   ReceiptTable
--   ReceiptItemList
-
-#### Reports
-
--   CategorySummaryCard
--   YearSelector
-
-----------
-
-### UI Patterns
-
--   Cards for summaries
--   Tables for structured data
--   Dialogs for editing
--   Toast notifications
-
-----------
-
-### UX Principles
-
--   Minimal clicks
--   Fast feedback
--   Clear classification visibility
--   Editable suggestions
-
-----------
-
-### Styling
-
--   Tailwind CSS
--   Responsive design
--   Consistent spacing
-
-----------
-
-### Error Handling
-
--   Toast-based error feedback
--   Automatic retries via TanStack Query
-
-----------
-
-## Testing
-
--   Unit tests for domain and application
--   FluentAssertions
--   Moq
-
-### Naming Convention
-
--   Method_Scenario_Result
-
-----------
-
-## Logging
-
--   Serilog
--   Structured logging
--   Pipeline tracking
-
-----------
-
-## Storage
-
--   Initial:
-    -   local filesystem
--   Future:
-    -   cloud storage
-
-----------
-
-## Scaling Strategy
-
--   Background jobs
--   OCR integration
--   AI classification
--   Multi-user support
--   Frontend expansion
-
-----------
+- Install: `cd Frontend && npm install`
+- Dev server: `cd Frontend && npm run dev`
+- Build: `cd Frontend && npm run build`
+
+### Docker
+- Run everything: `docker compose up --build`
+- Reset: `docker compose down -v`
 
 ## Key Decisions
-
--   Classification is historical
--   Item-level calculation
--   API-first design
--   Modular parsing
--   Clear separation of backend and frontend
+- Classification is historical (never overwritten, always appended)
+- Calculations at item level, not receipt level
+- API-first design
+- Modular parsing: Amazon → Eduki → Generic fallback (priority order)
 
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project

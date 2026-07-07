@@ -15,10 +15,11 @@ public class TokenService(IAppDbContext dbContext, ICurrentUser currentUser) : I
         return balance.Balance;
     }
 
-    public async Task<UserTokenBalance> GetOrCreateBalanceAsync(CancellationToken cancellationToken = default)
-    {
-        var userId = currentUser.UserId;
+    public Task<UserTokenBalance> GetOrCreateBalanceAsync(CancellationToken cancellationToken = default) =>
+        GetOrCreateBalanceAsync(currentUser.UserId, cancellationToken);
 
+    private async Task<UserTokenBalance> GetOrCreateBalanceAsync(Guid userId, CancellationToken cancellationToken)
+    {
         var existing = await dbContext.UserTokenBalances
             .FirstOrDefaultAsync(b => b.UserId == userId, cancellationToken);
 
@@ -52,6 +53,7 @@ public class TokenService(IAppDbContext dbContext, ICurrentUser currentUser) : I
 
     public async Task<bool> TryConsumeManyAsync(
         IReadOnlyList<TokenLedgerEntry> entries,
+        Guid userId,
         CancellationToken cancellationToken = default)
     {
         if (entries.Count == 0) return true;
@@ -59,7 +61,7 @@ public class TokenService(IAppDbContext dbContext, ICurrentUser currentUser) : I
         var total = entries.Sum(e => e.Amount);
         if (total <= 0) return true;
 
-        var balance = await GetOrCreateBalanceAsync(cancellationToken);
+        var balance = await GetOrCreateBalanceAsync(userId, cancellationToken);
         if (balance.Balance < total) return false;
 
         balance.Balance -= total;
@@ -76,8 +78,8 @@ public class TokenService(IAppDbContext dbContext, ICurrentUser currentUser) : I
             dbContext.TokenTransactions.Add(new TokenTransaction
             {
                 Id = Guid.NewGuid(),
-                UserId = currentUser.UserId,
-                UserKey = currentUser.UserId.ToString(),
+                UserId = userId,
+                UserKey = userId.ToString(),
                 Type = TokenTransactionType.Consumption,
                 Amount = -entry.Amount,
                 BalanceAfter = running,
@@ -93,12 +95,13 @@ public class TokenService(IAppDbContext dbContext, ICurrentUser currentUser) : I
 
     public async Task<UserTokenBalance> RefundManyAsync(
         IReadOnlyList<TokenLedgerEntry> entries,
+        Guid userId,
         CancellationToken cancellationToken = default)
     {
-        if (entries.Count == 0) return await GetOrCreateBalanceAsync(cancellationToken);
+        if (entries.Count == 0) return await GetOrCreateBalanceAsync(userId, cancellationToken);
 
         var total = entries.Sum(e => e.Amount);
-        var balance = await GetOrCreateBalanceAsync(cancellationToken);
+        var balance = await GetOrCreateBalanceAsync(userId, cancellationToken);
 
         if (total <= 0) return balance;
 
@@ -113,8 +116,8 @@ public class TokenService(IAppDbContext dbContext, ICurrentUser currentUser) : I
             dbContext.TokenTransactions.Add(new TokenTransaction
             {
                 Id = Guid.NewGuid(),
-                UserId = currentUser.UserId,
-                UserKey = currentUser.UserId.ToString(),
+                UserId = userId,
+                UserKey = userId.ToString(),
                 Type = TokenTransactionType.Refund,
                 Amount = entry.Amount,
                 BalanceAfter = running,
