@@ -144,14 +144,17 @@ try
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-        // Global: 60/min per IP (D-09). Triggers BEFORE auth so unauthenticated
-        // requests count against the bucket.
+        // Global: 60/min per IP (D-09), overridable via RateLimit__GlobalPermitLimit —
+        // the E2E workflow raises this because all Playwright tests share one IP/bucket
+        // against the same backend. Triggers BEFORE auth so unauthenticated requests
+        // count against the bucket.
+        var globalPermitLimit = builder.Configuration.GetValue("RateLimit:GlobalPermitLimit", 60);
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 60,
+                    PermitLimit = globalPermitLimit,
                     Window = TimeSpan.FromMinutes(1),
                     AutoReplenishment = true,
                     QueueLimit = 0

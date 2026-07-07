@@ -205,6 +205,10 @@ jobs:
           Stripe__WebhookSecret: whsec_placeholder_for_e2e
           Stripe__DemoMode: "true"
           UploadStorage__Path: /tmp/taxreader-uploads
+          # All Playwright tests in this job share one runner IP/rate-limit bucket
+          # against this backend, so the production default (60/min) gets exhausted
+          # by the combined suite. Raise it here only — prod default is untouched.
+          RateLimit__GlobalPermitLimit: "600"
 
       - name: Run Playwright E2E (QA-03)
         working-directory: Frontend
