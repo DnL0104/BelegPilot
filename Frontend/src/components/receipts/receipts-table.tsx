@@ -30,6 +30,7 @@ import {
 import { useReceipts } from "@/hooks/use-receipts";
 import { useBulkDeleteFiles } from "@/hooks/use-receipt-files";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { VENDOR_COLORS as vendorColors } from "@/lib/vendor-colors";
 import type { Receipt } from "@/types/api";
 
 export type ReceiptStatusFilter = "all" | "suggested" | "confirmed" | "failed";
@@ -98,12 +99,6 @@ export function ReceiptStatusBadge({
     </span>
   );
 }
-
-const vendorColors: Record<string, string> = {
-  Amazon: "bg-emerald-500",
-  Eduki: "bg-blue-500",
-  Thalia: "bg-purple-500",
-};
 
 interface ReceiptsTableProps {
   year?: number;

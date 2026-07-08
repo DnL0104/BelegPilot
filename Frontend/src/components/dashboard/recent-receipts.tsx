@@ -14,12 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ReceiptStatusBadge } from "@/components/receipts/receipts-table";
 import { useReceipts } from "@/hooks/use-receipts";
 import { formatCurrency, formatDate } from "@/lib/format";
-
-const vendorColors: Record<string, string> = {
-  Amazon: "bg-emerald-500",
-  Eduki: "bg-blue-500",
-  Thalia: "bg-purple-500",
-};
+import { VENDOR_COLORS as vendorColors } from "@/lib/vendor-colors";
 
 export function RecentReceipts() {
   const { data: receipts, isLoading } = useReceipts();
