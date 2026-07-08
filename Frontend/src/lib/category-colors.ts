@@ -1,7 +1,7 @@
-// Grouped by hue family (Werbungskosten = blue, Sonderausgaben = teal) so related
+// Grouped by hue family (Werbungskosten = blue, Sonderausgaben = amber) so related
 // categories read as one family at a glance; each bar always carries a text label,
 // so color is a secondary cue, not the sole identifier. Avoids red (reserved for
-// --destructive), green (reserved for success states), and amber (reserved for
+// --destructive), green (reserved for success states), and teal (reserved for
 // --primary) to prevent semantic collisions.
 export const CATEGORY_COLORS: Record<string, string> = {
   WerbungskostenArbeitsmittel: "bg-blue-400",
@@ -10,8 +10,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   WerbungskostenReisekosten: "bg-blue-700",
   WerbungskostenFortbildung: "bg-sky-500",
   WerbungskostenTelekommunikation: "bg-sky-600",
-  SonderausgabenSpenden: "bg-teal-500",
-  SonderausgabenVorsorgeaufwendungen: "bg-teal-700",
+  SonderausgabenSpenden: "bg-amber-600",
+  SonderausgabenVorsorgeaufwendungen: "bg-amber-800",
   AussergewoehnlicheBelastungenKrankheit: "bg-violet-500",
   HaushaltsnaheDienstleistung: "bg-rose-500",
   Handwerkerleistung: "bg-indigo-500",
