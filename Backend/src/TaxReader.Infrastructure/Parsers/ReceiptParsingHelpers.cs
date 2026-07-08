@@ -34,8 +34,10 @@ public static partial class ReceiptParsingHelpers
     }
 
     // Union of every total/summary/metadata keyword observed across Amazon, Eduki, and
-    // Generic receipts to date.
-    [GeneratedRegex(@"(?:Gesamt|Total|Summe|Endbetrag|Zwischensumme|Netto|Brutto|MwSt|USt|Umsatzsteuer|Steuer|Versand|Shipping|Zahldatum|Rechnungsdatum|Bestelldatum|Referenz|Rechnung\s+\d|Pos\s+Nummer|Anzahl|Preis|Fällig)", RegexOptions.IgnoreCase)]
+    // Generic receipts to date. Mastercard/Rückgeld are payment-method/change-due lines,
+    // not items — added alongside PriceRegex's €-less alternative below, since without €
+    // as a gate these lines would otherwise be picked up as false-positive items.
+    [GeneratedRegex(@"(?:Gesamt|Total|Summe|Endbetrag|Zwischensumme|Netto|Brutto|MwSt|USt|Umsatzsteuer|Steuer|Versand|Shipping|Zahldatum|Rechnungsdatum|Bestelldatum|Referenz|Rechnung\s+\d|Pos\s+Nummer|Anzahl|Preis|Fällig|Mastercard|Rückgeld)", RegexOptions.IgnoreCase)]
     public static partial Regex CommonNonItemKeywordRegex();
 
     [GeneratedRegex(@"\d{1,2}\.\d{1,2}\.\d{4}")]
@@ -44,9 +46,19 @@ public static partial class ReceiptParsingHelpers
     [GeneratedRegex(@"\d{4}-\d{2}-\d{2}")]
     public static partial Regex IsoDateRegex();
 
-    // Require € to avoid matching dates. Decimal part optional — OCR from screenshots
-    // often drops the comma (e.g. "3,99 €" is read as "399€").
-    [GeneratedRegex(@"(?<price>\d+(?:[.,]\d{1,2})?)\s*€")]
+    // Two alternatives:
+    // 1) A number followed by € — decimal part optional, since OCR from screenshots
+    //    often drops the comma (e.g. "3,99 €" is read as "399€"). Requiring € here
+    //    disambiguates from dates like "18.03.2026".
+    // 2) A comma-decimal number with NO € at all. Many German till receipts (e.g.
+    //    thermal Kassenbons) print "EUR"/"€" once as a column header instead of per
+    //    line, so requiring € on every line silently drops every item on those
+    //    receipts. Safe without €-anchoring because German dates always use "."
+    //    between segments and never contain a comma, so a comma-decimal number can't
+    //    be a mis-parsed date. Exactly 2 decimal digits required (not 1-2) — stricter
+    //    than alternative 1 — to avoid loosely matching stray single-decimal-digit
+    //    OCR noise (e.g. a garbled "MwSt" line read as "... 12,0 ...").
+    [GeneratedRegex(@"(?<price>\d+(?:[.,]\d{1,2})?)\s*€|(?<price>\d+,\d{2})(?!\d)")]
     public static partial Regex PriceRegex();
 
     [GeneratedRegex(@"(?:MwSt|USt|Umsatzsteuer|Steuer)[^\d]*(?<tax>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]

@@ -264,14 +264,30 @@ public sealed class TesseractEnginePool : IImageTextExtractor, IDisposable
         // more accurate for receipt text. Default would run both engines and pick
         // the better result, which roughly doubles inference time.
         var engine = new TesseractEngine(tessDataPath, _options.Language, EngineMode.LstmOnly);
-        // Auto (PSM 3): run layout analysis to locate the actual text region first.
-        // Was previously SingleBlock (treat the whole image as one text block) to
-        // skip that ~hundreds-of-ms analysis for already-cropped receipts, but that
-        // assumption breaks for phone photos with background around the receipt
-        // (e.g. a table) — SingleBlock feeds the background straight into OCR as if
-        // it were text, producing unusable output regardless of orientation. OCR
-        // runs in an async Hangfire job, so the added latency isn't user-facing.
-        engine.DefaultPageSegMode = PageSegMode.Auto;
+        // SingleColumn (PSM 4): run layout analysis to locate text blocks, but never
+        // attempt to split the page into multiple newspaper-style columns.
+        //
+        // INVESTIGATION NOTE (this fix was re-examined and the PSM itself was NOT
+        // changed further — see debug session ocr-price-column-not-detected.md):
+        // SparseText (PSM 11) was tried next because it was the only PSM that
+        // recovered every price token in raw OCR text across 5 real receipt photos.
+        // It was REJECTED: SparseText finds text as scattered independent fragments
+        // with no block/line coherence, so unrelated tokens from opposite corners of
+        // the image get concatenated onto the same output line in effectively random
+        // order. On one test photo this produced a fabricated "shop:1302 Datum:
+        // 06.07.2026 €" line that GenericParser mis-parsed as a EUR 2026,00 line
+        // item — i.e. SparseText trades "missing prices" for "phantom prices",
+        // which is worse for a tax report (a fictional four-figure line item is more
+        // dangerous than a missing one). SingleColumn's occasional column-drop
+        // failure (see Evidence) is a real, unresolved gap, but the fix for it is
+        // NOT a blanket PSM swap — every PSM that does full-page layout analysis
+        // (3/4/6/12) is inconsistent depending on photo framing/skew, and the one
+        // PSM that's consistent (11) is unsafe for this parser's line-based
+        // description+price pairing. Was previously SingleBlock (treat the whole
+        // image as one text block), which fed surrounding background (e.g. a table)
+        // straight into OCR as if it were text on phone photos. OCR runs in an async
+        // Hangfire job, so the added layout-analysis latency isn't user-facing.
+        engine.DefaultPageSegMode = PageSegMode.SingleColumn;
         return engine;
     }
 
