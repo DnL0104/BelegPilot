@@ -9,7 +9,6 @@ export function CookieBanner() {
   const { consent, acceptAll, acceptNecessary, settingsPanelOpen, closeSettings } = useConsent();
   const [showSettings, setShowSettings] = useState(false);
 
-  // Banner is hidden once the user has made a choice.
   if (consent.decided) return null;
 
   const isDialogOpen = showSettings || settingsPanelOpen;
