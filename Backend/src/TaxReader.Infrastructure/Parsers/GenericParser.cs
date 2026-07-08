@@ -44,8 +44,9 @@ public partial class GenericParser : IReceiptParser
 
         receipt.SubTotal = receipt.Items.Sum(i => i.TotalPrice);
         receipt.TaxAmount = ReceiptParsingHelpers.ExtractTaxAmount(rawText);
-        receipt.TotalAmount = ExtractTotal(rawText) > 0
-            ? ExtractTotal(rawText)
+        var extractedTotal = ExtractTotal(rawText);
+        receipt.TotalAmount = extractedTotal > 0
+            ? extractedTotal
             : receipt.SubTotal + receipt.TaxAmount;
 
         // Safety net: if exactly one item was found but its price differs substantially
