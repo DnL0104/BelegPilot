@@ -2,28 +2,13 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, categoryLabel } from "@/lib/format";
+import { CATEGORY_COLORS as categoryColors } from "@/lib/category-colors";
 import type { CategoryTotal } from "@/types/api";
 
 interface CategoryBreakdownProps {
   categories?: CategoryTotal[];
   isLoading: boolean;
 }
-
-const categoryColors: Record<string, string> = {
-  WerbungskostenArbeitsmittel: "bg-emerald-500",
-  WerbungskostenFachliteratur: "bg-purple-500",
-  WerbungskostenBueromaterial: "bg-blue-500",
-  WerbungskostenReisekosten: "bg-orange-500",
-  WerbungskostenFortbildung: "bg-indigo-500",
-  WerbungskostenTelekommunikation: "bg-cyan-500",
-  SonderausgabenSpenden: "bg-rose-500",
-  SonderausgabenVorsorgeaufwendungen: "bg-amber-500",
-  AussergewoehnlicheBelastungenKrankheit: "bg-red-500",
-  HaushaltsnaheDienstleistung: "bg-lime-500",
-  Handwerkerleistung: "bg-yellow-500",
-  Privat: "bg-slate-500",
-  Unbekannt: "bg-muted-foreground",
-};
 
 export function CategoryBreakdown({
   categories,
