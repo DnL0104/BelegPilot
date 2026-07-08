@@ -21,6 +21,7 @@ export function YearFilter({ value, onChange }: YearFilterProps) {
     <Select
       value={value?.toString() ?? "all"}
       onValueChange={(v) => onChange(!v || v === "all" ? undefined : parseInt(v, 10))}
+      items={{ all: "Alle Jahre", ...Object.fromEntries(years.map((y) => [y.toString(), y.toString()])) }}
     >
       <SelectTrigger className="w-[140px]" aria-label="Jahr filtern">
         <SelectValue placeholder="Alle Jahre" />

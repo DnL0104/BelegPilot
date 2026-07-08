@@ -177,8 +177,12 @@ export function ClassifyDialog({
             <label className="text-sm font-medium">
               {isSuggested ? "Oder andere Kategorie wählen:" : "Kategorie wählen:"}
             </label>
-            <Select value={category} onValueChange={(v) => setCategory(v ?? "")}>
-              <SelectTrigger>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v ?? "")}
+              items={Object.fromEntries(categories.map((cat) => [cat, categoryLabel(cat)]))}
+            >
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Kategorie wählen..." />
               </SelectTrigger>
               <SelectContent>

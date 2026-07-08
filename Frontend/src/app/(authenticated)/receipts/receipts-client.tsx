@@ -133,6 +133,7 @@ export function ReceiptsClient() {
                 <Select
                   value={statusFilter}
                   onValueChange={(v) => setStatusFilter(v as ReceiptStatusFilter)}
+                  items={Object.fromEntries(STATUS_FILTER_OPTIONS.map((option) => [option.value, option.label]))}
                 >
                   <SelectTrigger className="w-[140px]" aria-label="Status filtern">
                     <SelectValue />
