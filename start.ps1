@@ -92,7 +92,7 @@ $retries = 0
 do {
     $retries++
     Start-Sleep -Seconds 1
-    $ready = docker exec taxreader-db pg_isready 2>$null
+    $ready = docker exec belegpilot-db pg_isready 2>$null
 } while ($LASTEXITCODE -ne 0 -and $retries -lt 15)
 
 if ($retries -ge 15) {
