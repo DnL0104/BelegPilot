@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { CookieSettingsLink } from "@/components/layout/cookie-settings-link";
-import { deleteAccount, downloadExportBundle } from "@/lib/api-client";
 import { useAuth } from "@/providers/auth-provider";
 import { useDataExport } from "@/hooks/use-data-export";
+import { useDeleteAccount, useDownloadExportBundle } from "@/hooks/use-account";
 
 export function SettingsClient() {
   const { user, logout } = useAuth();
@@ -28,7 +28,7 @@ export function SettingsClient() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteAccountMutation = useDeleteAccount();
 
   // Data export state (DSGVO Art. 20 / LEG-07)
   const {
@@ -37,13 +37,12 @@ export function SettingsClient() {
     exportToken,
     status: exportStatus,
   } = useDataExport();
-  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadExportMutation = useDownloadExportBundle();
 
   const handleDownloadExport = async () => {
     if (!exportToken) return;
-    setIsDownloading(true);
     try {
-      const blob = await downloadExportBundle(exportToken);
+      const blob = await downloadExportMutation.mutateAsync(exportToken);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -54,17 +53,14 @@ export function SettingsClient() {
       URL.revokeObjectURL(url);
     } catch {
       toast.error("Export fehlgeschlagen. Bitte erneut versuchen.");
-    } finally {
-      setIsDownloading(false);
     }
   };
 
   const handleDeleteAccount = async () => {
     if (password.length === 0) return;
-    setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteAccount(password);
+      await deleteAccountMutation.mutateAsync(password);
       logout(); // clears tokens + navigates to /login
     } catch (err) {
       const status = (err as { response?: { status?: number } }).response?.status;
@@ -74,7 +70,6 @@ export function SettingsClient() {
       } else {
         toast.error("Ihr Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.");
       }
-      setIsDeleting(false);
     }
   };
 
@@ -200,8 +195,12 @@ export function SettingsClient() {
                       <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                         Export bereit
                       </span>
-                      <Button size="sm" onClick={handleDownloadExport} disabled={isDownloading}>
-                        {isDownloading ? (
+                      <Button
+                        size="sm"
+                        onClick={handleDownloadExport}
+                        disabled={downloadExportMutation.isPending}
+                      >
+                        {downloadExportMutation.isPending ? (
                           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                         ) : (
                           <Download className="mr-1.5 h-3.5 w-3.5" />
@@ -247,7 +246,7 @@ export function SettingsClient() {
       <AlertDialog
         open={deleteDialogOpen}
         onOpenChange={(open) => {
-          if (isDeleting) return;
+          if (deleteAccountMutation.isPending) return;
           setDeleteDialogOpen(open);
           if (!open) {
             setPassword("");
@@ -276,7 +275,7 @@ export function SettingsClient() {
                 setDeleteError(null);
               }}
               placeholder="Passwort"
-              disabled={isDeleting}
+              disabled={deleteAccountMutation.isPending}
               autoComplete="current-password"
               aria-label="Passwort zur Bestätigung der Kontolöschung"
               onKeyDown={(e) => {
@@ -291,13 +290,17 @@ export function SettingsClient() {
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteAccountMutation.isPending}>
+              Abbrechen
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleDeleteAccount}
-              disabled={password.length === 0 || isDeleting}
+              disabled={password.length === 0 || deleteAccountMutation.isPending}
             >
-              {isDeleting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {deleteAccountMutation.isPending && (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              )}
               Konto unwiderruflich löschen
             </AlertDialogAction>
           </AlertDialogFooter>
