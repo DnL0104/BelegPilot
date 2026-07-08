@@ -68,7 +68,7 @@ export function ReceiptStatusBadge({
     return (
       <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[12px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-400">
         <AlertCircle className="h-3 w-3" />
-        {failedCount} {failedCount === 1 ? "Fehler" : "Fehler"}
+        {failedCount} Fehler
       </span>
     );
   }
