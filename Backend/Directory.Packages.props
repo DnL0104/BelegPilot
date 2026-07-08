@@ -35,6 +35,11 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <!-- Pinned to the 3.x line, not the newer 4.x: v4 enforces a build-time license
+         key even on the free tier (see sixlabors.com/posts/licence-enforcement-changes),
+         an unacceptable build-reliability risk for a solo-operator deployment. 3.1.12
+         is fully patched against GHSA-2cmq-823j-5qj8 and GHSA-rxmq-m78w-7wmc. -->
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageVersion Include="Tesseract" Version="5.2.0" />
     <PackageVersion Include="Stripe.net" Version="51.2.0" />
     <PackageVersion Include="Hangfire.Core" Version="1.8.23" />

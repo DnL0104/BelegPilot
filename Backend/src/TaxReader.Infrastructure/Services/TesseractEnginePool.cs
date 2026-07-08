@@ -1,6 +1,8 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using TaxReader.Application.Interfaces;
 using TaxReader.Infrastructure.Configuration;
 using Tesseract;
@@ -85,7 +87,7 @@ public sealed class TesseractEnginePool : IImageTextExtractor, IDisposable
 
         using var ms = new MemoryStream();
         await imageStream.CopyToAsync(ms, cancellationToken);
-        var imageBytes = ms.ToArray();
+        var imageBytes = NormalizeOrientation(ms.ToArray());
 
         // Acquire — Hangfire's job CancellationToken is the only thing that aborts the wait.
         var engine = await _channel.Reader.ReadAsync(cancellationToken);
@@ -151,6 +153,32 @@ public sealed class TesseractEnginePool : IImageTextExtractor, IDisposable
                         _engineCount);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Phone photos routinely carry an EXIF Orientation tag instead of pre-rotated
+    /// pixels (e.g. a long thermal receipt photographed sideways to fit the whole
+    /// strip in frame). Leptonica's <see cref="Pix.LoadFromMemory"/> ignores EXIF
+    /// entirely, so without this step Tesseract sees the raw sensor orientation and
+    /// produces unusable output. Best-effort: a decode failure falls back to the
+    /// original bytes rather than failing the whole OCR pass over a preprocessing
+    /// step that ImageSharp doesn't need to support every format Leptonica does.
+    /// </summary>
+    internal byte[] NormalizeOrientation(byte[] imageBytes)
+    {
+        try
+        {
+            using var image = Image.Load(imageBytes);
+            image.Mutate(x => x.AutoOrient());
+            using var output = new MemoryStream();
+            image.SaveAsJpeg(output);
+            return output.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "EXIF orientation normalization failed; using original image bytes");
+            return imageBytes;
         }
     }
 
@@ -236,10 +264,14 @@ public sealed class TesseractEnginePool : IImageTextExtractor, IDisposable
         // more accurate for receipt text. Default would run both engines and pick
         // the better result, which roughly doubles inference time.
         var engine = new TesseractEngine(tessDataPath, _options.Language, EngineMode.LstmOnly);
-        // SingleBlock (PSM 6): treat the receipt as one uniform text block. The
-        // default Auto mode runs layout analysis (~hundreds of ms) which is
-        // wasteful for receipts that are already a single column of text.
-        engine.DefaultPageSegMode = PageSegMode.SingleBlock;
+        // Auto (PSM 3): run layout analysis to locate the actual text region first.
+        // Was previously SingleBlock (treat the whole image as one text block) to
+        // skip that ~hundreds-of-ms analysis for already-cropped receipts, but that
+        // assumption breaks for phone photos with background around the receipt
+        // (e.g. a table) — SingleBlock feeds the background straight into OCR as if
+        // it were text, producing unusable output regardless of orientation. OCR
+        // runs in an async Hangfire job, so the added latency isn't user-facing.
+        engine.DefaultPageSegMode = PageSegMode.Auto;
         return engine;
     }
 

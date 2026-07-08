@@ -2,6 +2,9 @@ using System.Threading.Channels;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using SixLabors.ImageSharp.PixelFormats;
 using TaxReader.Infrastructure.Configuration;
 using TaxReader.Infrastructure.Services;
 using Tesseract;
@@ -172,5 +175,48 @@ public class TesseractEnginePoolTests
 
         // Assert
         await act.Should().ThrowAsync<ObjectDisposedException>();
+    }
+
+    // Regression: a phone photo of a receipt (e.g. rotated to fit a long thermal
+    // strip in frame) carries an EXIF Orientation tag instead of pre-rotated pixels.
+    // Leptonica's Pix.LoadFromMemory ignores EXIF entirely, so without this
+    // normalization step OCR sees the raw sensor orientation and produces garbage.
+    // Pure ImageSharp logic — no native Tesseract install needed.
+    [Fact]
+    public void NormalizeOrientation_RotatesPixelsToMatchExifOrientation()
+    {
+        // Arrange — a 2x4 image (taller than wide) tagged as rotated 90° CW (EXIF
+        // value 6: "the top of the captured image is on its right side"), so the
+        // content should actually display as 4x2 (wider than tall) once corrected.
+        using var source = new Image<Rgba32>(2, 4);
+        source.Metadata.ExifProfile = new ExifProfile();
+        source.Metadata.ExifProfile.SetValue(ExifTag.Orientation, (ushort)6);
+        using var sourceStream = new MemoryStream();
+        source.SaveAsJpeg(sourceStream);
+
+        var pool = new TesseractEnginePool(Options(poolSize: 1), NullLogger<TesseractEnginePool>.Instance);
+
+        // Act
+        var normalizedBytes = pool.NormalizeOrientation(sourceStream.ToArray());
+
+        // Assert — dimensions swapped (2x4 -> 4x2) and the orientation tag no longer
+        // demands further rotation (AutoOrient resets it to 1/"normal" on correction).
+        using var normalized = Image.Load(normalizedBytes);
+        normalized.Width.Should().Be(4);
+        normalized.Height.Should().Be(2);
+    }
+
+    [Fact]
+    public void NormalizeOrientation_InvalidImageBytes_FallsBackToOriginalBytes()
+    {
+        // Arrange — not a decodable image at all.
+        var garbage = new byte[] { 1, 2, 3, 4, 5 };
+        var pool = new TesseractEnginePool(Options(poolSize: 1), NullLogger<TesseractEnginePool>.Instance);
+
+        // Act
+        var result = pool.NormalizeOrientation(garbage);
+
+        // Assert — best-effort preprocessing failure must not lose the original bytes.
+        result.Should().BeEquivalentTo(garbage);
     }
 }
