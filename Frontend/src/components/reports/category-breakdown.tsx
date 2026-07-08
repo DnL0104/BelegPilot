@@ -25,13 +25,6 @@ const categoryColors: Record<string, string> = {
   Unbekannt: "bg-muted-foreground",
 };
 
-const categoryCardBg: Record<string, string> = {
-  WerbungskostenArbeitsmittel: "bg-emerald-50 dark:bg-emerald-500/10",
-  WerbungskostenFachliteratur: "bg-purple-50 dark:bg-purple-500/10",
-  WerbungskostenBueromaterial: "bg-blue-50 dark:bg-blue-500/10",
-  WerbungskostenReisekosten: "bg-orange-50 dark:bg-orange-500/10",
-};
-
 export function CategoryBreakdown({
   categories,
   isLoading,
