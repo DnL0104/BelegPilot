@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle, FlaskConical, ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,11 +27,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useTokenTransactions } from "@/hooks/use-tokens";
+import { useTokenBalance, useTokenTransactions } from "@/hooks/use-tokens";
 import { useInvoices, useCreatePortalSession } from "@/hooks/use-billing";
 import { TopUpDialog } from "@/components/tokens/top-up-dialog";
-import { queryKeys } from "@/lib/query-keys";
-import { getTokenBalance } from "@/lib/api-client";
 import { formatDate, formatCurrency } from "@/lib/format";
 
 // WR-03: credit tiers mirror TopUpDialog's PACKAGES / the backend allow-list in
@@ -82,11 +79,9 @@ export function BillingClient() {
     }
   }, [isPaymentSuccess]);
 
-  const { data: tokenBalance, isLoading: balanceLoading } = useQuery({
-    queryKey: queryKeys.tokens.balance,
-    queryFn: getTokenBalance,
-    refetchInterval: isPolling ? 3000 : 30_000,
-  });
+  const { data: tokenBalance, isLoading: balanceLoading } = useTokenBalance(
+    isPolling ? 3000 : 30_000,
+  );
 
   const { data: transactions, isLoading: transactionsLoading } =
     useTokenTransactions(20);

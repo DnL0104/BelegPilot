@@ -8,11 +8,11 @@ import {
   purchaseTokens,
 } from "@/lib/api-client";
 
-export function useTokenBalance() {
+export function useTokenBalance(refetchInterval = 30_000) {
   return useQuery({
     queryKey: queryKeys.tokens.balance,
     queryFn: getTokenBalance,
-    refetchInterval: 30_000,
+    refetchInterval,
   });
 }
 
