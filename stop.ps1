@@ -19,6 +19,6 @@ foreach ($pid in $backendPids) {
 
 # Stop Docker containers
 Write-Host "  Stopping Docker containers..." -ForegroundColor Yellow
-docker compose -f "$PSScriptRoot\Backend\docker-compose.yml" stop db 2>$null
+docker compose -f "$PSScriptRoot\docker-compose.yml" stop db 2>$null
 
 Write-Host "`n=== All services stopped ===" -ForegroundColor Green

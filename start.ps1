@@ -3,6 +3,12 @@
 
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
+$logDir = Join-Path $env:TEMP "taxreader-logs"
+New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+$backendLog = Join-Path $logDir "backend.log"
+$backendErrLog = Join-Path $logDir "backend.err.log"
+$frontendLog = Join-Path $logDir "frontend.log"
+$frontendErrLog = Join-Path $logDir "frontend.err.log"
 
 function Get-PreferredLanIp {
     $preferredTypes = @(
@@ -60,20 +66,59 @@ function Get-PreferredLanIp {
     return $null
 }
 
-function Test-HttpEndpoint {
+function Wait-HttpEndpoint {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Url,
-
-        [int]$TimeoutSeconds = 5
+        [int]$TimeoutSeconds = 45
     )
 
-    try {
-        $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec $TimeoutSeconds
-        return $response.StatusCode -ge 200 -and $response.StatusCode -lt 500
+    $elapsed = 0
+    while ($elapsed -lt $TimeoutSeconds) {
+        try {
+            $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3
+            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+                return $true
+            }
+        } catch {
+            # not ready yet - keep polling
+        }
+        Start-Sleep -Seconds 1
+        $elapsed++
     }
-    catch {
-        return $false
+    return $false
+}
+
+function Show-LogTail {
+    param([string]$Label, [string]$LogPath, [string]$ErrLogPath, [int]$Lines = 30)
+
+    Write-Host "`n  --- $Label log tail ($LogPath) ---" -ForegroundColor Red
+    if (Test-Path $LogPath) {
+        Get-Content -Path $LogPath -Tail $Lines | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+    }
+    if ((Test-Path $ErrLogPath) -and (Get-Item $ErrLogPath).Length -gt 0) {
+        Write-Host "  --- $Label stderr tail ---" -ForegroundColor Red
+        Get-Content -Path $ErrLogPath -Tail $Lines | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+    }
+}
+
+# Load .env into the process environment so the bare-metal backend connects
+# with the SAME Postgres credentials docker-compose used to init the db
+# container - avoids the "role does not exist" mismatch when .env overrides
+# POSTGRES_USER/POSTGRES_PASSWORD away from the appsettings.Development.json
+# placeholders.
+$envFile = Join-Path $root ".env"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+            $key, $value = $line.Split("=", 2)
+            $key = $key.Trim()
+            $value = $value.Trim().Trim('"').Trim("'")
+            if (-not (Test-Path "Env:\$key")) {
+                Set-Item -Path "Env:\$key" -Value $value
+            }
+        }
     }
 }
 
@@ -81,55 +126,84 @@ Write-Host "=== TaxReader Startup ===" -ForegroundColor Cyan
 
 $lanIp = Get-PreferredLanIp
 
-# 1. Start Docker (PostgreSQL)
-Write-Host "`n[1/3] Starting Docker containers (PostgreSQL)..." -ForegroundColor Yellow
-Start-Process -FilePath "docker" -ArgumentList "compose", "-f", "$root\docker-compose.yml", "up", "-d", "db" -NoNewWindow -Wait
-Write-Host "  PostgreSQL is running." -ForegroundColor Green
-
-# 2. Wait for PostgreSQL to be ready
-Write-Host "  Waiting for PostgreSQL to accept connections..." -ForegroundColor Gray
-$retries = 0
-do {
-    $retries++
-    Start-Sleep -Seconds 1
-    $ready = docker exec belegpilot-db pg_isready 2>$null
-} while ($LASTEXITCODE -ne 0 -and $retries -lt 15)
-
-if ($retries -ge 15) {
-    Write-Host "  Warning: PostgreSQL may not be ready yet." -ForegroundColor Red
-} else {
-    Write-Host "  PostgreSQL ready." -ForegroundColor Green
+# Explicit -f suppresses Compose's automatic docker-compose.override.yml
+# merge, so it must be listed by hand when present (it publishes the db
+# port to localhost for the bare-metal backend below).
+$composeFiles = @("-f", "$root\docker-compose.yml")
+$overrideFile = Join-Path $root "docker-compose.override.yml"
+if (Test-Path $overrideFile) {
+    $composeFiles += @("-f", $overrideFile)
 }
 
-# 3. Start Backend API
+# 1. Start Docker (PostgreSQL)
+Write-Host "`n[1/3] Starting Docker containers (PostgreSQL)..." -ForegroundColor Yellow
+docker compose @composeFiles up -d db
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  docker compose up failed - is Docker Desktop running?" -ForegroundColor Red
+    exit 1
+}
+
+$dbContainerId = (docker compose @composeFiles ps -q db).Trim()
+if (-not $dbContainerId) {
+    Write-Host "  Could not resolve the db container - check 'docker compose ps'." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "  Waiting for PostgreSQL to become healthy..." -ForegroundColor Gray
+$retries = 0
+$healthy = $false
+do {
+    Start-Sleep -Seconds 1
+    $status = docker inspect --format "{{.State.Health.Status}}" $dbContainerId 2>$null
+    $healthy = $status -eq "healthy"
+    $retries++
+} while (-not $healthy -and $retries -lt 30)
+
+if ($healthy) {
+    Write-Host "  PostgreSQL ready." -ForegroundColor Green
+} else {
+    Write-Host "  PostgreSQL did not become healthy in time (status: $status)." -ForegroundColor Red
+    docker logs $dbContainerId --tail 30
+    exit 1
+}
+
+# 2. Start Backend API
 Write-Host "`n[2/3] Starting Backend API (port 5190)..." -ForegroundColor Yellow
-$backendJob = Start-Process -FilePath "dotnet" -ArgumentList "run", "--project", "$root\Backend\src\TaxReader.Api", "--", "--urls", "http://0.0.0.0:5190" -PassThru -WindowStyle Normal
-Write-Host "  Backend API starting (PID: $($backendJob.Id))." -ForegroundColor Green
 
-# Give the backend a moment to start
-Start-Sleep -Seconds 6
+$pgUser = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { "postgres" }
+$pgPassword = if ($env:POSTGRES_PASSWORD) { $env:POSTGRES_PASSWORD } else { "postgres" }
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=belegpilot;Username=$pgUser;Password=$pgPassword"
 
-$backendReady = Test-HttpEndpoint -Url "http://localhost:5190/scalar/v1"
+Remove-Item -Path $backendLog, $backendErrLog -ErrorAction SilentlyContinue
+$backendProcess = Start-Process -FilePath "dotnet" `
+    -ArgumentList "run", "--project", "$root\Backend\src\TaxReader.Api", "--", "--urls", "http://0.0.0.0:5190" `
+    -PassThru -NoNewWindow `
+    -RedirectStandardOutput $backendLog -RedirectStandardError $backendErrLog
+Write-Host "  Backend API starting (PID: $($backendProcess.Id)). Log: $backendLog" -ForegroundColor Green
+
+$backendReady = Wait-HttpEndpoint -Url "http://localhost:5190/scalar/v1" -TimeoutSeconds 60
 if ($backendReady) {
     Write-Host "  Backend API reachable." -ForegroundColor Green
 } else {
-    Write-Host "  Warning: Backend API is not responding on http://localhost:5190." -ForegroundColor Red
-    Write-Host "  Check the backend window for build or startup errors." -ForegroundColor Yellow
+    Write-Host "  Backend API is not responding on http://localhost:5190." -ForegroundColor Red
+    Show-LogTail -Label "Backend" -LogPath $backendLog -ErrLogPath $backendErrLog
 }
 
-# 4. Start Frontend
+# 3. Start Frontend
 Write-Host "`n[3/3] Starting Frontend (port 3000)..." -ForegroundColor Yellow
-$frontendJob = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run dev" -WorkingDirectory "$root\Frontend" -PassThru -WindowStyle Normal
-Write-Host "  Frontend starting (PID: $($frontendJob.Id))." -ForegroundColor Green
+Remove-Item -Path $frontendLog, $frontendErrLog -ErrorAction SilentlyContinue
+$frontendProcess = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run dev" `
+    -WorkingDirectory "$root\Frontend" -PassThru -NoNewWindow `
+    -RedirectStandardOutput $frontendLog -RedirectStandardError $frontendErrLog
+Write-Host "  Frontend starting (PID: $($frontendProcess.Id)). Log: $frontendLog" -ForegroundColor Green
 
-Start-Sleep -Seconds 6
-
-$frontendReady = Test-HttpEndpoint -Url "http://localhost:3000"
+$frontendReady = Wait-HttpEndpoint -Url "http://localhost:3000" -TimeoutSeconds 45
 if ($frontendReady) {
     Write-Host "  Frontend reachable." -ForegroundColor Green
 } else {
-    Write-Host "  Warning: Frontend is not responding on http://localhost:3000." -ForegroundColor Red
-    Write-Host "  Check the frontend window for startup errors." -ForegroundColor Yellow
+    Write-Host "  Frontend is not responding on http://localhost:3000." -ForegroundColor Red
+    Show-LogTail -Label "Frontend" -LogPath $frontendLog -ErrLogPath $frontendErrLog
 }
 
 # Summary
@@ -142,6 +216,11 @@ if ($lanIp) {
     Write-Host "  Backend (LAN):   http://${lanIp}:5190" -ForegroundColor White
     Write-Host "  API Docs (LAN):  http://${lanIp}:5190/scalar/v1" -ForegroundColor White
 }
-Write-Host "  Frontend status: $(if ($frontendReady) { 'reachable' } else { 'not responding' })" -ForegroundColor White
-Write-Host "  Backend status:  $(if ($backendReady) { 'reachable' } else { 'not responding' })" -ForegroundColor White
-Write-Host "`nPress Ctrl+C in each window to stop, or run: .\stop.ps1" -ForegroundColor Gray
+Write-Host "  Frontend status: $(if ($frontendReady) { 'reachable' } else { 'NOT RESPONDING - see log above' })" -ForegroundColor White
+Write-Host "  Backend status:  $(if ($backendReady) { 'reachable' } else { 'NOT RESPONDING - see log above' })" -ForegroundColor White
+Write-Host "`n  Live logs: Get-Content -Wait '$backendLog'  /  Get-Content -Wait '$frontendLog'" -ForegroundColor Gray
+Write-Host "  Stop everything: .\stop.ps1" -ForegroundColor Gray
+
+if (-not $backendReady -or -not $frontendReady) {
+    exit 1
+}
