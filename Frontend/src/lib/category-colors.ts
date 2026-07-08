@@ -1,15 +1,19 @@
+// Grouped by hue family (Werbungskosten = blue, Sonderausgaben = teal) so related
+// categories read as one family at a glance; each bar always carries a text label,
+// so color is a secondary cue, not the sole identifier. Avoids red (reserved for
+// --destructive) and green (reserved for success states) to prevent semantic collisions.
 export const CATEGORY_COLORS: Record<string, string> = {
-  WerbungskostenArbeitsmittel: "bg-emerald-500",
-  WerbungskostenFachliteratur: "bg-purple-500",
-  WerbungskostenBueromaterial: "bg-blue-500",
-  WerbungskostenReisekosten: "bg-orange-500",
-  WerbungskostenFortbildung: "bg-indigo-500",
-  WerbungskostenTelekommunikation: "bg-cyan-500",
-  SonderausgabenSpenden: "bg-rose-500",
-  SonderausgabenVorsorgeaufwendungen: "bg-amber-500",
-  AussergewoehnlicheBelastungenKrankheit: "bg-red-500",
-  HaushaltsnaheDienstleistung: "bg-lime-500",
-  Handwerkerleistung: "bg-yellow-500",
-  Privat: "bg-slate-500",
+  WerbungskostenArbeitsmittel: "bg-blue-400",
+  WerbungskostenFachliteratur: "bg-blue-500",
+  WerbungskostenBueromaterial: "bg-blue-600",
+  WerbungskostenReisekosten: "bg-blue-700",
+  WerbungskostenFortbildung: "bg-sky-500",
+  WerbungskostenTelekommunikation: "bg-sky-600",
+  SonderausgabenSpenden: "bg-teal-500",
+  SonderausgabenVorsorgeaufwendungen: "bg-teal-700",
+  AussergewoehnlicheBelastungenKrankheit: "bg-violet-500",
+  HaushaltsnaheDienstleistung: "bg-amber-600",
+  Handwerkerleistung: "bg-indigo-500",
+  Privat: "bg-slate-400",
   Unbekannt: "bg-muted-foreground",
 };
