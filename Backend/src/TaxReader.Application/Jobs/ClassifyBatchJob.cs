@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using TaxReader.Application.Common;
 using TaxReader.Application.Interfaces;
+using TaxReader.Domain.Entities;
 using TaxReader.Domain.Enums;
 
 namespace TaxReader.Application.Jobs;
@@ -115,10 +116,7 @@ public class ClassifyBatchJob(
                 // may have been added before the failure, so the flag must be accurate.
                 foreach (var run in runs.Where(r => r.ReceiptFile.Receipt is not null))
                 {
-                    var receipt = run.ReceiptFile.Receipt!;
-                    var itemsSum = receipt.Items.Sum(i => i.TotalPrice);
-                    if (Math.Abs(itemsSum - receipt.TotalAmount) > 0.50m)
-                        receipt.HasSumMismatch = true;
+                    CheckSumMismatch(run.ReceiptFile.Receipt!);
                 }
 
                 await dbContext.SaveChangesAsync(CancellationToken.None);
@@ -134,10 +132,7 @@ public class ClassifyBatchJob(
         // Runs in the same SaveChangesAsync as the Completed status update.
         foreach (var run in runs.Where(r => r.ReceiptFile.Receipt is not null))
         {
-            var receipt = run.ReceiptFile.Receipt!;
-            var itemsSum = receipt.Items.Sum(i => i.TotalPrice);
-            if (Math.Abs(itemsSum - receipt.TotalAmount) > 0.50m)
-                receipt.HasSumMismatch = true;
+            CheckSumMismatch(run.ReceiptFile.Receipt!);
         }
 
         // Finalize: mark every run as Completed
@@ -149,5 +144,14 @@ public class ClassifyBatchJob(
             r.ReceiptFile.Status = FileStatus.Processed;
         }
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    // D-16 / WR-07: compare item totals against receipt total (€0.50 absolute tolerance),
+    // flagging mismatches. Shared by both the failure path and the completion path.
+    private static void CheckSumMismatch(Receipt receipt)
+    {
+        var itemsSum = receipt.Items.Sum(i => i.TotalPrice);
+        if (Math.Abs(itemsSum - receipt.TotalAmount) > 0.50m)
+            receipt.HasSumMismatch = true;
     }
 }
