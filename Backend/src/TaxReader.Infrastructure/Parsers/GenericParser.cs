@@ -170,6 +170,11 @@ public partial class GenericParser : IReceiptParser
     [GeneratedRegex(@"(?:Rechnungsdatum|Bestelldatum|Zahldatum|Datum)\s+(?<date>\d{1,2}\.\d{1,2}\.\d{4})", RegexOptions.IgnoreCase)]
     private static partial Regex LabeledDateRegex();
 
-    [GeneratedRegex(@"(?:Gesamtsumme|Gesamt|Total|Summe|Endbetrag|Brutto)[^\d]*(?<total>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
+    // "Betrag" (bare) added for German till receipts (e.g. REWE) whose payment-confirmation
+    // section prints just "Betrag € 11,06" as the payable total, never "Gesamt...". Guarded
+    // with a negative lookbehind for "Auszahlungs" so a receipt with a real cashback/
+    // cash-withdrawal-at-checkout "Auszahlungsbetrag" line can't hijack the total — that
+    // payout amount is a different value from the actual purchase total.
+    [GeneratedRegex(@"(?:Gesamtsumme|Gesamt|Total|Summe|Endbetrag|Brutto|(?<!Auszahlungs)Betrag)[^\d]*(?<total>\d+[.,]\d{2})", RegexOptions.IgnoreCase)]
     private static partial Regex TotalValueRegex();
 }

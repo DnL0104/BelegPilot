@@ -83,4 +83,59 @@ public class GenericParserTests
         receipt.Items.First().Description.Should().Contain("Velrion 1500 Credits");
         receipt.TotalAmount.Should().Be(49.99m);
     }
+
+    [Fact]
+    public void Parse_RewePaymentSlipWithCashbackSection_ExtractsCorrectTotalAndExcludesSummaryLines()
+    {
+        // Regression test: real Tesseract OCR output (raw_extracted_text) from a phone-photo
+        // REWE receipt. "Betrag € 11,06" (payment-confirmation section) is the real, correct
+        // total; "Gesantbetrag 1,36" further down is an OCR-corrupted "Gesamtbetrag" (misread
+        // 'm' -> 'n', so the old "Gesamt"-only TotalValueRegex never matched it); "A= 19,0% ..."
+        // and "7,0% ..." are per-row VAT breakdown lines with no "Steuer" keyword on the row
+        // itself (only on a preceding header line). Before this fix, all 4 of these
+        // summary/tax lines were mis-parsed as fake items and TotalAmount silently fell back
+        // to their wrong sum (15.78) instead of the real total (11.06).
+        var text = """
+            Betrag € 11,06
+            Cashback €
+            Gesamt j
+            Steuer % Netto fi Steuer
+            A= 19,0% 5,71) 1,08
+            7,0% 3,99 0,28
+            Gesantbetrag 1,36
+            BFAND 2,00 EURO
+            """;
+
+        var file = TestDataFactory.CreateReceiptFile(sourceHint: null);
+        var receipt = _parser.Parse(text, file);
+
+        // Only BFAND (a real deposit charge) survives filtering; the single-item safety
+        // net then corrects its price to the reliably-extracted total (same mechanism as
+        // AmazonParser), since 2,00 differs substantially from 11,06.
+        receipt.Items.Should().ContainSingle();
+        receipt.Items.First().Description.Should().Be("BFAND");
+        receipt.TotalAmount.Should().Be(11.06m);
+    }
+
+    [Fact]
+    public void Parse_TimestampWithStrayEuroSign_DoesNotCreatePhantomPriceItem()
+    {
+        // Regression test: real Tesseract OCR output misread a receipt timestamp
+        // ("17:48:55") with a stray "€" landing right after it. Before this fix,
+        // PriceRegex matched the seconds field "55" as a price (immediately followed by
+        // " €"), producing a fake item "ma 17:48:" priced at €55,00 — the dominant wrong
+        // value in a real bug report (total_amount 65,00 instead of a plausible ~10,00).
+        var text = """
+            selene + 323066
+            ma 17:48:55 €
+            Kasse: Bon
+            Partyartikel 3,00
+            """;
+
+        var file = TestDataFactory.CreateReceiptFile(sourceHint: null);
+        var receipt = _parser.Parse(text, file);
+
+        receipt.Items.Should().NotContain(i => i.TotalPrice == 55.00m);
+        receipt.Items.Should().NotContain(i => i.Description.Contains("17:48"));
+    }
 }
