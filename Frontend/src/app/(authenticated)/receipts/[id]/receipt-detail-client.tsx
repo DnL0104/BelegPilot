@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Trash2, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
+import { ChevronRight, Trash2, Loader2, RefreshCw, AlertTriangle, SquarePen } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ReceiptItemsTable } from "@/components/receipts/receipt-items-table";
+import { VisionExtractedBadge } from "@/components/receipts/vision-extracted-badge";
 import { useReceiptById, useAcknowledgeSumMismatch } from "@/hooks/use-receipts";
 import { useDeleteFile, useReceiptFileStatus } from "@/hooks/use-receipt-files";
 import { useReclassifyReceipt } from "@/hooks/use-receipt-items";
@@ -85,9 +86,12 @@ export function ReceiptDetailClient({
         </nav>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">
-            {receipt?.vendor ?? "Belegdetails"}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight text-balance">
+              {receipt?.vendor ?? "Belegdetails"}
+            </h1>
+            {receipt?.extractionSource === "Vision" && <VisionExtractedBadge />}
+          </div>
           {receipt && (
             <div className="flex items-center gap-2">
               <Button
@@ -195,25 +199,39 @@ export function ReceiptDetailClient({
                 </AlertTitle>
                 <AlertDescription className="flex items-center justify-between gap-4">
                   <span>
-                    Die Summe der Artikel weicht von der Belegsumme ab. Bitte prüfen.
+                    Die Summe der Artikel weicht von der Belegsumme ab. Passen Sie die
+                    betroffenen Artikel an oder markieren Sie die Abweichung als geprüft.
                   </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => acknowledgeMutation.mutate(id)}
-                    disabled={acknowledgeMutation.isPending}
-                  >
-                    {acknowledgeMutation.isPending && (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    )}
-                    Als geprüft markieren
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        document
+                          .getElementById("artikel-liste")
+                          ?.scrollIntoView({ block: "start" })
+                      }
+                    >
+                      <SquarePen className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      Artikel korrigieren
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => acknowledgeMutation.mutate(id)}
+                      disabled={acknowledgeMutation.isPending}
+                    >
+                      {acknowledgeMutation.isPending && (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      )}
+                      Als geprüft markieren
+                    </Button>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
 
             <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-              <div className="border-b border-border px-6 py-4">
+              <div id="artikel-liste" className="border-b border-border px-6 py-4">
                 <h3 className="text-[15px] font-semibold">
                   Artikel ({receipt.itemCount})
                 </h3>
