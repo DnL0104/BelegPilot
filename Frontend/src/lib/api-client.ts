@@ -272,6 +272,23 @@ export async function confirmClassification(
   return data;
 }
 
+export interface CorrectItemPayload {
+  description: string;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export async function correctReceiptItem(
+  itemId: string,
+  payload: CorrectItemPayload
+): Promise<ReceiptItem> {
+  const { data } = await api.post<ReceiptItem>(
+    `/receipt-items/${itemId}/correct`,
+    payload
+  );
+  return data;
+}
+
 export async function getCategoryTotals(
   year: number
 ): Promise<CategoryTotal[]> {

@@ -36,6 +36,7 @@ export interface Receipt {
   unknownCount: number;
   failedCount: number;     // items with ClassificationStatus.Failed — separate from unknownCount (Pitfall 2)
   hasSumMismatch: boolean;
+  extractionSource: string;
 }
 
 // --- Batch upload response (202 Accepted — D-03) ---

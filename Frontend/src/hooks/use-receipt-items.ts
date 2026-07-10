@@ -10,7 +10,9 @@ import {
   retryFailedClassifications,
   getPendingSuggestions,
   saveClassificationRule,
+  correctReceiptItem,
   type SaveRulePayload,
+  type CorrectItemPayload,
 } from "@/lib/api-client";
 
 export function useReceiptItems(receiptId: string) {
@@ -78,6 +80,25 @@ export function useRetryFailedClassifications() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.receipts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.classifications.pendingSuggestions });
+    },
+  });
+}
+
+export function useCorrectReceiptItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      itemId,
+      receiptId,
+      ...payload
+    }: { itemId: string; receiptId: string } & CorrectItemPayload) =>
+      correctReceiptItem(itemId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.receipts.items(variables.receiptId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.receipts.all });
     },
   });
 }
