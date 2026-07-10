@@ -8,5 +8,6 @@ public enum AuditAction
     RefreshTokenReplayDetected,
     ClassificationRuleCreated,
     DataExportRequested,
-    DataExportDownloaded
+    DataExportDownloaded,
+    ItemCorrected
 }

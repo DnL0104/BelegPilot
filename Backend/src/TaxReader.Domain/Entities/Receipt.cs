@@ -1,3 +1,5 @@
+using TaxReader.Domain.Enums;
+
 namespace TaxReader.Domain.Entities;
 
 public class Receipt
@@ -13,6 +15,7 @@ public class Receipt
     public string RawExtractedText { get; set; } = string.Empty;
     public DateTime ParsedAt { get; set; } = DateTime.UtcNow;
     public bool HasSumMismatch { get; set; } = false;
+    public ExtractionSource ExtractionSource { get; set; } = ExtractionSource.Ocr;
 
     public ReceiptFile ReceiptFile { get; set; } = null!;
     public ICollection<ReceiptItem> Items { get; set; } = [];
