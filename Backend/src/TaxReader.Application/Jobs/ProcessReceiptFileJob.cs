@@ -31,6 +31,9 @@ public class ProcessReceiptFileJob(
     IEnumerable<IReceiptParser> parsers,
     IBackgroundJobClient jobClient,
     IUploadBlobStore blobStore,
+    ITokenService tokenService,
+    IReceiptVisionExtractor visionExtractor,
+    IVisionFallbackSettings visionSettings,
     ILogger<ProcessReceiptFileJob> logger)
 {
     private static readonly HashSet<string> ImageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
@@ -138,6 +141,15 @@ public class ProcessReceiptFileJob(
 
                 if (string.IsNullOrWhiteSpace(rawText))
                 {
+                    // Pitfall: vision fires ONLY on this pre-parse failure branch and
+                    // ParserMissing below — never on a clean parse — so the per-receipt
+                    // AI cost stays strictly fallback-only (cost containment, VIS-03).
+                    if (await TryVisionFallbackAsync(run, receiptFile, ms, cancellationToken))
+                    {
+                        await RunBarrierAsync(uploadBatchId, receiptFile, batchSize, cancellationToken);
+                        return;
+                    }
+
                     await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "NoTextExtracted", "Aus dieser Datei konnte kein Text gelesen werden.");
                     return;
                 }
@@ -149,6 +161,14 @@ public class ProcessReceiptFileJob(
                 var parser = parsers.FirstOrDefault(p => p.CanParse(rawText, receiptFile.SourceHint));
                 if (parser is null)
                 {
+                    // Text extraction consumed `ms` — TryVisionFallbackAsync resets its
+                    // position before reading, so re-use of the same stream is safe here.
+                    if (await TryVisionFallbackAsync(run, receiptFile, ms, cancellationToken))
+                    {
+                        await RunBarrierAsync(uploadBatchId, receiptFile, batchSize, cancellationToken);
+                        return;
+                    }
+
                     await MarkFailedAsync(run, receiptFile, ProcessingStatus.Failed, "ParserMissing", "Format der Datei wird derzeit nicht unterstützt.");
                     return;
                 }
@@ -190,17 +210,29 @@ public class ProcessReceiptFileJob(
             }
         }
 
-        // Barrier: count completed parents in this batch. Last one enqueues the classify job.
-        // Includes Parsing (just-finished current run), Classifying, Completed; excludes
-        // Failed/Cancelled (those don't go through classify).
-        // Explicit equality, NOT >=: ProcessingRun.Status is persisted as a string
-        // (HasConversion<string>()), so a ">=" comparison against the enum compiles fine
-        // in C# but translates to a lexicographic SQL string comparison — under which
-        // "Completed" sorts BEFORE "Parsing" (C < P), silently excluding already-completed
-        // siblings from the count. Never manifested in the plain happy path (every sibling
-        // is freshly at exactly "Parsing" when this barrier runs, so string equality still
-        // matched), but broke retrying one stuck file in a batch whose siblings had already
-        // reached Completed.
+        await RunBarrierAsync(uploadBatchId, receiptFile, batchSize, cancellationToken);
+    }
+
+    /// <summary>
+    /// Barrier: count completed parents in this batch. Last one enqueues the classify job.
+    /// Includes Parsing (just-finished current run — parser success or vision-fallback
+    /// success alike), Classifying, Completed; excludes Failed/Cancelled (those don't go
+    /// through classify).
+    /// Explicit equality, NOT >=: ProcessingRun.Status is persisted as a string
+    /// (HasConversion&lt;string&gt;()), so a ">=" comparison against the enum compiles fine
+    /// in C# but translates to a lexicographic SQL string comparison — under which
+    /// "Completed" sorts BEFORE "Parsing" (C &lt; P), silently excluding already-completed
+    /// siblings from the count. Never manifested in the plain happy path (every sibling
+    /// is freshly at exactly "Parsing" when this barrier runs, so string equality still
+    /// matched), but broke retrying one stuck file in a batch whose siblings had already
+    /// reached Completed.
+    /// </summary>
+    private async Task RunBarrierAsync(
+        Guid uploadBatchId,
+        ReceiptFile receiptFile,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
         var completedCount = await dbContext.ProcessingRuns
             .Where(r => r.ReceiptFile.UploadBatchId == uploadBatchId
                      && (r.Status == ProcessingStatus.Parsing
@@ -215,6 +247,122 @@ public class ProcessReceiptFileJob(
                 j => j.HandleAsync(uploadBatchId, receiptFile.UserId, CancellationToken.None),
                 cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Pitfall: vision is confined to the two pre-parse failure branches (NoTextExtracted,
+    /// ParserMissing) that call this method — never on a clean parse — so per-receipt AI
+    /// cost stays strictly fallback-only (cost containment, VIS-03). ClassifyBatchJob is
+    /// intentionally untouched (D-02): vision never re-fires on sum-mismatch.
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> when a vision-extracted Receipt was persisted (caller should run the
+    /// barrier and return); <c>false</c> when the caller should fall through to the
+    /// existing terminal MarkFailedAsync path unchanged.
+    /// </returns>
+    private async Task<bool> TryVisionFallbackAsync(
+        ProcessingRun run,
+        ReceiptFile receiptFile,
+        MemoryStream ms,
+        CancellationToken cancellationToken)
+    {
+        if (!visionExtractor.IsConfigured)
+            return false;
+
+        var isPdf = !IsImageFile(receiptFile.OriginalFileName);
+        var mediaType = isPdf ? "application/pdf" : GetMediaType(receiptFile.OriginalFileName);
+
+        var cost = visionSettings.CostPerVisionExtraction;
+        var ledger = new List<TokenLedgerEntry> { new(cost, "Vision extraction", receiptFile.Id) };
+        var hasTokens = await tokenService.TryConsumeManyAsync(ledger, receiptFile.UserId, cancellationToken);
+        if (!hasTokens)
+        {
+            logger.LogInformation(
+                "Vision fallback skipped for ReceiptFile {ReceiptFileId} — insufficient tokens.",
+                receiptFile.Id);
+            return false;
+        }
+
+        // Retry-once-then-degrade (mirrors AiOnlyClassificationService.ClassifyItemsAsync):
+        // genuine cancellation must propagate, never be swallowed into a retry or refund.
+        VisionExtractionResult? result = null;
+        var attempt = 0;
+        while (true)
+        {
+            try
+            {
+                ms.Position = 0; // text extraction (or the prior failed attempt) consumed it
+                result = await visionExtractor.ExtractAsync(ms, mediaType, isPdf, cancellationToken);
+                break;
+            }
+            catch (Exception ex) when (attempt == 0 && !cancellationToken.IsCancellationRequested)
+            {
+                attempt++;
+                logger.LogWarning(ex,
+                    "Vision extraction failed on attempt 1 for ReceiptFile {ReceiptFileId} — retrying.",
+                    receiptFile.Id);
+                await Task.Delay(visionSettings.RetryDelay, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Vision extraction failed on retry for ReceiptFile {ReceiptFileId} — falling back to Failed.",
+                    receiptFile.Id);
+                await tokenService.RefundManyAsync(ledger, receiptFile.UserId, cancellationToken);
+                return false;
+            }
+        }
+
+        if (result is null || result.Items.Count == 0)
+        {
+            logger.LogWarning(
+                "Vision extraction returned no usable items for ReceiptFile {ReceiptFileId} — falling back to Failed.",
+                receiptFile.Id);
+            await tokenService.RefundManyAsync(ledger, receiptFile.UserId, cancellationToken);
+            return false;
+        }
+
+        var total = result.Total ?? result.Items.Sum(i => i.Price);
+        var receipt = new Receipt
+        {
+            Id = Guid.NewGuid(),
+            ReceiptFileId = receiptFile.Id,
+            Vendor = result.Vendor ?? "Unbekannt",
+            PurchaseDate = DateOnly.FromDateTime(receiptFile.UploadedAt),
+            SubTotal = total,
+            TaxAmount = 0,
+            TotalAmount = total,
+            RawExtractedText = string.Empty,
+            ParsedAt = DateTime.UtcNow,
+            ExtractionSource = ExtractionSource.Vision
+        };
+
+        foreach (var item in result.Items)
+        {
+            receipt.Items.Add(new ReceiptItem
+            {
+                Id = Guid.NewGuid(),
+                ReceiptId = receipt.Id,
+                Description = item.Description,
+                Quantity = 1,
+                UnitPrice = item.Price,
+                TotalPrice = item.Price
+            });
+        }
+
+        dbContext.Receipts.Add(receipt);
+        run.Status = ProcessingStatus.Parsing; // same status the parser-success path leaves the run in
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Vision fallback succeeded for ReceiptFile {ReceiptFileId} — {ItemCount} items extracted.",
+            receiptFile.Id, receipt.Items.Count);
+
+        return true;
     }
 
     private async Task MarkFailedAsync(

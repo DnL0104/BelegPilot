@@ -77,6 +77,11 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        // Application-layer port over the vision-fallback slice of AnthropicOptions —
+        // ProcessReceiptFileJob (Application) reads cost/retry settings through this
+        // instead of referencing TaxReader.Infrastructure directly (CLAUDE.md).
+        services.AddScoped<IVisionFallbackSettings, AnthropicVisionFallbackSettings>();
+
         // Image OCR (local Tesseract — no API costs).
         // D-16/D-17/D-18: bounded TesseractEngine pool replaces the legacy Singleton+lock.
         // PoolSize (default 3) is configurable via Tesseract__PoolSize. The pool is registered

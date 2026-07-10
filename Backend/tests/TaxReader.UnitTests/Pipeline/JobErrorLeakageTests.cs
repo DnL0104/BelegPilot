@@ -30,6 +30,9 @@ public class JobErrorLeakageTests : IDisposable
     private readonly Mock<IBackgroundJobClient> _jobClientMock = new();
     private readonly Mock<IUploadBlobStore> _blobStoreMock = new();
     private readonly Mock<IClassificationService> _classificationMock = new();
+    private readonly Mock<ITokenService> _tokenServiceMock = new();
+    private readonly Mock<IReceiptVisionExtractor> _visionExtractorMock = new();
+    private readonly Mock<IVisionFallbackSettings> _visionSettingsMock = new();
 
     public JobErrorLeakageTests()
     {
@@ -51,6 +54,9 @@ public class JobErrorLeakageTests : IDisposable
             new[] { _parserMock.Object },
             _jobClientMock.Object,
             _blobStoreMock.Object,
+            _tokenServiceMock.Object,
+            _visionExtractorMock.Object, // IsConfigured defaults to false — vision fallback never fires in these tests
+            _visionSettingsMock.Object,
             Mock.Of<ILogger<ProcessReceiptFileJob>>());
 
     private ClassifyBatchJob CreateClassifyJob() =>
