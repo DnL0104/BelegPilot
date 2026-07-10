@@ -63,4 +63,44 @@ public sealed class MigrationSmokeTests(PostgresContainerFixture fixture) : IAsy
         var pending = await verifyCtx.Database.GetPendingMigrationsAsync();
         pending.Should().BeEmpty("all migrations must be applied to the fresh container");
     }
+
+    /// <summary>
+    /// Phase 5 (05-01): proves AddExtractionSourceAndItemCorrected applies cleanly and that
+    /// existing/pre-phase rows default to ExtractionSource.Ocr with zero backfill logic.
+    /// </summary>
+    [Fact]
+    public async Task Migrate_SeededReceipt_ExtractionSourceDefaultsToOcr()
+    {
+        var userId = Guid.NewGuid();
+        var fileId = Guid.NewGuid();
+        var receiptId = Guid.NewGuid();
+
+        await using (var ctx = CreateContext())
+        {
+            ctx.Users.Add(new User
+            {
+                Id = userId,
+                Email = $"extraction-source-smoke-{userId:N}@test.local",
+                DisplayName = "Extraction Source Smoke",
+                PasswordHash = "x"
+            });
+
+            var file = TestDataFactory.CreateReceiptFile(id: fileId, contentHash: "extraction-source-smoke-hash");
+            file.UserId = userId;
+            ctx.ReceiptFiles.Add(file);
+
+            // Deliberately does not set ExtractionSource — proves the column default (Ocr)
+            // applies without any explicit backfill logic, mirroring pre-phase rows.
+            var receipt = TestDataFactory.CreateReceipt(id: receiptId, receiptFileId: fileId);
+            ctx.Receipts.Add(receipt);
+
+            await ctx.SaveChangesAsync();
+        }
+
+        await using var verifyCtx = CreateContext();
+        var retrieved = await verifyCtx.Receipts.FindAsync(receiptId);
+
+        retrieved.Should().NotBeNull("seeded Receipt must be queryable after migrations are applied");
+        retrieved!.ExtractionSource.Should().Be(ExtractionSource.Ocr, "existing/pre-phase rows must default to Ocr with no backfill logic");
+    }
 }
