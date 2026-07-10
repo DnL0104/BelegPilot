@@ -26,6 +26,9 @@ public class ProcessReceiptFileJobTests : IDisposable
     private readonly Mock<IReceiptParser> _parserMock = new();
     private readonly Mock<IBackgroundJobClient> _jobClientMock = new();
     private readonly Mock<IUploadBlobStore> _blobStoreMock = new();
+    private readonly Mock<ITokenService> _tokenServiceMock = new();
+    private readonly Mock<IReceiptVisionExtractor> _visionExtractorMock = new();
+    private readonly Mock<IVisionFallbackSettings> _visionSettingsMock = new();
     private readonly ProcessReceiptFileJob _job;
 
     public ProcessReceiptFileJobTests()
@@ -42,12 +45,21 @@ public class ProcessReceiptFileJobTests : IDisposable
             new[] { _parserMock.Object },
             _jobClientMock.Object,
             _blobStoreMock.Object,
+            _tokenServiceMock.Object,
+            _visionExtractorMock.Object,
+            _visionSettingsMock.Object,
             Mock.Of<ILogger<ProcessReceiptFileJob>>());
 
         // Default: blob store returns a fake PDF stream
         _blobStoreMock
             .Setup(s => s.OpenReadAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new MemoryStream(new byte[] { 1, 2, 3 }));
+
+        // Default: vision extractor not configured — existing (pre-vision) tests must see
+        // zero change in behavior; only the new vision-fallback tests below opt in.
+        _visionExtractorMock.Setup(v => v.IsConfigured).Returns(false);
+        _visionSettingsMock.Setup(s => s.RetryDelay).Returns(TimeSpan.Zero);
+        _visionSettingsMock.Setup(s => s.CostPerVisionExtraction).Returns(1);
     }
 
     private (ReceiptFile, ProcessingRun) SeedFile(
@@ -326,6 +338,160 @@ public class ProcessReceiptFileJobTests : IDisposable
         var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
         savedRun.Status.Should().Be(ProcessingStatus.Failed);
         savedRun.ErrorCode.Should().Be("NoContent");
+    }
+
+    // ── Vision fallback (05-03, VIS-02/VIS-03/VIS-04) ──────────────────────
+
+    private void SetupVisionSucceeds(string vendor = "REWE", string description = "Kaffee", decimal price = 4.99m)
+    {
+        _visionExtractorMock.Setup(v => v.IsConfigured).Returns(true);
+        _tokenServiceMock
+            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _visionExtractorMock
+            .Setup(v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VisionExtractionResult(vendor, [new VisionExtractedItem(description, price)], price));
+    }
+
+    [Fact]
+    public async Task HandleAsync_NoTextExtractedImage_VisionSucceeds_PersistsVisionReceipt()
+    {
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId, fileName: "test.jpg");
+        _imageExtractorMock
+            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+        SetupVisionSucceeds();
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
+        savedRun.Status.Should().NotBe(ProcessingStatus.Failed);
+
+        var savedReceipt = await _dbContext.Receipts.FirstAsync(r => r.ReceiptFileId == file.Id);
+        savedReceipt.ExtractionSource.Should().Be(ExtractionSource.Vision);
+        savedReceipt.Items.Should().ContainSingle(i => i.Description == "Kaffee" && i.Quantity == 1);
+
+        _visionExtractorMock.Verify(
+            v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), false, It.IsAny<CancellationToken>()),
+            Times.Once, "an image file must route through the image content-block path (isPdf=false)");
+    }
+
+    [Fact]
+    public async Task HandleAsync_NoTextExtractedPdf_VisionSucceeds_UsesDocumentContentBlock()
+    {
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId, fileName: "scanned.pdf");
+        _pdfExtractorMock
+            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+        SetupVisionSucceeds();
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
+        savedRun.Status.Should().NotBe(ProcessingStatus.Failed);
+
+        var savedReceipt = await _dbContext.Receipts.FirstAsync(r => r.ReceiptFileId == file.Id);
+        savedReceipt.ExtractionSource.Should().Be(ExtractionSource.Vision);
+
+        _visionExtractorMock.Verify(
+            v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>()),
+            Times.Once, "a scanned PDF with no text layer must route through the document content-block path (isPdf=true)");
+    }
+
+    [Fact]
+    public async Task HandleAsync_NoMatchingParser_VisionSucceeds_PersistsVisionReceipt()
+    {
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId);
+        _pdfExtractorMock
+            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("some unrecognized text");
+        _parserMock.Setup(p => p.CanParse(It.IsAny<string>(), It.IsAny<string?>())).Returns(false);
+        SetupVisionSucceeds();
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
+        savedRun.Status.Should().NotBe(ProcessingStatus.Failed);
+
+        var savedReceipt = await _dbContext.Receipts.FirstAsync(r => r.ReceiptFileId == file.Id);
+        savedReceipt.ExtractionSource.Should().Be(ExtractionSource.Vision);
+    }
+
+    [Fact]
+    public async Task HandleAsync_CleanParse_NeverInvokesVisionExtractor()
+    {
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId);
+        SetupSuccessfulPipeline();
+        SetupVisionSucceeds(); // configured + would succeed if called — proves it's simply never invoked
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        _visionExtractorMock.Verify(
+            v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+            Times.Never, "vision must never fire when OCR+parser already succeed (cost containment, VIS-03)");
+
+        var savedReceipt = await _dbContext.Receipts.FirstAsync(r => r.ReceiptFileId == file.Id);
+        savedReceipt.ExtractionSource.Should().Be(ExtractionSource.Ocr);
+    }
+
+    [Fact]
+    public async Task HandleAsync_VisionExtractionFailsTwice_RefundsTokensAndStaysFailed()
+    {
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId);
+        _pdfExtractorMock
+            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+        _visionExtractorMock.Setup(v => v.IsConfigured).Returns(true);
+        _tokenServiceMock
+            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _visionExtractorMock
+            .Setup(v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("vision call failed"));
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
+        savedRun.Status.Should().Be(ProcessingStatus.Failed);
+        savedRun.ErrorCode.Should().Be("NoTextExtracted");
+
+        _visionExtractorMock.Verify(
+            v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2), "the retry-once-then-degrade wrapper must attempt exactly twice before giving up");
+        _tokenServiceMock.Verify(
+            t => t.RefundManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Once, "the pre-charged vision tokens must be refunded when vision exhausts its retry budget");
+
+        (await _dbContext.Receipts.CountAsync(r => r.ReceiptFileId == file.Id)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task HandleAsync_InsufficientTokens_SkipsVisionAndStaysFailed()
+    {
+        var batchId = Guid.NewGuid();
+        var (file, run) = SeedFile(batchId);
+        _pdfExtractorMock
+            .Setup(e => e.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+        _visionExtractorMock.Setup(v => v.IsConfigured).Returns(true);
+        _tokenServiceMock
+            .Setup(t => t.TryConsumeManyAsync(It.IsAny<IReadOnlyList<TokenLedgerEntry>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        await _job.HandleAsync(file.Id, batchId, batchSize: 1, CancellationToken.None);
+
+        var savedRun = await _dbContext.ProcessingRuns.FirstAsync(r => r.Id == run.Id);
+        savedRun.Status.Should().Be(ProcessingStatus.Failed);
+        savedRun.ErrorCode.Should().Be("NoTextExtracted");
+
+        _visionExtractorMock.Verify(
+            v => v.ExtractAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+            Times.Never, "the extractor must never be called when the token pre-charge gate fails");
     }
 
     public void Dispose() => _dbContext.Dispose();
