@@ -95,6 +95,7 @@ try
     builder.Services.AddScoped<DeleteReceiptFileHandler>();
     builder.Services.AddScoped<BulkDeleteReceiptFilesHandler>();
     builder.Services.AddScoped<ConfirmClassificationHandler>();
+    builder.Services.AddScoped<CorrectReceiptItemHandler>();
     builder.Services.AddScoped<BatchConfirmHandler>();
     builder.Services.AddScoped<ReclassifyReceiptHandler>();
     builder.Services.AddScoped<RetryFailedItemsHandler>();

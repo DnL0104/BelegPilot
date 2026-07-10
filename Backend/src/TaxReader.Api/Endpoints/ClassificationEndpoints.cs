@@ -83,6 +83,22 @@ public static class ClassificationEndpoints
         .WithName("ConfirmClassification")
         .WithSummary("Manually confirm a classification for a receipt item");
 
+        classification.MapPost("/{id:guid}/correct", async (
+            Guid id,
+            CorrectReceiptItemRequest request,
+            CorrectReceiptItemHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            var command = new CorrectReceiptItemCommand(id, request.Description, request.UnitPrice, request.TotalPrice);
+            var result = await handler.HandleAsync(command, cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : Results.NotFound(new { error = result.Error });
+        })
+        .WithName("CorrectReceiptItem")
+        .WithSummary("Manually correct a receipt item's description, unit price, or total price");
+
         classification.MapPost("/batch-confirm", async (
             BatchConfirmRequest request,
             BatchConfirmHandler handler,
@@ -116,6 +132,7 @@ public static class ClassificationEndpoints
 }
 
 public record ConfirmClassificationRequest(string Category);
+public record CorrectReceiptItemRequest(string Description, decimal UnitPrice, decimal TotalPrice);
 public record BatchConfirmRequest(IReadOnlyList<Guid> ItemIds);
 public record SaveRuleRequest(
     string? VendorPattern,
