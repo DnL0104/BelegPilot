@@ -88,12 +88,12 @@ export function useCorrectReceiptItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      itemId,
-      receiptId,
-      ...payload
-    }: { itemId: string; receiptId: string } & CorrectItemPayload) =>
-      correctReceiptItem(itemId, payload),
+    mutationFn: (vars: { itemId: string; receiptId: string } & CorrectItemPayload) =>
+      correctReceiptItem(vars.itemId, {
+        description: vars.description,
+        unitPrice: vars.unitPrice,
+        totalPrice: vars.totalPrice,
+      }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.receipts.items(variables.receiptId),

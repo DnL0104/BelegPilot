@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Pencil, Check, Loader2, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Pencil, SquarePen, Check, Loader2, X, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClassificationBadge } from "./classification-badge";
 import { ClassifyDialog } from "./classify-dialog";
+import { EditItemDialog } from "./edit-item-dialog";
 import { useReceiptItems, useBatchConfirm } from "@/hooks/use-receipt-items";
 import { formatCurrency } from "@/lib/format";
 import type { ReceiptItem } from "@/types/api";
@@ -28,6 +29,7 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
   const { data: items, isLoading } = useReceiptItems(receiptId);
   const batchConfirmMutation = useBatchConfirm();
   const [classifyItem, setClassifyItem] = useState<ReceiptItem | null>(null);
+  const [editItem, setEditItem] = useState<ReceiptItem | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // CLS-04: per-row expand state for reasoning; collapsed by default.
   const [expandedReasons, setExpandedReasons] = useState<Set<string>>(new Set());
@@ -225,14 +227,24 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                   <p className="text-sm font-medium leading-snug">
                     {item.description}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setClassifyItem(item)}
-                    className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Klassifizierung bearbeiten"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setClassifyItem(item)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      aria-label="Klassifizierung bearbeiten"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditItem(item)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      aria-label="Artikel bearbeiten"
+                    >
+                      <SquarePen className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Price row */}
@@ -385,14 +397,24 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
                     )}
                   </TableCell>
                   <TableCell>
-                    <button
-                      type="button"
-                      onClick={() => setClassifyItem(item)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label="Klassifizierung bearbeiten"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setClassifyItem(item)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Klassifizierung bearbeiten"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditItem(item)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Artikel bearbeiten"
+                      >
+                        <SquarePen className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -420,6 +442,14 @@ export function ReceiptItemsTable({ receiptId, vendor = "" }: ReceiptItemsTableP
         open={!!classifyItem}
         onOpenChange={(open) => {
           if (!open) setClassifyItem(null);
+        }}
+      />
+
+      <EditItemDialog
+        item={editItem}
+        open={!!editItem}
+        onOpenChange={(open) => {
+          if (!open) setEditItem(null);
         }}
       />
     </>

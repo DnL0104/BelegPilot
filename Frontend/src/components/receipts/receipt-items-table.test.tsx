@@ -14,6 +14,8 @@ vi.mock('@/hooks/use-receipt-items', () => ({
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 // Stub ClassifyDialog to avoid its deep dependency tree (mirrors classify-dialog.test.tsx's save-rule stub).
 vi.mock('./classify-dialog', () => ({ ClassifyDialog: () => <div data-testid="classify-dialog" /> }))
+// Stub EditItemDialog for the same reason (avoids needing useCorrectReceiptItem in the hooks mock above).
+vi.mock('./edit-item-dialog', () => ({ EditItemDialog: () => <div data-testid="edit-item-dialog" /> }))
 
 import { ReceiptItemsTable } from './receipt-items-table'
 import { useReceiptItems } from '@/hooks/use-receipt-items'
