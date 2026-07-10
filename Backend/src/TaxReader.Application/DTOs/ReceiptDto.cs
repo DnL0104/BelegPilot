@@ -15,4 +15,5 @@ public record ReceiptDto(
     int UnknownCount,
     int FailedCount,         // items with ClassificationStatus.Failed — distinct from UnknownCount
     bool HasSumMismatch,
+    string ExtractionSource,
     string? RawExtractedText = null);

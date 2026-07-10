@@ -54,6 +54,7 @@ public static class DtoMappingExtensions
             unknownCount,
             failedCount,
             entity.HasSumMismatch,
+            entity.ExtractionSource.ToString(),
             includeRawText ? entity.RawExtractedText : null);
     }
 

@@ -246,7 +246,8 @@ public class ReceiptDtoSumMismatchMappingTests
             SuggestedCount: 0,
             UnknownCount: 0,
             FailedCount: 0,
-            HasSumMismatch: true);
+            HasSumMismatch: true,
+            ExtractionSource: "Ocr");
 
         dto.HasSumMismatch.Should().BeTrue();
     }
