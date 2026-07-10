@@ -12,6 +12,13 @@ public class AnthropicOptions
     public int CostPerClassification { get; set; } = 1;
 
     /// <summary>
+    /// Tokens (credits) consumed per vision fallback extraction call. Default reflects the
+    /// spike's real measured cost of ~0.26-0.3 Cent/receipt (claude-haiku-4-5) — tunable per
+    /// environment.
+    /// </summary>
+    public int CostPerVisionExtraction { get; set; } = 1;
+
+    /// <summary>
     /// Delay between the first AI attempt and the single automatic retry (CLS-01).
     /// Configurable so unit tests can set <see cref="System.TimeSpan.Zero"/> instead of
     /// paying the real wait on every retry-path test.

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TaxReader.Domain.Entities;
+using TaxReader.Domain.Enums;
 
 namespace TaxReader.Infrastructure.Data.Configurations;
 
@@ -21,6 +22,11 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
         builder.Property(e => e.RawExtractedText).IsRequired();
         builder.Property(e => e.HasSumMismatch)
             .HasDefaultValue(false)
+            .IsRequired();
+        builder.Property(e => e.ExtractionSource)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .HasDefaultValue(ExtractionSource.Ocr)
             .IsRequired();
 
         builder.HasIndex(e => e.ReceiptFileId).IsUnique();

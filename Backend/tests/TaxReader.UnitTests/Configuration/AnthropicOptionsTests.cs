@@ -20,6 +20,13 @@ public class AnthropicOptionsTests
     }
 
     [Fact]
+    public void Default_CostPerVisionExtraction_IsOne()
+    {
+        var options = new AnthropicOptions();
+        options.CostPerVisionExtraction.Should().Be(1);
+    }
+
+    [Fact]
     public void Default_ApiKey_IsNull()
     {
         var options = new AnthropicOptions();
