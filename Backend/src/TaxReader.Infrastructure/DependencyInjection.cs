@@ -67,6 +67,16 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(20);
         });
 
+        // Vision-fallback extraction (05-02, VIS-01) — a separate typed HttpClient from
+        // IAiClassifier's above: vision calls transmit a full-resolution image/PDF and can
+        // take longer than a text-only classification call, so they get their own timeout
+        // rather than sharing ClaudeAiClassifier's 20s client.
+        services.AddHttpClient<IReceiptVisionExtractor, ClaudeVisionExtractor>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.anthropic.com/");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         // Image OCR (local Tesseract — no API costs).
         // D-16/D-17/D-18: bounded TesseractEngine pool replaces the legacy Singleton+lock.
         // PoolSize (default 3) is configurable via Tesseract__PoolSize. The pool is registered
